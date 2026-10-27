@@ -28,6 +28,10 @@ Not yet: "More like this" recommendations, Last.fm import, following friends.
    - *Site URL:* your Vercel URL, e.g. `https://www.discomplete.com`
    - *Redirect URLs:* add `https://www.discomplete.com/auth/callback`, `https://discomplete.vercel.app/auth/callback` and `http://localhost:3000/auth/callback`
 4. **Project Settings → API:** copy the *Project URL* and the *anon public* key.
+5. **Authentication → Emails → Templates:** in both *Magic Link* and *Confirm signup*, add the code so people can sign in inside the installed app (where email links open the browser instead):
+   ```html
+   <p>Your sign-in code: <strong>{{ .Token }}</strong></p>
+   ```
 
 ### 2. Vercel
 1. **Add New → Project →** import `Wedin992/discomplete`.

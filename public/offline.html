@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#131314">
+<title>Offline · Discomplete</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #131314; color: #EEEBE4; font-family: system-ui, sans-serif; }
+  main { min-height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 32px 24px; box-sizing: border-box; max-width: 520px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 40px; line-height: 1; text-transform: uppercase; font-weight: 800; }
+  p { margin: 0; color: #A3A09A; font-size: 17px; line-height: 1.5; }
+  button { align-self: flex-start; height: 48px; padding: 0 22px; border-radius: 999px; border: 0; background: #FF6A3D; color: #131314; font: inherit; font-weight: 700; font-size: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <img src="/icon-192.png" alt="" width="64" height="64" style="border-radius: 14px">
+  <h1>You’re offline</h1>
+  <p>Discomplete needs a connection to load your diary. Your entries are safe — try again when you’re back online.</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+</main>
+</body>
+</html>

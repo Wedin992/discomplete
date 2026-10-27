@@ -136,4 +136,68 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
 .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 22px; border-radius: 999px; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,0.45); max-width: calc(100% - 32px); animation: toast 3s forwards; }
 @keyframes toast { 0%, 85% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 .error { color: var(--danger); }
+
+/* ── App mode & phones ───────────────────────────────────── */
+html { -webkit-text-size-adjust: 100%; }
+body { -webkit-tap-highlight-color: transparent; }
+.site-header { padding-top: env(safe-area-inset-top); }
+.site-header .container, main.container, .site-footer .container {
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
+}
+
+.tabbar { display: none; }
+
+@media (max-width: 720px) {
+  .container, main.container, .site-header .container, .site-footer .container {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  main.container { padding-top: 24px; padding-bottom: 40px; }
+  .site-header .container { padding-top: 8px; padding-bottom: 8px; }
+  .signed-in .nav, .signed-in .header-log { display: none; }
+  .wordmark { font-size: 21px; }
+
+  .signed-in { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+  .signed-in .site-footer { display: none; }
+  .tabbar {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    padding: 6px max(8px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right));
+    background: rgba(19, 19, 20, 0.94);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+  }
+  .tab {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    min-height: 54px; color: var(--muted); text-decoration: none; font-size: 11px; font-weight: 600;
+  }
+  .tab:hover { color: var(--text); }
+  .tab[aria-current="page"] { color: var(--text); }
+  .tab[aria-current="page"]:not(.tab-log) svg { color: var(--accent); }
+  .tab-log[aria-current="page"] .tab-log-btn { box-shadow: 0 0 0 3px rgba(255, 106, 61, 0.3); }
+  .title-xl { font-size: clamp(32px, 9vw, 60px); }
+  .title-l { font-size: 28px; }
+  .tab-log span:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tab-log-btn {
+    width: 52px; height: 40px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+    background: var(--accent); color: var(--on-accent);
+  }
+  .tab-log:hover .tab-log-btn { background: var(--accent-hover); }
+
+  .toast { bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .entry { gap: 14px; }
+  .cover-76 { width: 60px; height: 60px; }
+  .entry-title { font-size: 17px; }
+  .card { padding: 16px; }
+  .btn-lg { height: 50px; padding: 0 20px; font-size: 16px; }
+  .search-box { height: 56px; }
+  .search-box input { font-size: 17px; }
+}
+
+/* Installed app: no browser bar above, so give the header room under the clock. */
+@media (display-mode: standalone) {
+  .site-header { position: sticky; top: 0; z-index: 15; background: rgba(19, 19, 20, 0.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+}
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
