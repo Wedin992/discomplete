@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { DeleteEntryButton } from "@/components/DeleteEntryButton";
-import { kindLabel, longDate, todayIso, type EntryWithAlbum } from "@/lib/format";
-import { LogForm } from "@/app/record/[id]/log/LogForm";
+import { kindLabel, longDate, recordPath, todayIso, type EntryWithAlbum } from "@/lib/format";
+import { LogForm } from "@/app/record/LogForm";
 
 export const metadata: Metadata = { title: "Edit entry" };
 
@@ -27,7 +27,7 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
           <h1 className="title-m" style={{ marginTop: 4 }}>{album.title}</h1>
           <p className="muted" style={{ marginTop: 4 }}>{album.artist}{album.release_year ? ` · ${album.release_year}` : ""}</p>
         </div>
-        <Link href={`/record/${album.id}`} className="btn">View record</Link>
+        <Link href={recordPath(album)} className="btn">View record</Link>
       </div>
       <LogForm
         albumId={album.id}

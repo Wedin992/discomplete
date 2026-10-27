@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { EntryCard } from "@/components/EntryCard";
-import { daysBetween, longDate, monthName, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
+import { daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
 
 export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const { saved } = await searchParams;
@@ -67,7 +67,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
                 {reminder.note ? ` and wrote “${reminder.note.length > 80 ? reminder.note.slice(0, 80) + "…" : reminder.note}”` : ""}
               </p>
             </div>
-            <Link href={`/record/${reminder.album_id}/log`} className="btn btn-primary">Log a relisten</Link>
+            <Link href={logPath(reminder.album)} className="btn btn-primary">Log a relisten</Link>
           </div>
         ) : null}
 
@@ -108,7 +108,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
             <h2 className="eyebrow">On repeat this month</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
               {onRepeat.map(({ album, n }) => (
-                <Link key={album.id} href={`/record/${album.id}`} className="tile" aria-label={`${album.title}, logged ${n} times`}>
+                <Link key={album.id} href={recordPath(album)} className="tile" aria-label={`${album.title}, logged ${n} times`}>
                   <Cover album={album} size="full" />
                   <span className="mono muted" style={{ fontSize: 11 }}>{n}×</span>
                 </Link>
@@ -121,7 +121,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           <h2 className="eyebrow">Next up · To listen</h2>
           {toListen.length ? (
             toListen.map((a) => (
-              <Link key={a.id} href={`/record/${a.id}`} className="row gap-12" style={{ color: "var(--text)", textDecoration: "none", flexWrap: "nowrap" }}>
+              <Link key={a.id} href={recordPath(a)} className="row gap-12" style={{ color: "var(--text)", textDecoration: "none", flexWrap: "nowrap" }}>
                 <Cover album={a} size="44" />
                 <span className="stack" style={{ minWidth: 0 }}>
                   <span style={{ fontWeight: 700, fontSize: 15 }}>{a.title}</span>

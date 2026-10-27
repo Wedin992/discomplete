@@ -12,7 +12,23 @@ export type Album = {
   cover_xl: string | null;
   track_count: number | null;
   duration_sec: number | null;
+  /** Set by the database (migration 0002). Null only before that migration has run. */
+  artist_slug?: string | null;
+  title_slug?: string | null;
 };
+
+type Linkable = Pick<Album, "id"> & { artist_slug?: string | null; title_slug?: string | null };
+
+/** /record/metallica/and-justice-for-all — falls back to the id before slugs exist. */
+export function recordPath(a: Linkable) {
+  return a.artist_slug && a.title_slug ? `/record/${a.artist_slug}/${a.title_slug}` : `/record/${a.id}`;
+}
+
+export function logPath(a: Linkable) {
+  return `${recordPath(a)}/log`;
+}
+
+export const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
 export type Entry = {
   id: string;

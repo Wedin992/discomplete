@@ -1,9 +1,7 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
-import { duration, formatLabel, kindLabel, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
+import { duration, formatLabel, kindLabel, logPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
 import { toggleCollection, toggleToListen } from "@/app/actions";
 
 type Stats = { rating_count: number; avg_rating: number | null; r1: number; r2: number; r3: number; r4: number; r5: number };
@@ -12,22 +10,8 @@ type PublicNote = {
   username: string | null; display_name: string | null; is_anonymous: boolean; is_mine: boolean;
 };
 
-async function loadAlbum(id: string) {
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { supabase } = await getUser();
-  const { data } = await supabase.from("albums").select("*").eq("id", id).maybeSingle();
-  return data as Album | null;
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const album = await loadAlbum((await params).id);
-  return { title: album ? `${album.title} — ${album.artist}` : "Record" };
-}
-
-export default async function RecordPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const album = await loadAlbum(id);
-  if (!album) notFound();
+export async function RecordView({ album }: { album: Album }) {
+  const id = album.id;
   const { supabase, user } = await getUser();
 
   const [statsRes, notesRes, mineRes, listRes, collRes] = await Promise.all([
@@ -66,7 +50,7 @@ export default async function RecordPage({ params }: { params: Promise<{ id: str
           <p style={{ fontSize: 24 }}>{album.artist}</p>
           {facts ? <div className="row gap-8"><span className="chip" style={{ fontSize: 12, padding: "5px 12px" }}>{facts}</span></div> : null}
           <div className="row gap-12" style={{ marginTop: 4 }}>
-            <Link href={`/record/${album.id}/log`} className="btn btn-primary btn-lg">Log this listen</Link>
+            <Link href={logPath(album)} className="btn btn-primary btn-lg">Log this listen</Link>
             <form action={toggleToListen}>
               <input type="hidden" name="album_id" value={album.id} />
               <input type="hidden" name="source" value="Saved from the record page" />

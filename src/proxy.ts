@@ -3,7 +3,20 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login", "/auth"];
 
+// The address people should always end up on. Preview deployments keep their own URLs.
+const CANONICAL_HOST = "www.discomplete.com";
+const REDIRECT_HOSTS = new Set(["discomplete.vercel.app", "discomplete.com"]);
+
 export async function proxy(request: NextRequest) {
+  const host = request.headers.get("host")?.toLowerCase() ?? "";
+  if (REDIRECT_HOSTS.has(host)) {
+    const url = request.nextUrl.clone();
+    url.protocol = "https:";
+    url.host = CANONICAL_HOST;
+    url.port = "";
+    return NextResponse.redirect(url, 308);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

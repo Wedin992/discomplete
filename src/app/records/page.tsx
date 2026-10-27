@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
-import type { Album } from "@/lib/format";
+import { recordPath, type Album } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Records" };
 
@@ -53,7 +53,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           {rows.map((r) => {
             const bits = [r.vinyl && "Vinyl", r.cd && "CD", r.wishlist && "Wishlist", r.logged && `Logged ${r.logged}×`].filter(Boolean).join(" · ");
             return (
-              <Link key={r.album.id} href={`/record/${r.album.id}`} className="tile">
+              <Link key={r.album.id} href={recordPath(r.album)} className="tile">
                 <Cover album={r.album} size="full" />
                 <span style={{ fontWeight: 700 }}>{r.album.title}</span>
                 <span className="muted" style={{ fontSize: 14 }}>{r.album.artist}</span>

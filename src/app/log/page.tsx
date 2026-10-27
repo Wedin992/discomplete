@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
-import type { Album } from "@/lib/format";
+import { logPath, type Album } from "@/lib/format";
 import { Search } from "./Search";
 
 export const metadata: Metadata = { title: "Log a listen" };
@@ -39,7 +39,7 @@ export default async function LogPage({ searchParams }: { searchParams: Promise<
             <p className="eyebrow">Recently logged</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
               {recent.map((a) => (
-                <Link key={a.id} href={`/record/${a.id}/log`} className="tile">
+                <Link key={a.id} href={logPath(a)} className="tile">
                   <Cover album={a} size="full" />
                   <span style={{ fontSize: 14, fontWeight: 700 }}>{a.title}</span>
                 </Link>

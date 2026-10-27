@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { toggleToListen } from "@/app/actions";
-import type { Album } from "@/lib/format";
+import { logPath, recordPath, type Album } from "@/lib/format";
 
 export const metadata: Metadata = { title: "To listen" };
 
@@ -27,12 +27,12 @@ export default async function ToListenPage() {
           <div key={album.id} className="card row gap-16" style={{ padding: 14 }}>
             <Cover album={album} size="64" />
             <div className="stack gap-4" style={{ flex: "1 1 220px", minWidth: 0 }}>
-              <Link href={`/record/${album.id}`} className="link-button" style={{ fontSize: 18 }}>{album.title}</Link>
+              <Link href={recordPath(album)} className="link-button" style={{ fontSize: 18 }}>{album.title}</Link>
               <span className="muted">{album.artist}{album.release_year ? ` · ${album.release_year}` : ""}</span>
               {source ? <span className="mono muted" style={{ fontSize: 11 }}>{source}</span> : null}
             </div>
             <div className="row gap-8">
-              <Link href={`/record/${album.id}/log`} className="btn btn-primary">Log it</Link>
+              <Link href={logPath(album)} className="btn btn-primary">Log it</Link>
               <form action={toggleToListen}>
                 <input type="hidden" name="album_id" value={album.id} />
                 <button type="submit" className="btn">Remove</button>

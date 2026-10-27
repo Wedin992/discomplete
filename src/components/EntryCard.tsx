@@ -1,19 +1,19 @@
 import Link from "next/link";
 import { Cover } from "@/components/Cover";
 import { VisibilityIcon } from "@/components/Icons";
-import { formatLabel, kindLabel, stars, visibilityLabel, type EntryWithAlbum } from "@/lib/format";
+import { formatLabel, kindLabel, recordPath, stars, visibilityLabel, type EntryWithAlbum } from "@/lib/format";
 import { DeleteEntryButton } from "@/components/DeleteEntryButton";
 
 export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
   const a = entry.album;
   return (
     <article className="card entry" style={{ padding: 16 }}>
-      <Link href={`/record/${a.id}`} tabIndex={-1} aria-hidden="true">
+      <Link href={recordPath(a)} tabIndex={-1} aria-hidden="true">
         <Cover album={a} size="76" />
       </Link>
       <div className="entry-body">
         <div className="row gap-4" style={{ alignItems: "baseline", columnGap: 10 }}>
-          <Link href={`/record/${a.id}`} className="link-button entry-title">{a.title}</Link>
+          <Link href={recordPath(a)} className="link-button entry-title">{a.title}</Link>
           <span className="muted">{a.artist}</span>
         </div>
         <div className="meta">
