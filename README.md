@@ -1,6 +1,6 @@
 # Discomplete
 
-**Live:** https://discomplete.vercel.app
+**Live:** https://www.discomplete.com
 
 A music diary. Log what you listened to, how you listened (stream, vinyl or CD), what you thought — and come back to see how it changed.
 
@@ -25,8 +25,8 @@ Not yet: "More like this" recommendations, Last.fm import, following friends.
 1. Create a project at [supabase.com](https://supabase.com) (the free tier is fine; pick an EU region).
 2. **SQL Editor → New query:** paste all of `supabase/migrations/0001_init.sql` and click **Run**.
 3. **Authentication → URL Configuration:**
-   - *Site URL:* your Vercel URL, e.g. `https://discomplete.vercel.app`
-   - *Redirect URLs:* add `https://discomplete.vercel.app/auth/callback` and `http://localhost:3000/auth/callback`
+   - *Site URL:* your Vercel URL, e.g. `https://www.discomplete.com`
+   - *Redirect URLs:* add `https://www.discomplete.com/auth/callback`, `https://discomplete.vercel.app/auth/callback` and `http://localhost:3000/auth/callback`
 4. **Project Settings → API:** copy the *Project URL* and the *anon public* key.
 
 ### 2. Vercel
