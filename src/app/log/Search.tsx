@@ -2,15 +2,31 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { ChevronIcon, SearchIcon } from "@/components/Icons";
+import { logFromDeezer } from "@/app/actions";
 import type { SearchAlbum, SearchTrack } from "@/lib/deezer";
 
 const TRIES = ["and justice for all", "kent", "rumours"];
 
-export function Search({ initialQuery, children }: { initialQuery: string; children?: React.ReactNode }) {
+/** A search hit; tapping it saves the record (if new) and opens the log form directly. */
+function ResultButton({ children, transparent }: { children: React.ReactNode; transparent?: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" className="result" disabled={pending} style={transparent ? { background: "transparent" } : undefined}>
+      {children}
+      {pending ? <span className="chip">Opening…</span> : <ChevronIcon />}
+    </button>
+  );
+}
+
+type Props = { initialQuery: string; children?: React.ReactNode; autoFocus?: boolean };
+
+export function Search({ initialQuery, children, autoFocus = true }: Props) {
   const [query, setQuery] = useState(initialQuery);
   const [albums, setAlbums] = useState<SearchAlbum[]>([]);
   const [tracks, setTracks] = useState<SearchTrack[]>([]);
+  const [years, setYears] = useState<Record<number, number | null>>({});
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const reqId = useRef(0);
 
@@ -30,14 +46,24 @@ export function Search({ initialQuery, children }: { initialQuery: string; child
         const json = await res.json();
         if (id !== reqId.current) return;
         if (!res.ok) throw new Error(json.error);
-        setAlbums(json.albums ?? []);
+        const found: SearchAlbum[] = json.albums ?? [];
+        setAlbums(found);
         setTracks(json.tracks ?? []);
         setStatus("done");
+        // Years arrive a moment later; the list is usable before that.
+        const missing = found.map((a) => a.deezerId).filter((x) => !(x in years));
+        if (missing.length) {
+          fetch(`/api/search/years?ids=${missing.join(",")}`)
+            .then((r) => r.json())
+            .then((y) => setYears((cur) => ({ ...cur, ...(y.years ?? {}) })))
+            .catch(() => {});
+        }
       } catch {
         if (id === reqId.current) setStatus("error");
       }
-    }, 300);
+    }, 200);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   const empty = query.trim().length < 2;
@@ -52,8 +78,9 @@ export function Search({ initialQuery, children }: { initialQuery: string; child
           <input
             id="search"
             type="search"
-            autoFocus
+            autoFocus={autoFocus}
             autoComplete="off"
+            enterKeyHint="search"
             placeholder="e.g. and justice for all"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -81,20 +108,25 @@ export function Search({ initialQuery, children }: { initialQuery: string; child
       {albums.length ? (
         <div className="stack gap-12">
           <h2 className="eyebrow">Albums</h2>
-          {albums.map((a) => (
-            <a key={a.deezerId} href={`/open/${a.deezerId}`} className="result">
-              <img src={a.cover} alt="" width={64} height={64} className="cover cover-64" />
-              <span className="result-text">
-                <span style={{ fontSize: 18, fontWeight: 700 }}>{a.title}</span>
-                <span className="muted" style={{ fontSize: 14 }}>
-                  {a.artist} · {a.recordType === "single" ? "Single" : a.recordType === "ep" ? "EP" : "Album"}
-                  {a.year ? ` · ${a.year}` : ""}
-                </span>
-              </span>
-              {a.editions > 1 ? <span className="chip">{a.editions} editions</span> : null}
-              <ChevronIcon />
-            </a>
-          ))}
+          {albums.map((a) => {
+            const year = a.year ?? years[a.deezerId] ?? null;
+            return (
+              <form key={a.deezerId} action={logFromDeezer}>
+                <input type="hidden" name="deezer_id" value={a.deezerId} />
+                <ResultButton>
+                  <img src={a.cover} alt="" width={64} height={64} className="cover cover-64" />
+                  <span className="result-text">
+                    <span style={{ fontSize: 18, fontWeight: 700 }}>{a.title}</span>
+                    <span className="muted" style={{ fontSize: 14 }}>
+                      {a.artist} · {a.recordType === "single" ? "Single" : a.recordType === "ep" ? "EP" : "Album"}
+                      {year ? ` · ${year}` : ""}
+                    </span>
+                  </span>
+                  {a.editions > 1 ? <span className="chip">{a.editions} editions</span> : null}
+                </ResultButton>
+              </form>
+            );
+          })}
         </div>
       ) : null}
 
@@ -102,14 +134,16 @@ export function Search({ initialQuery, children }: { initialQuery: string; child
         <div className="stack gap-12">
           <h2 className="eyebrow">Tracks</h2>
           {tracks.map((t) => (
-            <a key={t.deezerId} href={`/open/${t.albumDeezerId}`} className="result" style={{ background: "transparent" }}>
-              <img src={t.cover} alt="" width={44} height={44} className="cover cover-44" />
-              <span className="result-text">
-                <span style={{ fontWeight: 700 }}>{t.title}</span>
-                <span className="muted" style={{ fontSize: 14 }}>{t.artist} · Track · from {t.albumTitle}</span>
-              </span>
-              <ChevronIcon />
-            </a>
+            <form key={t.deezerId} action={logFromDeezer}>
+              <input type="hidden" name="deezer_id" value={t.albumDeezerId} />
+              <ResultButton transparent>
+                <img src={t.cover} alt="" width={44} height={44} className="cover cover-44" />
+                <span className="result-text">
+                  <span style={{ fontWeight: 700 }}>{t.title}</span>
+                  <span className="muted" style={{ fontSize: 14 }}>{t.artist} · Track · from {t.albumTitle}</span>
+                </span>
+              </ResultButton>
+            </form>
           ))}
         </div>
       ) : null}

@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { completeOnboarding, skipOnboarding } from "@/app/actions";
@@ -162,7 +163,7 @@ export function Quiz({ name, initialGoals, initialArtists, retaking }: Props) {
 
 function SkipLink({ retaking }: { retaking: boolean }) {
   if (retaking)
-    return <a href="/settings" className="btn-text" style={{ display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Cancel</a>;
+    return <Link href="/settings" className="btn-text" style={{ display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Cancel</Link>;
   return (
     <form action={skipOnboarding}>
       <button type="submit" className="btn-text">Skip for now</button>

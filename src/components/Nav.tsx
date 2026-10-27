@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { openLogSheet } from "@/components/LogSheet";
 
 const LINKS = [
   { href: "/", label: "Diary" },
@@ -30,7 +31,7 @@ export function Nav() {
   return (
     <nav className="nav" aria-label="Main">
       {LINKS.map((l) => (
-        <Link key={l.href} href={l.href} prefetch onClick={() => go(l.href)} aria-current={isActive(active, l.href) ? "page" : undefined}>
+        <Link key={l.href} href={l.href} prefetch={l.href === "/discover" ? undefined : true} onClick={() => go(l.href)} aria-current={isActive(active, l.href) ? "page" : undefined}>
           {l.label}
         </Link>
       ))}
@@ -67,7 +68,7 @@ export function TabBar() {
         const active = isActive(path, t.href);
         if (t.href === "/log")
           return (
-            <Link key={t.href} href="/log" prefetch onClick={() => go("/log")} className="tab tab-log" aria-current={active ? "page" : undefined}>
+            <Link key={t.href} href="/log" prefetch={false} onClick={(e) => { e.preventDefault(); openLogSheet(); }} className="tab tab-log" aria-current={active ? "page" : undefined}>
               <span className="tab-log-btn" aria-hidden="true">
                 <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
               </span>
@@ -75,7 +76,7 @@ export function TabBar() {
             </Link>
           );
         return (
-          <Link key={t.href} href={t.href} prefetch onClick={() => go(t.href)} className="tab" aria-current={active ? "page" : undefined}>
+          <Link key={t.href} href={t.href} prefetch={t.href === "/discover" ? undefined : true} onClick={() => go(t.href)} className="tab" aria-current={active ? "page" : undefined}>
             {TAB_ICONS[t.href]}
             <span>{t.label}</span>
           </Link>
@@ -91,6 +92,15 @@ export function SettingsLink() {
   return (
     <Link href="/settings" className="header-settings" aria-label="Settings" aria-current={path.startsWith("/settings") ? "page" : undefined}>
       <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5" {...stroke} /><path d="M5 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5" {...stroke} /></svg>
+    </Link>
+  );
+}
+
+/** "Log a listen" button in the header (wider screens): opens the search sheet. */
+export function HeaderLogButton({ children }: { children: React.ReactNode }) {
+  return (
+    <Link href="/log" prefetch={false} className="btn btn-primary header-log" onClick={(e) => { e.preventDefault(); openLogSheet(); }}>
+      {children}
     </Link>
   );
 }

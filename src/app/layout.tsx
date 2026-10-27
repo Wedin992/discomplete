@@ -1,9 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
-import { Nav, SettingsLink, TabBar } from "@/components/Nav";
+import { HeaderLogButton, Nav, SettingsLink, TabBar } from "@/components/Nav";
+import { LogSheet } from "@/components/LogSheet";
 import { LogoMark, PlusIcon } from "@/components/Icons";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
+// Typefaces are bundled with the app (no request to Google, nothing blocks the first paint).
+import "@fontsource-variable/archivo/wdth.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,12 +33,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap"
-        />
       </head>
       <body className={user ? "signed-in" : undefined}>
         <header className="site-header">
@@ -45,9 +44,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {user ? (
               <>
                 <Nav />
-                <Link href="/log" className="btn btn-primary header-log">
+                <HeaderLogButton>
                   <PlusIcon /> Log a listen
-                </Link>
+                </HeaderLogButton>
                 <SettingsLink />
               </>
             ) : null}
@@ -60,6 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
         </footer>
         {user ? <TabBar /> : null}
+        {user ? <LogSheet /> : null}
         <RegisterServiceWorker />
       </body>
     </html>

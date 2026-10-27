@@ -12,7 +12,7 @@
   --on-accent: #131314;
   --danger: #ff8a7a;
   --radius: 12px;
-  --display: "Archivo", system-ui, sans-serif;
+  --display: "Archivo Variable", "Archivo", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
   color-scheme: dark;
 }
@@ -137,6 +137,13 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
 @keyframes toast { 0%, 85% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 .error { color: var(--danger); }
 
+/* log search sheet (opens instantly over the current page) */
+.sheet { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; animation: sheet-in 140ms ease-out; }
+.sheet-inner { padding-top: calc(24px + env(safe-area-inset-top)); padding-bottom: calc(40px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 24px; max-width: 760px; }
+.sheet-close { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); display: inline-flex; align-items: center; justify-content: center; }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sheet { animation: none; } }
+
 /* onboarding quiz */
 .goal { display: flex; align-items: center; gap: 16px; width: 100%; padding: 16px 18px; text-align: left; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); color: var(--text); }
 .goal:hover { border-color: var(--muted); }
@@ -196,8 +203,7 @@ body { -webkit-tap-highlight-color: transparent; }
     grid-template-columns: repeat(5, minmax(0, 1fr));
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
     padding: 6px max(8px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right));
-    background: rgba(19, 19, 20, 0.94);
-    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    background: var(--bg);
     border-top: 1px solid var(--line);
   }
   .tab {
@@ -229,6 +235,6 @@ body { -webkit-tap-highlight-color: transparent; }
 
 /* Installed app: no browser bar above, so give the header room under the clock. */
 @media (display-mode: standalone) {
-  .site-header { position: sticky; top: 0; z-index: 15; background: rgba(19, 19, 20, 0.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .site-header { position: sticky; top: 0; z-index: 15; background: var(--bg); }
 }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

@@ -112,16 +112,13 @@ export async function search(q: string): Promise<{ albums: SearchAlbum[]; tracks
     return { main, editions: g.length };
   });
 
-  // Search results don't include a release year; fetch details for the shown albums.
-  const details = await Promise.all(
-    merged.map(({ main }) => getAlbum(main.id).catch(() => null))
-  );
-
-  const albums: SearchAlbum[] = merged.map(({ main, editions }, i) => ({
+  // Search results don't include a release year. They're returned straight away and the
+  // years are filled in afterwards by /api/search/years, so typing never waits on them.
+  const albums: SearchAlbum[] = merged.map(({ main, editions }) => ({
     deezerId: main.id,
     title: main.title,
     artist: main.artist.name,
-    year: details[i]?.release_year ?? null,
+    year: null,
     recordType: main.record_type ?? "album",
     cover: main.cover_medium,
     editions,
@@ -193,4 +190,10 @@ export async function searchArtists(q: string): Promise<ArtistHit[]> {
     600
   );
   return (res.data ?? []).map((a) => ({ id: a.id, name: a.name, picture: a.picture_medium, fans: a.nb_fan ?? 0 }));
+}
+
+/** Release years for a handful of albums (cached for a day per album). */
+export async function getYears(ids: number[]): Promise<Record<number, number | null>> {
+  const rows = await Promise.all(ids.map((id) => getAlbum(id).then((a) => [id, a.release_year] as const).catch(() => [id, null] as const)));
+  return Object.fromEntries(rows);
 }
