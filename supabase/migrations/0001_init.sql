@@ -214,3 +214,23 @@ create table public.collection (
 alter table public.collection enable row level security;
 create policy "Users manage their own collection"
   on public.collection for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ─────────────────────────────────────────────────────────────
+-- API access. Explicit, so this works with "Automatically expose
+-- new tables" turned off. Row-level security still decides which rows.
+-- ─────────────────────────────────────────────────────────────
+grant usage on schema public to anon, authenticated;
+
+grant select on public.profiles, public.albums to anon, authenticated;
+grant update (username, display_name) on public.profiles to authenticated;
+
+grant select, insert, update, delete on public.entries to authenticated;
+grant select, insert, update, delete on public.to_listen to authenticated;
+grant select, insert, update, delete on public.collection to authenticated;
+
+-- Functions: only what the app calls, nothing else.
+revoke all on function public.handle_new_user() from public, anon, authenticated;
+revoke all on function public.album_public_notes(uuid, int) from public;
+revoke all on function public.album_stats(uuid) from public;
+grant execute on function public.album_public_notes(uuid, int) to anon, authenticated;
+grant execute on function public.album_stats(uuid) to anon, authenticated;
