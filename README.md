@@ -1,5 +1,7 @@
 # Discomplete
 
+**Live:** https://discomplete.vercel.app
+
 A music diary. Log what you listened to, how you listened (stream, vinyl or CD), what you thought — and come back to see how it changed.
 
 **Stack:** Next.js 16 (App Router) · Supabase (auth + Postgres with row-level security) · Deezer's open API for search and cover art · hosted on Vercel.
