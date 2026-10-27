@@ -17,6 +17,8 @@ export default async function DiscoverPage() {
     .select("rating, album:albums(deezer_id, title, artist, deezer_artist_id)")
     .eq("user_id", user!.id);
   const rows = ((data ?? []) as unknown as Row[]).filter((r) => r.album);
+  const { data: favData } = await supabase.from("favorite_artists").select("deezer_artist_id, artist").eq("user_id", user!.id);
+  const favourites = (favData ?? []) as { deezer_artist_id: number; artist: string }[];
 
   const likedTitles = new Set(rows.filter((r) => (r.rating ?? 0) >= 3).map((r) => r.album!.deezer_id ?? r.album!.title));
   const likedCount = likedTitles.size;
@@ -26,10 +28,10 @@ export default async function DiscoverPage() {
       <div>
         <p className="eyebrow">Inspiration</p>
         <h1 className="title-xl">Discover</h1>
-        <p className="muted" style={{ marginTop: 8 }}>Records picked from artists similar to the ones you rated highest.</p>
+        <p className="muted" style={{ marginTop: 8 }}>Records picked from artists similar to the ones you love and rated highest.</p>
       </div>
 
-      {likedCount < UNLOCK_AT ? (
+      {likedCount < UNLOCK_AT && !favourites.length ? (
         <div className="card stack gap-12">
           <p style={{ fontWeight: 700, fontSize: 18 }}>
             {likedCount} of {UNLOCK_AT} — rate {UNLOCK_AT - likedCount} more {UNLOCK_AT - likedCount === 1 ? "record" : "records"} to unlock Discover
@@ -37,28 +39,35 @@ export default async function DiscoverPage() {
           <div className="bar" style={{ height: 10 }} aria-hidden="true">
             <span style={{ width: `${(likedCount / UNLOCK_AT) * 100}%` }} />
           </div>
-          <p className="muted">Give 3 stars or more to five different records. The more you rate, the better the picks get.</p>
-          <Link href="/log" className="btn btn-primary" style={{ alignSelf: "flex-start" }}>Log a listen</Link>
+          <p className="muted">Give 3 stars or more to five different records — or tell us a few artists you love to get picks right away.</p>
+          <div className="row gap-12">
+            <Link href="/log" className="btn btn-primary">Log a listen</Link>
+            <Link href="/welcome" className="btn">Pick artists you love</Link>
+          </div>
         </div>
       ) : (
         <Suspense fallback={<DiscoverSkeleton />}>
-          <Suggestions rows={rows} userId={user!.id} />
+          <Suggestions rows={rows} favourites={favourites} userId={user!.id} />
         </Suspense>
       )}
     </section>
   );
 }
 
-async function Suggestions({ rows, userId }: { rows: Row[]; userId: string }) {
+async function Suggestions({ rows, favourites, userId }: { rows: Row[]; favourites: { deezer_artist_id: number; artist: string }[]; userId: string }) {
   const { supabase } = await getUser();
   const [queuedRes, exploreRes] = await Promise.all([
     supabase.from("to_listen").select("album:albums(deezer_id, title, deezer_artist_id)").eq("user_id", userId),
     supabase.from("explore_artists").select("deezer_artist_id").eq("user_id", userId),
   ]);
 
-  const liked: LikedRecord[] = rows
-    .filter((r) => (r.rating ?? 0) >= 3)
-    .map((r) => ({ rating: r.rating!, artist: r.album!.artist, deezer_artist_id: r.album!.deezer_artist_id, deezer_id: r.album!.deezer_id, title: r.album!.title }));
+  const liked: LikedRecord[] = [
+    ...rows
+      .filter((r) => (r.rating ?? 0) >= 3)
+      .map((r) => ({ rating: r.rating!, artist: r.album!.artist, deezer_artist_id: r.album!.deezer_artist_id, deezer_id: r.album!.deezer_id, title: r.album!.title })),
+    // Artists picked in the sign-up quiz count like a 4-star record.
+    ...favourites.map((f) => ({ rating: 4, artist: f.artist, deezer_artist_id: f.deezer_artist_id, deezer_id: null, title: "" })),
+  ];
   const queued = ((queuedRes.data ?? []) as unknown as { album: KnownRecord | null }[]).map((r) => r.album).filter((a): a is KnownRecord => !!a);
   const known: KnownRecord[] = [...rows.map((r) => r.album!), ...queued];
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { EntryCard } from "@/components/EntryCard";
@@ -7,6 +8,10 @@ import { daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars
 export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const { saved } = await searchParams;
   const { supabase, user } = await getUser();
+  // New accounts take the short sign-up quiz first (skippable). Before migration 0005 the
+  // column doesn't exist, the query errors, and nobody is redirected.
+  const { data: profile, error: profileError } = await supabase.from("profiles").select("onboarded_at").eq("id", user!.id).maybeSingle();
+  if (!profileError && profile && !profile.onboarded_at) redirect("/welcome");
   const [entriesRes, listRes] = await Promise.all([
     supabase
       .from("entries")

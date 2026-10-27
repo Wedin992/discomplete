@@ -184,3 +184,13 @@ export async function getRelatedArtists(artistId: number): Promise<RelatedArtist
   const res = await get<{ data: { id: number; name: string; nb_fan?: number }[] }>(`/artist/${artistId}/related?limit=20`, 86400);
   return (res.data ?? []).map((a) => ({ id: a.id, name: a.name, fans: a.nb_fan ?? 0 }));
 }
+
+export type ArtistHit = { id: number; name: string; picture: string; fans: number };
+
+export async function searchArtists(q: string): Promise<ArtistHit[]> {
+  const res = await get<{ data: { id: number; name: string; picture_medium: string; nb_fan?: number }[] }>(
+    `/search/artist?q=${encodeURIComponent(q.trim())}&limit=8`,
+    600
+  );
+  return (res.data ?? []).map((a) => ({ id: a.id, name: a.name, picture: a.picture_medium, fans: a.nb_fan ?? 0 }));
+}

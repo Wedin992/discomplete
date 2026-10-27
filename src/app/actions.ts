@@ -210,3 +210,39 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+const GOALS = ["diary", "discover", "collection"];
+
+export async function completeOnboarding(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const goals = formData.getAll("goals").map(String).filter((g) => GOALS.includes(g));
+  type Pick = { id: number; name: string; picture?: string };
+  let artists: Pick[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get("artists") ?? "[]"));
+    if (Array.isArray(parsed))
+      artists = parsed
+        .filter((a) => Number.isInteger(a?.id) && typeof a?.name === "string")
+        .slice(0, 30)
+        .map((a) => ({ id: a.id, name: String(a.name).slice(0, 300), picture: typeof a.picture === "string" ? a.picture.slice(0, 500) : undefined }));
+  } catch {
+    artists = [];
+  }
+
+  // Replace the favourites with what was picked (the quiz can be retaken from Settings).
+  await supabase.from("favorite_artists").delete().eq("user_id", user.id);
+  if (artists.length)
+    await supabase.from("favorite_artists").insert(
+      artists.map((a) => ({ user_id: user.id, deezer_artist_id: a.id, artist: a.name, picture: a.picture ?? null }))
+    );
+  await supabase.from("profiles").update({ goals, onboarded_at: new Date().toISOString() }).eq("id", user.id);
+  revalidatePath("/", "layout");
+  redirect(goals.includes("discover") && artists.length ? "/discover?welcome=1" : "/?welcome=1");
+}
+
+export async function skipOnboarding() {
+  const { supabase, user } = await requireUser();
+  await supabase.from("profiles").update({ onboarded_at: new Date().toISOString() }).eq("id", user.id);
+  revalidatePath("/", "layout");
+  redirect("/");
+}

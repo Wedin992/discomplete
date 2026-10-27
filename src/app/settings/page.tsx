@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
@@ -18,6 +19,11 @@ export default async function SettingsPage() {
         <h2 className="eyebrow">Public profile</h2>
         <p className="muted small">This is how your public notes are signed. Anonymous notes never show it.</p>
         <ProfileForm username={data?.username ?? ""} displayName={data?.display_name ?? ""} />
+      </div>
+      <div className="card stack gap-8">
+        <h2 className="eyebrow">Your taste</h2>
+        <p className="muted">The artists you love shape your picks in Discover.</p>
+        <Link href="/welcome" className="btn" style={{ alignSelf: "flex-start" }}>Change artists and goals</Link>
       </div>
       <div className="card stack gap-8">
         <h2 className="eyebrow">Get the app</h2>

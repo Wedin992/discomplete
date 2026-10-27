@@ -137,6 +137,17 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
 @keyframes toast { 0%, 85% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 .error { color: var(--danger); }
 
+/* onboarding quiz */
+.goal { display: flex; align-items: center; gap: 16px; width: 100%; padding: 16px 18px; text-align: left; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); color: var(--text); }
+.goal:hover { border-color: var(--muted); }
+.goal.on { border-color: var(--accent); background: rgba(255, 106, 61, 0.08); }
+.goal-check { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 7px; border: 2px solid var(--line-strong); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--on-accent); }
+.goal.on .goal-check { background: var(--accent); border-color: var(--accent); }
+.artist-chip { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 6px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); font-weight: 600; }
+.artist-chip img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.artist-chip span:last-child { color: var(--muted); font-size: 18px; line-height: 1; }
+.artist-chip:hover { border-color: var(--muted); }
+
 /* suggestions from explored artists */
 .explore-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 @media (max-width: 720px) { .explore-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
