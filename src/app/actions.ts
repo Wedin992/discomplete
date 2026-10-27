@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { TAGS, todayIso } from "@/lib/format";
+import { translateToEnglish } from "@/lib/translate";
 
 async function requireUser() {
   const { supabase, user } = await getUser();
@@ -25,7 +26,7 @@ export async function saveEntry(formData: FormData) {
   const listenedOnRaw = String(formData.get("listened_on") ?? "");
   const listenedOn = /^\d{4}-\d{2}-\d{2}$/.test(listenedOnRaw) && listenedOnRaw <= todayIso() ? listenedOnRaw : todayIso();
 
-  const fields = {
+  const fields: Record<string, unknown> = {
     listened_on: listenedOn,
     rating,
     format: ["stream", "vinyl", "cd"].includes(format) ? format : "stream",
@@ -35,13 +36,41 @@ export async function saveEntry(formData: FormData) {
     is_anonymous: isAnonymous,
   };
 
+  // English translation for others to read: only for public notes, made once when the
+  // note is written, changed, or goes from private to public. Private notes are never sent.
+  let before: { note?: string | null; note_lang?: string | null; is_private?: boolean } | null = null;
+  if (entryId) {
+    const { data } = await supabase.from("entries").select("*").eq("id", entryId).eq("user_id", user.id).maybeSingle();
+    before = data;
+  }
+  if (isPrivate || !note) {
+    fields.note_lang = null;
+    fields.note_en = null;
+  } else {
+    const needsTranslation = !before || before.note !== note || before.is_private || !before.note_lang;
+    if (needsTranslation) {
+      const t = await translateToEnglish(note);
+      fields.note_lang = t.lang;
+      fields.note_en = t.english;
+    }
+  }
+
+  // Until migration 0003 has run, the translation columns don't exist: save without them.
+  const withoutTranslation = () => {
+    const rest = { ...fields };
+    delete rest.note_lang;
+    delete rest.note_en;
+    return rest;
+  };
+  const missingColumn = (e: { code?: string; message?: string } | null) =>
+    !!e && (e.code === "PGRST204" || e.code === "42703" || /note_(en|lang)/.test(e.message ?? ""));
+
   if (entryId) {
     // Editing: first listen / relisten stays as it was logged.
-    const { error } = await supabase
-      .from("entries")
-      .update({ ...fields, updated_at: new Date().toISOString() })
-      .eq("id", entryId)
-      .eq("user_id", user.id);
+    const update = (values: Record<string, unknown>) =>
+      supabase.from("entries").update({ ...values, updated_at: new Date().toISOString() }).eq("id", entryId).eq("user_id", user.id);
+    let { error } = await update(fields);
+    if (missingColumn(error)) ({ error } = await update(withoutTranslation()));
     if (error) throw new Error("Could not save your changes.");
     revalidatePath("/", "layout");
     redirect("/?saved=edited");
@@ -53,12 +82,15 @@ export async function saveEntry(formData: FormData) {
     .eq("user_id", user.id)
     .eq("album_id", albumId);
 
-  const { error } = await supabase.from("entries").insert({
-    ...fields,
-    user_id: user.id,
-    album_id: albumId,
-    kind: (count ?? 0) > 0 ? "relisten" : "first",
-  });
+  const insert = (values: Record<string, unknown>) =>
+    supabase.from("entries").insert({
+      ...values,
+      user_id: user.id,
+      album_id: albumId,
+      kind: (count ?? 0) > 0 ? "relisten" : "first",
+    });
+  let { error } = await insert(fields);
+  if (missingColumn(error)) ({ error } = await insert(withoutTranslation()));
   if (error) throw new Error("Could not save the entry.");
 
   await supabase.from("to_listen").delete().eq("user_id", user.id).eq("album_id", albumId);

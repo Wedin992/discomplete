@@ -3,6 +3,7 @@ import { Cover } from "@/components/Cover";
 import { VisibilityIcon } from "@/components/Icons";
 import { formatLabel, kindLabel, recordPath, stars, visibilityLabel, type EntryWithAlbum } from "@/lib/format";
 import { DeleteEntryButton } from "@/components/DeleteEntryButton";
+import { NoteText } from "@/components/NoteText";
 
 export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
   const a = entry.album;
@@ -21,7 +22,11 @@ export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
           <span>{kindLabel(entry.kind)} · {formatLabel(entry.format)}</span>
           {entry.tags.length ? <span>{entry.tags.join(" · ")}</span> : null}
         </div>
-        {entry.note ? <p style={{ marginTop: 2, whiteSpace: "pre-line" }}>{entry.note}</p> : null}
+        {entry.note ? (
+          <div style={{ marginTop: 2 }}>
+            <NoteText note={entry.note} lang={entry.note_lang} english={entry.note_en} />
+          </div>
+        ) : null}
         <div className="row gap-12" style={{ justifyContent: "space-between", marginTop: 2 }}>
           <span className="vis">
             <VisibilityIcon isPrivate={entry.is_private} isAnonymous={entry.is_anonymous} />

@@ -137,6 +137,10 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
 @keyframes toast { 0%, 85% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 .error { color: var(--danger); }
 
+/* translated notes */
+.translation { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; border-top: 1px dashed var(--line-strong); color: var(--text-soft); font-size: 15px; }
+.translation-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--muted); }
+
 /* loading placeholders */
 .skeleton { display: block; border-radius: 6px; background: linear-gradient(90deg, #222225 0%, #2c2c30 50%, #222225 100%); background-size: 200% 100%; animation: shimmer 1.2s ease-in-out infinite; }
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }

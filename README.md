@@ -28,7 +28,8 @@ Not yet: "More like this" recommendations, Last.fm import, following friends.
    - *Site URL:* your Vercel URL, e.g. `https://www.discomplete.com`
    - *Redirect URLs:* add `https://www.discomplete.com/auth/callback`, `https://discomplete.vercel.app/auth/callback` and `http://localhost:3000/auth/callback`
 4. **Project Settings → API:** copy the *Project URL* and the *anon public* key.
-5. **Authentication → Emails → Templates:** in both *Magic Link* and *Confirm signup*, add the code so people can sign in inside the installed app (where email links open the browser instead):
+5. *(Optional)* **Translations:** run `supabase/migrations/0003_translations.sql` and add `DEEPL_API_KEY` in Vercel (DeepL API, free Developer plan). Public notes not in English get an English translation; private notes are never sent to DeepL.
+6. **Authentication → Emails → Templates:** in both *Magic Link* and *Confirm signup*, add the code so people can sign in inside the installed app (where email links open the browser instead):
    ```html
    <p>Your sign-in code: <strong>{{ .Token }}</strong></p>
    ```

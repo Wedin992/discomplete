@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
+import { NoteText } from "@/components/NoteText";
 import { duration, formatLabel, kindLabel, logPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
 import { toggleCollection, toggleToListen } from "@/app/actions";
 
 type Stats = { rating_count: number; avg_rating: number | null; r1: number; r2: number; r3: number; r4: number; r5: number };
 type PublicNote = {
   id: string; listened_on: string; rating: number | null; note: string; created_at: string;
+  note_lang?: string | null; note_en?: string | null;
   username: string | null; display_name: string | null; is_anonymous: boolean; is_mine: boolean;
 };
 
@@ -104,7 +106,7 @@ export async function RecordView({ album }: { album: Album }) {
                         {n.rating ? <span className="stars small">{stars(n.rating)}</span> : null}
                         <span className="mono small muted">{shortDate(n.listened_on)}</span>
                       </div>
-                      <p style={{ whiteSpace: "pre-line" }}>{n.note}</p>
+                      <NoteText note={n.note} lang={n.note_lang} english={n.note_en} />
                     </div>
                   </article>
                 );
@@ -131,7 +133,7 @@ export async function RecordView({ album }: { album: Album }) {
                 {e.rating ? <span className="stars">{stars(e.rating)}</span> : null}
               </div>
               <div className="stack gap-4" style={{ flex: "1 1 300px", minWidth: 0 }}>
-                <p style={{ whiteSpace: "pre-line" }}>{e.note || "—"}</p>
+                {e.note ? <NoteText note={e.note} lang={e.note_lang} english={e.note_en} /> : <p>—</p>}
                 <div className="row gap-16" style={{ justifyContent: "space-between" }}>
                   <span className="mono muted" style={{ fontSize: 11 }}>{visibilityLabel(e)}</span>
                   <Link href={`/entry/${e.id}/edit`} className="btn-text small" style={{ minHeight: 32, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Edit</Link>

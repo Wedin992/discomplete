@@ -38,6 +38,9 @@ export type Entry = {
   format: "stream" | "vinyl" | "cd";
   kind: "first" | "relisten";
   note: string | null;
+  /** Detected language of the note and its English translation (migration 0003). */
+  note_lang?: string | null;
+  note_en?: string | null;
   tags: string[];
   is_private: boolean;
   is_anonymous: boolean;
