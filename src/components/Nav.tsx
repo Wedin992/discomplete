@@ -7,7 +7,6 @@ const LINKS = [
   { href: "/", label: "Diary" },
   { href: "/records", label: "Records" },
   { href: "/to-listen", label: "To listen" },
-  { href: "/lyrics", label: "Lyrics" },
   { href: "/settings", label: "Settings" },
 ];
 

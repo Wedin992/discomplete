@@ -22,7 +22,6 @@ export type Entry = {
   format: "stream" | "vinyl" | "cd";
   kind: "first" | "relisten";
   note: string | null;
-  lyric: string | null;
   tags: string[];
   is_private: boolean;
   is_anonymous: boolean;

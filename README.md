@@ -10,12 +10,12 @@ A music diary. Log what you listened to, how you listened (stream, vinyl or CD),
 
 - Sign in with an email link (no passwords)
 - Search any record via Deezer — editions (remasters, deluxe) are merged into one result
-- Log a listen: format, rating, note, tags, a saved lyric line, date
+- Log a listen: format, rating, note, tags, date — edit or delete it later
 - Visibility per entry: **public** (default), **public as Anonymous listener**, or **private only**
 - First listen vs. relisten is detected automatically
 - Diary (by day), month stats, "on repeat", relisten reminder
 - Record page: community average + distribution, public notes, your own history
-- To listen, collection (vinyl / CD / wishlist), lyrics you kept
+- To listen, collection (vinyl / CD / wishlist)
 
 Not yet: "More like this" recommendations, Last.fm import, following friends.
 

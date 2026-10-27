@@ -35,7 +35,12 @@ export default async function LogRecordPage({ params }: { params: Promise<{ id: 
         </div>
         <Link href="/log" className="btn">Change record</Link>
       </div>
-      <LogForm albumId={album.id} defaultFormat={defaultFormat} loggedBefore={before} today={today} />
+      <LogForm
+        albumId={album.id}
+        today={today}
+        loggedBefore={before}
+        initial={{ format: defaultFormat, rating: 0, note: "", tags: [], isPrivate: false, isAnonymous: false, listenedOn: today }}
+      />
     </section>
   );
 }

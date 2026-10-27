@@ -5,23 +5,42 @@ import { useFormStatus } from "react-dom";
 import { saveEntry } from "@/app/actions";
 import { FORMATS, RATING_LABELS, TAGS } from "@/lib/format";
 
-function SaveButton() {
+function SaveButton({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button type="submit" className="btn btn-primary btn-lg" disabled={pending}>
-      {pending ? "Saving…" : "Save to diary"}
+      {pending ? "Saving…" : editing ? "Save changes" : "Save to diary"}
     </button>
   );
 }
 
-type Props = { albumId: string; defaultFormat: string; loggedBefore: number; today: string };
+export type EntryDraft = {
+  format: string;
+  rating: number;
+  note: string;
+  tags: string[];
+  isPrivate: boolean;
+  isAnonymous: boolean;
+  listenedOn: string;
+};
 
-export function LogForm({ albumId, defaultFormat, loggedBefore, today }: Props) {
-  const [format, setFormat] = useState(defaultFormat);
-  const [rating, setRating] = useState(0);
-  const [tags, setTags] = useState<string[]>([]);
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [isAnon, setIsAnon] = useState(false);
+type Props = {
+  albumId: string;
+  today: string;
+  initial: EntryDraft;
+  /** Set when editing an existing entry. */
+  entryId?: string;
+  /** How many times this record was logged before (new entries only). */
+  loggedBefore?: number;
+};
+
+export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0 }: Props) {
+  const editing = !!entryId;
+  const [format, setFormat] = useState(initial.format);
+  const [rating, setRating] = useState(initial.rating);
+  const [tags, setTags] = useState<string[]>(initial.tags);
+  const [isPrivate, setIsPrivate] = useState(initial.isPrivate);
+  const [isAnon, setIsAnon] = useState(initial.isAnonymous);
 
   const visHelp = isPrivate
     ? "Private — only you will see this entry, and the rating isn’t counted."
@@ -32,6 +51,7 @@ export function LogForm({ albumId, defaultFormat, loggedBefore, today }: Props) 
   return (
     <form action={saveEntry} className="stack gap-28">
       <input type="hidden" name="album_id" value={albumId} />
+      {editing ? <input type="hidden" name="entry_id" value={entryId} /> : null}
       <input type="hidden" name="format" value={format} />
       <input type="hidden" name="rating" value={rating} />
       {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
@@ -45,11 +65,13 @@ export function LogForm({ albumId, defaultFormat, loggedBefore, today }: Props) 
             </button>
           ))}
         </div>
-        <p className="mono small muted">
-          {loggedBefore
-            ? `You’ve logged this ${loggedBefore}× before — saved as a relisten, so you can compare.`
-            : "First time in your diary — saved as a first listen."}
-        </p>
+        {!editing ? (
+          <p className="mono small muted">
+            {loggedBefore
+              ? `You’ve logged this ${loggedBefore}× before — saved as a relisten, so you can compare.`
+              : "First time in your diary — saved as a first listen."}
+          </p>
+        ) : null}
       </fieldset>
 
       <fieldset>
@@ -73,7 +95,7 @@ export function LogForm({ albumId, defaultFormat, loggedBefore, today }: Props) 
 
       <div className="field">
         <label htmlFor="note" className="label">Your note</label>
-        <textarea id="note" name="note" rows={4} maxLength={5000} className="textarea" placeholder="First impression, a thought, where you were…" />
+        <textarea id="note" name="note" rows={4} maxLength={5000} className="textarea" defaultValue={initial.note} placeholder="First impression, a thought, where you were…" />
       </div>
 
       <fieldset>
@@ -90,15 +112,9 @@ export function LogForm({ albumId, defaultFormat, loggedBefore, today }: Props) 
         </div>
       </fieldset>
 
-      <div className="field">
-        <label htmlFor="lyric" className="label">A line worth keeping <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></label>
-        <input id="lyric" name="lyric" type="text" maxLength={200} className="input" placeholder="A short line from one of the songs" />
-        <p className="muted small">Keep it to a line — 200 characters at most.</p>
-      </div>
-
       <div className="field" style={{ maxWidth: 260 }}>
         <label htmlFor="listened_on" className="label">Listened on</label>
-        <input id="listened_on" name="listened_on" type="date" defaultValue={today} max={today} className="input" />
+        <input id="listened_on" name="listened_on" type="date" defaultValue={initial.listenedOn} max={today} className="input" />
       </div>
 
       <div className="card stack gap-8">
@@ -117,7 +133,7 @@ export function LogForm({ albumId, defaultFormat, loggedBefore, today }: Props) 
       </div>
 
       <div className="row gap-12">
-        <SaveButton />
+        <SaveButton editing={editing} />
         <button type="button" className="btn btn-lg" onClick={() => history.back()}>Cancel</button>
       </div>
     </form>

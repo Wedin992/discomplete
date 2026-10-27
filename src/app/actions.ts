@@ -14,16 +14,38 @@ async function requireUser() {
 export async function saveEntry(formData: FormData) {
   const { supabase, user } = await requireUser();
   const albumId = String(formData.get("album_id") ?? "");
+  const entryId = String(formData.get("entry_id") ?? "");
   const format = String(formData.get("format") ?? "stream");
   const ratingRaw = Number(formData.get("rating") ?? 0);
   const rating = Number.isInteger(ratingRaw) && ratingRaw >= 1 && ratingRaw <= 5 ? ratingRaw : null;
   const note = String(formData.get("note") ?? "").trim().slice(0, 5000) || null;
-  const lyric = String(formData.get("lyric") ?? "").trim().slice(0, 200) || null;
   const tags = formData.getAll("tags").map(String).filter((t) => TAGS.includes(t));
   const isPrivate = formData.get("is_private") === "on";
   const isAnonymous = !isPrivate && formData.get("is_anonymous") === "on";
   const listenedOnRaw = String(formData.get("listened_on") ?? "");
   const listenedOn = /^\d{4}-\d{2}-\d{2}$/.test(listenedOnRaw) && listenedOnRaw <= todayIso() ? listenedOnRaw : todayIso();
+
+  const fields = {
+    listened_on: listenedOn,
+    rating,
+    format: ["stream", "vinyl", "cd"].includes(format) ? format : "stream",
+    note,
+    tags,
+    is_private: isPrivate,
+    is_anonymous: isAnonymous,
+  };
+
+  if (entryId) {
+    // Editing: first listen / relisten stays as it was logged.
+    const { error } = await supabase
+      .from("entries")
+      .update({ ...fields, updated_at: new Date().toISOString() })
+      .eq("id", entryId)
+      .eq("user_id", user.id);
+    if (error) throw new Error("Could not save your changes.");
+    revalidatePath("/", "layout");
+    redirect("/?saved=edited");
+  }
 
   const { count } = await supabase
     .from("entries")
@@ -32,17 +54,10 @@ export async function saveEntry(formData: FormData) {
     .eq("album_id", albumId);
 
   const { error } = await supabase.from("entries").insert({
+    ...fields,
     user_id: user.id,
     album_id: albumId,
-    listened_on: listenedOn,
-    rating,
-    format: ["stream", "vinyl", "cd"].includes(format) ? format : "stream",
     kind: (count ?? 0) > 0 ? "relisten" : "first",
-    note,
-    lyric,
-    tags,
-    is_private: isPrivate,
-    is_anonymous: isAnonymous,
   });
   if (error) throw new Error("Could not save the entry.");
 
@@ -56,6 +71,7 @@ export async function deleteEntry(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   await supabase.from("entries").delete().eq("id", id).eq("user_id", user.id);
   revalidatePath("/", "layout");
+  if (formData.get("redirect_to") === "/") redirect("/?saved=deleted");
 }
 
 export async function toggleToListen(formData: FormData) {

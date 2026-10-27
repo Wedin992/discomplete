@@ -136,7 +136,11 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </div>
       </aside>
 
-      {saved ? <div className="toast" role="status">Saved to your diary</div> : null}
+      {saved ? (
+        <div className="toast" role="status">
+          {saved === "edited" ? "Changes saved" : saved === "deleted" ? "Entry deleted" : "Saved to your diary"}
+        </div>
+      ) : null}
     </div>
   );
 }

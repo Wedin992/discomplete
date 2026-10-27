@@ -148,8 +148,10 @@ export default async function RecordPage({ params }: { params: Promise<{ id: str
               </div>
               <div className="stack gap-4" style={{ flex: "1 1 300px", minWidth: 0 }}>
                 <p style={{ whiteSpace: "pre-line" }}>{e.note || "—"}</p>
-                {e.lyric ? <p className="lyric">“{e.lyric}”</p> : null}
-                <span className="mono muted" style={{ fontSize: 11 }}>{visibilityLabel(e)}</span>
+                <div className="row gap-16" style={{ justifyContent: "space-between" }}>
+                  <span className="mono muted" style={{ fontSize: 11 }}>{visibilityLabel(e)}</span>
+                  <Link href={`/entry/${e.id}/edit`} className="btn-text small" style={{ minHeight: 32, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Edit</Link>
+                </div>
               </div>
             </div>
           ))}
