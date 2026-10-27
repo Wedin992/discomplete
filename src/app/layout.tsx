@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
-import { Nav, TabBar } from "@/components/Nav";
+import { Nav, SettingsLink, TabBar } from "@/components/Nav";
 import { LogoMark, PlusIcon } from "@/components/Icons";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 import "./globals.css";
@@ -48,6 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Link href="/log" className="btn btn-primary header-log">
                   <PlusIcon /> Log a listen
                 </Link>
+                <SettingsLink />
               </>
             ) : null}
           </div>

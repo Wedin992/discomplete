@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 const LINKS = [
   { href: "/", label: "Diary" },
+  { href: "/discover", label: "Discover" },
   { href: "/records", label: "Records" },
   { href: "/to-listen", label: "To listen" },
   { href: "/settings", label: "Settings" },
@@ -49,15 +50,15 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
   "/to-listen": (
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-3.5L7 20z" {...stroke} /></svg>
   ),
-  "/settings": (
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5" {...stroke} /><path d="M5 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5" {...stroke} /></svg>
+  "/discover": (
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" {...stroke} /><path d="M15.5 8.5l-2 5-5 2 2-5z" {...stroke} /></svg>
   ),
 };
 
 /** Bottom tab bar, shown on phones. */
 export function TabBar() {
   const { active: path, go } = useActivePath();
-  const tabs = [LINKS[0], LINKS[1], { href: "/log", label: "Log" }, LINKS[2], { href: "/settings", label: "You" }];
+  const tabs = [LINKS[0], LINKS[1], { href: "/log", label: "Log" }, LINKS[3], LINKS[2]];
   return (
     <nav className="tabbar" aria-label="Main">
       {tabs.map((t) => {
@@ -79,5 +80,15 @@ export function TabBar() {
         );
       })}
     </nav>
+  );
+}
+
+/** Settings shortcut in the header on phones (the tab bar has no room for it). */
+export function SettingsLink() {
+  const path = usePathname();
+  return (
+    <Link href="/settings" className="header-settings" aria-label="Settings" aria-current={path.startsWith("/settings") ? "page" : undefined}>
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5" {...stroke} /><path d="M5 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5" {...stroke} /></svg>
+    </Link>
   );
 }

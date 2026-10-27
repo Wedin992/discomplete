@@ -176,3 +176,11 @@ export async function getArtistAlbums(artistId: number): Promise<ArtistAlbum[]> 
     })
     .sort((a, b) => b.fans - a.fans);
 }
+
+export type RelatedArtist = { id: number; name: string; fans: number };
+
+/** Artists Deezer considers similar, most similar first. */
+export async function getRelatedArtists(artistId: number): Promise<RelatedArtist[]> {
+  const res = await get<{ data: { id: number; name: string; nb_fan?: number }[] }>(`/artist/${artistId}/related?limit=20`, 86400);
+  return (res.data ?? []).map((a) => ({ id: a.id, name: a.name, fans: a.nb_fan ?? 0 }));
+}
