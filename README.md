@@ -1,0 +1,56 @@
+# Discomplete
+
+A music diary. Log what you listened to, how you listened (stream, vinyl or CD), what you thought — and come back to see how it changed.
+
+**Stack:** Next.js 16 (App Router) · Supabase (auth + Postgres with row-level security) · Deezer's open API for search and cover art · hosted on Vercel.
+
+## What's in this first version
+
+- Sign in with an email link (no passwords)
+- Search any record via Deezer — editions (remasters, deluxe) are merged into one result
+- Log a listen: format, rating, note, tags, a saved lyric line, date
+- Visibility per entry: **public** (default), **public as Anonymous listener**, or **private only**
+- First listen vs. relisten is detected automatically
+- Diary (by day), month stats, "on repeat", relisten reminder
+- Record page: community average + distribution, public notes, your own history
+- To listen, collection (vinyl / CD / wishlist), lyrics you kept
+
+Not yet: "More like this" recommendations, Last.fm import, following friends.
+
+## Setup (one time)
+
+### 1. Supabase
+1. Create a project at [supabase.com](https://supabase.com) (the free tier is fine; pick an EU region).
+2. **SQL Editor → New query:** paste all of `supabase/migrations/0001_init.sql` and click **Run**.
+3. **Authentication → URL Configuration:**
+   - *Site URL:* your Vercel URL, e.g. `https://discomplete.vercel.app`
+   - *Redirect URLs:* add `https://discomplete.vercel.app/auth/callback` and `http://localhost:3000/auth/callback`
+4. **Project Settings → API:** copy the *Project URL* and the *anon public* key.
+
+### 2. Vercel
+1. **Add New → Project →** import `Wedin992/discomplete`.
+2. Under *Environment Variables* add:
+   - `NEXT_PUBLIC_SUPABASE_URL` = the Project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = the anon key
+3. **Deploy.** Every push to `main` deploys automatically after this.
+
+### Local development (optional)
+```bash
+cp .env.example .env.local   # fill in the two values
+npm install
+npm run dev
+```
+
+## How privacy works
+
+Entries are readable only by their owner at table level. Other people's notes and ratings reach the record page only through two database functions:
+
+- `album_public_notes` — non-private entries with a note; anonymous ones never include a name
+- `album_stats` — rating average and distribution; private ratings are excluded
+
+The service-role key is never needed by the app.
+
+## Notes
+
+- Supabase's built-in email sender is rate-limited (a few emails per hour). Fine for personal use; add your own SMTP (e.g. Resend) under *Authentication → Emails* before inviting others.
+- Covers are loaded from Deezer's CDN, not copied.
