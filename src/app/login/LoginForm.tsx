@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"email" | "code">("email");
@@ -37,8 +35,8 @@ export function LoginForm() {
       setError("That code didn’t work. Check the latest email, or send a new one.");
       return;
     }
-    router.replace("/");
-    router.refresh();
+    // Full page load so the new session cookie is picked up everywhere at once.
+    window.location.replace("/");
   }
 
   if (step === "code")
