@@ -137,6 +137,14 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
 @keyframes toast { 0%, 85% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 .error { color: var(--danger); }
 
+/* loading placeholders */
+.skeleton { display: block; border-radius: 6px; background: linear-gradient(90deg, #222225 0%, #2c2c30 50%, #222225 100%); background-size: 200% 100%; animation: shimmer 1.2s ease-in-out infinite; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* Snappier taps on touch screens */
+a, button { touch-action: manipulation; }
+
 /* ── App mode & phones ───────────────────────────────────── */
 html { -webkit-text-size-adjust: 100%; }
 body { -webkit-tap-highlight-color: transparent; }

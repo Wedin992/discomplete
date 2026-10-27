@@ -37,12 +37,13 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Refreshes the session cookie when needed. Do not remove.
-  const { data } = await supabase.auth.getUser();
+  // Refreshes the session cookie when needed and verifies it. Do not remove.
+  const { data } = await supabase.auth.getClaims();
+  const signedIn = !!data?.claims?.sub;
 
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + "/"));
-  if (!data.user && !isPublic) {
+  if (!signedIn && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
