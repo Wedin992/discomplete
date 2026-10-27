@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const LINKS = [
   { href: "/", label: "Diary" },
@@ -14,13 +15,21 @@ function isActive(path: string, href: string) {
   return href === "/" ? path === "/" : path.startsWith(href);
 }
 
+/** The path being navigated to (highlighted the moment it is tapped), else the current one. */
+function useActivePath() {
+  const path = usePathname();
+  const [pending, setPending] = useState<string | null>(null);
+  useEffect(() => setPending(null), [path]);
+  return { active: pending ?? path, go: (href: string) => setPending(href) };
+}
+
 /** Top navigation, shown on wider screens. */
 export function Nav() {
-  const path = usePathname();
+  const { active, go } = useActivePath();
   return (
     <nav className="nav" aria-label="Main">
       {LINKS.map((l) => (
-        <Link key={l.href} href={l.href} aria-current={isActive(path, l.href) ? "page" : undefined}>
+        <Link key={l.href} href={l.href} prefetch onClick={() => go(l.href)} aria-current={isActive(active, l.href) ? "page" : undefined}>
           {l.label}
         </Link>
       ))}
@@ -47,7 +56,7 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
 
 /** Bottom tab bar, shown on phones. */
 export function TabBar() {
-  const path = usePathname();
+  const { active: path, go } = useActivePath();
   const tabs = [LINKS[0], LINKS[1], { href: "/log", label: "Log" }, LINKS[2], { href: "/settings", label: "You" }];
   return (
     <nav className="tabbar" aria-label="Main">
@@ -55,7 +64,7 @@ export function TabBar() {
         const active = isActive(path, t.href);
         if (t.href === "/log")
           return (
-            <Link key={t.href} href="/log" className="tab tab-log" aria-current={active ? "page" : undefined}>
+            <Link key={t.href} href="/log" prefetch onClick={() => go("/log")} className="tab tab-log" aria-current={active ? "page" : undefined}>
               <span className="tab-log-btn" aria-hidden="true">
                 <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
               </span>
@@ -63,7 +72,7 @@ export function TabBar() {
             </Link>
           );
         return (
-          <Link key={t.href} href={t.href} className="tab" aria-current={active ? "page" : undefined}>
+          <Link key={t.href} href={t.href} prefetch onClick={() => go(t.href)} className="tab" aria-current={active ? "page" : undefined}>
             {TAB_ICONS[t.href]}
             <span>{t.label}</span>
           </Link>
