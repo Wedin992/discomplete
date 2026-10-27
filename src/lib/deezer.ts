@@ -1,7 +1,7 @@
 // Thin wrapper around Deezer's open API (no key needed). Server-side only:
 // Deezer does not allow browser (CORS) requests, so the app calls it from its own API routes.
 
-const BASE = "https://api.deezer.com";
+const BASE = process.env.DEEZER_API_BASE ?? "https://api.deezer.com";
 
 type DzArtist = { id: number; name: string };
 type DzAlbumLite = {
@@ -63,7 +63,7 @@ async function get<T>(path: string, revalidate = 3600): Promise<T> {
 }
 
 /** "Master of Puppets (Remastered Deluxe Box Set)" → "master of puppets" */
-function baseTitle(title: string) {
+export function baseTitle(title: string) {
   return title
     .toLowerCase()
     .replace(/\s*[\(\[][^\)\]]*(remaster|deluxe|edition|expanded|anniversary|version|live|bonus|mono|stereo)[^\)\]]*[\)\]]/g, "")
@@ -137,4 +137,42 @@ export async function search(q: string): Promise<{ albums: SearchAlbum[]; tracks
   }));
 
   return { albums, tracks };
+}
+
+export type ArtistAlbum = {
+  deezerId: number;
+  title: string;
+  year: number | null;
+  cover: string;
+  fans: number;
+};
+
+/**
+ * An artist's studio albums, editions merged (the plain title wins), most popular first.
+ * Singles, EPs and compilations are left out.
+ */
+export async function getArtistAlbums(artistId: number): Promise<ArtistAlbum[]> {
+  type Row = DzAlbumLite & { release_date?: string; fans?: number };
+  const res = await get<{ data: Row[] }>(`/artist/${artistId}/albums?limit=100`, 86400);
+  const groups = new Map<string, Row[]>();
+  for (const a of res.data ?? []) {
+    if ((a.record_type ?? "album") !== "album") continue;
+    const key = baseTitle(a.title);
+    const g = groups.get(key);
+    if (g) g.push(a);
+    else groups.set(key, [a]);
+  }
+  return [...groups.values()]
+    .map((g) => {
+      const main = g.find((a) => isPlainTitle(a.title)) ?? g[0];
+      const year = main.release_date ? parseInt(main.release_date.slice(0, 4), 10) : NaN;
+      return {
+        deezerId: main.id,
+        title: main.title,
+        year: Number.isFinite(year) ? year : null,
+        cover: main.cover_medium,
+        fans: Math.max(...g.map((a) => a.fans ?? 0)),
+      };
+    })
+    .sort((a, b) => b.fans - a.fans);
 }

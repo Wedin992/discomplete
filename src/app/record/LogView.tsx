@@ -7,10 +7,15 @@ import { LogForm } from "./LogForm";
 export async function LogView({ album }: { album: Album }) {
   const id = album.id;
   const { supabase, user } = await getUser();
-  const [countRes, collRes] = await Promise.all([
+  const [countRes, collRes, exploreRes] = await Promise.all([
     supabase.from("entries").select("id", { count: "exact", head: true }).eq("album_id", id).eq("user_id", user!.id),
     supabase.from("collection").select("vinyl, cd").eq("album_id", id).eq("user_id", user!.id).maybeSingle(),
+    album.deezer_artist_id
+      ? supabase.from("explore_artists").select("deezer_artist_id").eq("user_id", user!.id).eq("deezer_artist_id", album.deezer_artist_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
+  // Before migration 0004 the table doesn't exist: then the checkbox is simply not offered.
+  const explore = album.deezer_artist_id && !exploreRes.error ? { artist: album.artist, following: !!exploreRes.data } : null;
   const before = countRes.count ?? 0;
   const owned = collRes.data as { vinyl: boolean; cd: boolean } | null;
   const defaultFormat = owned?.vinyl ? "vinyl" : owned?.cd ? "cd" : "stream";
@@ -31,6 +36,7 @@ export async function LogView({ album }: { album: Album }) {
         albumId={album.id}
         today={today}
         loggedBefore={before}
+        explore={explore}
         initial={{ format: defaultFormat, rating: 0, note: "", tags: [], isPrivate: false, isAnonymous: false, listenedOn: today }}
       />
     </section>

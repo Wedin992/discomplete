@@ -137,6 +137,10 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
 @keyframes toast { 0%, 85% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 .error { color: var(--danger); }
 
+/* suggestions from explored artists */
+.explore-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 720px) { .explore-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 /* translated notes */
 .translation { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; border-top: 1px dashed var(--line-strong); color: var(--text-soft); font-size: 15px; }
 .translation-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--muted); }

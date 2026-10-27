@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { ExploreArtists } from "./ExploreArtists";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { toggleToListen } from "@/app/actions";
@@ -46,6 +48,9 @@ export default async function ToListenPage() {
           <p className="muted">Tap “+ To listen” on any record page to save it here.</p>
         </div>
       )}
+      <Suspense fallback={<p className="muted small">Finding more from artists you’re exploring…</p>}>
+        <ExploreArtists />
+      </Suspense>
     </section>
   );
 }

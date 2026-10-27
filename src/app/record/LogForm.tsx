@@ -32,9 +32,11 @@ type Props = {
   entryId?: string;
   /** How many times this record was logged before (new entries only). */
   loggedBefore?: number;
+  /** Offer "I want to hear more from <artist>" when the artist is known. */
+  explore?: { artist: string; following: boolean } | null;
 };
 
-export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0 }: Props) {
+export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, explore = null }: Props) {
   const editing = !!entryId;
   const [format, setFormat] = useState(initial.format);
   const [rating, setRating] = useState(initial.rating);
@@ -111,6 +113,17 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0 }: 
           })}
         </div>
       </fieldset>
+
+      {explore ? (
+        <div className="card stack gap-4">
+          <input type="hidden" name="explore_shown" value="1" />
+          <div className="check">
+            <input id="explore_artist" name="explore_artist" type="checkbox" defaultChecked={explore.following} />
+            <label htmlFor="explore_artist"><strong>I want to hear more from {explore.artist}</strong></label>
+          </div>
+          <p className="muted small" style={{ paddingLeft: 34 }}>Their other albums show up under To listen, so you know what to play next.</p>
+        </div>
+      ) : null}
 
       <div className="field" style={{ maxWidth: 260 }}>
         <label htmlFor="listened_on" className="label">Listened on</label>

@@ -17,6 +17,10 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
   const entry = data as unknown as EntryWithAlbum | null;
   if (!entry) notFound();
   const album = entry.album;
+  const exploreRes = album.deezer_artist_id
+    ? await supabase.from("explore_artists").select("deezer_artist_id").eq("user_id", user!.id).eq("deezer_artist_id", album.deezer_artist_id).maybeSingle()
+    : null;
+  const explore = exploreRes && !exploreRes.error ? { artist: album.artist, following: !!exploreRes.data } : null;
 
   return (
     <section className="stack gap-28 narrow" style={{ maxWidth: 720 }}>
@@ -32,6 +36,7 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
       <LogForm
         albumId={album.id}
         entryId={entry.id}
+        explore={explore}
         today={todayIso()}
         initial={{
           format: entry.format,

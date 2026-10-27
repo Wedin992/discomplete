@@ -3,13 +3,75 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
-import { TAGS, todayIso } from "@/lib/format";
+import { TAGS, logPath, todayIso, type Album } from "@/lib/format";
 import { translateToEnglish } from "@/lib/translate";
+import { getAlbum } from "@/lib/deezer";
 
 async function requireUser() {
   const { supabase, user } = await getUser();
   if (!user) redirect("/login");
   return { supabase, user };
+}
+
+type Supabase = Awaited<ReturnType<typeof getUser>>["supabase"];
+
+/** Follows or unfollows the record's artist, depending on the log form's checkbox. */
+async function syncExplore(supabase: Supabase, userId: string, albumId: string, formData: FormData) {
+  if (formData.get("explore_shown") !== "1") return;
+  const { data: album } = await supabase.from("albums").select("deezer_artist_id, artist").eq("id", albumId).maybeSingle();
+  if (!album?.deezer_artist_id) return;
+  if (formData.get("explore_artist") === "on") {
+    await supabase.from("explore_artists").upsert(
+      { user_id: userId, deezer_artist_id: album.deezer_artist_id, artist: album.artist, from_album_id: albumId },
+      { onConflict: "user_id,deezer_artist_id", ignoreDuplicates: true }
+    );
+  } else {
+    await supabase.from("explore_artists").delete().eq("user_id", userId).eq("deezer_artist_id", album.deezer_artist_id);
+  }
+}
+
+export async function stopExploring(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const artistId = Number(formData.get("deezer_artist_id"));
+  if (!Number.isInteger(artistId)) return;
+  await supabase.from("explore_artists").delete().eq("user_id", user.id).eq("deezer_artist_id", artistId);
+  revalidatePath("/", "layout");
+}
+
+/** "+ To listen" on a suggestion that may not be in the catalogue yet. */
+export async function queueFromDeezer(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const deezerId = Number(formData.get("deezer_id"));
+  const source = String(formData.get("source") ?? "").slice(0, 200) || null;
+  if (!Number.isInteger(deezerId) || deezerId <= 0) return;
+  const albumId = await ensureAlbum(supabase, deezerId);
+  if (!albumId) return;
+  await supabase.from("to_listen").upsert({ user_id: user.id, album_id: albumId, source }, { onConflict: "user_id,album_id", ignoreDuplicates: true });
+  revalidatePath("/", "layout");
+}
+
+/** "Log it" on a suggestion: save it to the catalogue, then open the log form. */
+export async function logFromDeezer(formData: FormData) {
+  const { supabase } = await requireUser();
+  const deezerId = Number(formData.get("deezer_id"));
+  if (!Number.isInteger(deezerId) || deezerId <= 0) return;
+  const albumId = await ensureAlbum(supabase, deezerId);
+  if (!albumId) return;
+  const { data } = await supabase.from("albums").select("*").eq("id", albumId).maybeSingle();
+  redirect(data ? logPath(data as Album) : "/log");
+}
+
+async function ensureAlbum(supabase: Supabase, deezerId: number): Promise<string | null> {
+  const { data: existing } = await supabase.from("albums").select("id").eq("deezer_id", deezerId).maybeSingle();
+  if (existing?.id) return existing.id as string;
+  try {
+    const record = await getAlbum(deezerId);
+    const { data, error } = await supabase.rpc("upsert_album", { p: record });
+    if (error) return null;
+    return data as string;
+  } catch {
+    return null;
+  }
 }
 
 export async function saveEntry(formData: FormData) {
@@ -72,6 +134,7 @@ export async function saveEntry(formData: FormData) {
     let { error } = await update(fields);
     if (missingColumn(error)) ({ error } = await update(withoutTranslation()));
     if (error) throw new Error("Could not save your changes.");
+    await syncExplore(supabase, user.id, albumId, formData);
     revalidatePath("/", "layout");
     redirect("/?saved=edited");
   }
@@ -94,6 +157,7 @@ export async function saveEntry(formData: FormData) {
   if (error) throw new Error("Could not save the entry.");
 
   await supabase.from("to_listen").delete().eq("user_id", user.id).eq("album_id", albumId);
+  await syncExplore(supabase, user.id, albumId, formData);
   revalidatePath("/", "layout");
   redirect("/?saved=1");
 }
