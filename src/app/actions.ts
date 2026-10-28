@@ -298,3 +298,14 @@ export async function notForMe(formData: FormData) {
   await dismissPick(supabase, user.id, scope, slot, deezerId);
   revalidatePath("/discover", "layout");
 }
+
+/** "Not now" on a "Remember this?" reminder: don't bring that record up again for six months. */
+export async function snoozeRediscover(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const albumId = String(formData.get("album_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(albumId)) return;
+  const until = new Date(todayIso() + "T12:00:00Z");
+  until.setUTCMonth(until.getUTCMonth() + 6);
+  await supabase.from("rediscover_snoozed").upsert({ user_id: user.id, album_id: albumId, until: until.toISOString().slice(0, 10) }, { onConflict: "user_id,album_id" });
+  revalidatePath("/");
+}

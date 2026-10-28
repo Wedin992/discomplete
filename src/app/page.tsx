@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { EntryCard } from "@/components/EntryCard";
-import { daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
+import { rng } from "@/lib/discover";
+import { snoozeRediscover } from "@/app/actions";
+import { artistPath, daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
 
 export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
   const { saved } = await searchParams;
@@ -12,7 +14,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   // column doesn't exist, the query errors, and nobody is redirected.
   const { data: profile, error: profileError } = await supabase.from("profiles").select("onboarded_at").eq("id", user!.id).maybeSingle();
   if (!profileError && profile && !profile.onboarded_at) redirect("/welcome");
-  const [entriesRes, listRes] = await Promise.all([
+  const [entriesRes, listRes, snoozeRes] = await Promise.all([
     supabase
       .from("entries")
       .select("*, album:albums(*)")
@@ -21,7 +23,9 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
       .order("created_at", { ascending: false })
       .limit(200),
     supabase.from("to_listen").select("album:albums(*)").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(3),
+    supabase.from("rediscover_snoozed").select("album_id").eq("user_id", user!.id).gte("until", todayIso()),
   ]);
+  const snoozed = new Set(((snoozeRes.data ?? []) as { album_id: string }[]).map((r) => r.album_id));
   const entries = (entriesRes.data ?? []) as unknown as EntryWithAlbum[];
   const toListen = ((listRes.data ?? []) as unknown as { album: Album }[]).map((r) => r.album).filter(Boolean);
   const today = todayIso();
@@ -48,6 +52,28 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   });
   const onRepeat = [...albumCount.values()].sort((a, b) => b.n - a.n).slice(0, 3);
 
+  // "Remember this?": a record you gave 4★ or 5★ that you haven't played for 6+ weeks.
+  // One a day at most, picked at random (favouring higher ratings and longer gaps).
+  const latest = new Map<string, EntryWithAlbum>(); // newest entry per record (entries are newest first)
+  const best = new Map<string, EntryWithAlbum>(); // highest-rated entry per record
+  for (const e of entries) {
+    if (!latest.has(e.album_id)) latest.set(e.album_id, e);
+    const b = best.get(e.album_id);
+    if ((e.rating ?? 0) > (b?.rating ?? 0)) best.set(e.album_id, e);
+  }
+  const loved = [...best.values()]
+    .filter((e) => (e.rating ?? 0) >= 4 && !snoozed.has(e.album_id))
+    .map((e) => ({ e, gap: daysBetween(latest.get(e.album_id)!.listened_on, today) }))
+    .filter((x) => x.gap >= 42)
+    .map((x) => ({ ...x, score: (x.e.rating! - 3) * Math.min(x.gap / 42, 4) }));
+  let rediscover: (typeof loved)[number] | null = null;
+  if (loved.length) {
+    const rand = rng(`${user!.id}|${today}|rediscover`);
+    let r = rand() * loved.reduce((s, x) => s + x.score, 0);
+    rediscover = loved.find((x) => (r -= x.score) <= 0) ?? loved[0];
+  }
+  const ago = (days: number) => (days >= 60 ? `${Math.round(days / 30)} months ago` : `${Math.round(days / 7)} weeks ago`);
+
   // Relisten reminder: a first listen rated 3 or lower, 2+ weeks old, never revisited
   const relistened = new Set(entries.filter((e) => e.kind === "relisten").map((e) => e.album_id));
   const reminder = entries.find(
@@ -62,7 +88,36 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           <h1 className="title-xl">Diary</h1>
         </div>
 
-        {reminder ? (
+        {rediscover ? (
+          <div className="card highlight stack gap-12">
+            <div className="row gap-16" style={{ alignItems: "center" }}>
+              <Link href={recordPath(rediscover.e.album)} tabIndex={-1} aria-hidden="true">
+                <Cover album={rediscover.e.album} size="64" />
+              </Link>
+              <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+                <p className="eyebrow" style={{ color: "var(--accent)" }}>Remember this?</p>
+                <p style={{ fontWeight: 700, fontSize: 17, marginTop: 2 }}>
+                  You gave {rediscover.e.album.title} {stars(rediscover.e.rating)}
+                </p>
+                <p className="muted">
+                  Last played {ago(rediscover.gap)}. Want to hear it again — or something else by {rediscover.e.album.artist}?
+                </p>
+              </div>
+            </div>
+            <div className="row gap-12" style={{ alignItems: "center" }}>
+              <Link href={recordPath(rediscover.e.album)} className="btn btn-primary btn-sm">Listen again</Link>
+              {artistPath(rediscover.e.album.artist, rediscover.e.album.deezer_artist_id) ? (
+                <Link href={artistPath(rediscover.e.album.artist, rediscover.e.album.deezer_artist_id)!} className="btn btn-sm">
+                  More from {rediscover.e.album.artist}
+                </Link>
+              ) : null}
+              <form action={snoozeRediscover}>
+                <input type="hidden" name="album_id" value={rediscover.e.album_id} />
+                <button type="submit" className="btn-text small" style={{ minHeight: 40 }}>Not now</button>
+              </form>
+            </div>
+          </div>
+        ) : reminder ? (
           <div className="card highlight row gap-16">
             <Cover album={reminder.album} size="64" />
             <div style={{ flex: "1 1 240px", minWidth: 0 }}>
