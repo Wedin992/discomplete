@@ -7,7 +7,7 @@ import { artistPath, longDate, todayIso, type Album } from "@/lib/format";
 import { LogForm } from "./LogForm";
 import { getAlbumTracks } from "@/lib/deezer";
 
-export async function LogView({ album }: { album: Album }) {
+export async function LogView({ album, date, suggestionId }: { album: Album; date?: string; suggestionId?: string }) {
   const id = album.id;
   const { supabase, user } = await getUser();
   const tracksP = album.deezer_id ? getAlbumTracks(album.deezer_id).catch(() => []) : Promise.resolve([]);
@@ -24,6 +24,8 @@ export async function LogView({ album }: { album: Album }) {
   const owned = collRes.data as { vinyl: boolean; cd: boolean } | null;
   const defaultFormat = owned?.vinyl ? "vinyl" : owned?.cd ? "cd" : "stream";
   const today = todayIso();
+  // Coming from a Last.fm suggestion: the day it was played.
+  const listenedOn = date && /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= today ? date : today;
   const tracks = (await tracksP).map((t) => ({ id: t.id, title: t.title, position: t.position }));
 
   return (
@@ -46,7 +48,8 @@ export async function LogView({ album }: { album: Album }) {
         loggedBefore={before}
         explore={explore}
         tracks={tracks}
-        initial={{ format: defaultFormat, rating: 0, note: "", tags: [], isPrivate: false, isAnonymous: false, listenedOn: today }}
+        suggestionId={suggestionId && /^[0-9a-f-]{36}$/i.test(suggestionId) ? suggestionId : undefined}
+        initial={{ format: defaultFormat, rating: 0, note: "", tags: [], isPrivate: false, isAnonymous: false, listenedOn }}
       />
     </section>
   );

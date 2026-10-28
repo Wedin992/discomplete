@@ -307,3 +307,11 @@ body { -webkit-tap-highlight-color: transparent; }
 .pick-title-link { color: var(--text); text-decoration: none; }
 .pick-title-link:hover { color: var(--accent-hover); text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 760px) { .pick-cover-link { width: 104px; flex: 0 0 104px; } .pick-cover-link .pick-cover { width: 100%; } }
+
+/* Spotify via Last.fm */
+.lfm-item { display: flex; gap: 14px; align-items: flex-start; }
+.lfm-item + .lfm-item { border-top: 1px solid var(--line); padding-top: 16px; }
+.lfm-more summary { list-style: none; cursor: pointer; min-height: 36px; display: inline-flex; align-items: center; }
+.lfm-more summary::-webkit-details-marker { display: none; }
+.lfm-menu { padding-top: 4px; }
+.lfm-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }

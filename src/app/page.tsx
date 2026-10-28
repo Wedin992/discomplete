@@ -5,6 +5,8 @@ import { Cover } from "@/components/Cover";
 import { EntryCard } from "@/components/EntryCard";
 import { rng } from "@/lib/discover";
 import { snoozeRediscover } from "@/app/actions";
+import { LastfmSuggestions, type Suggestion } from "@/components/LastfmSuggestions";
+import { LastfmSync } from "@/components/LastfmSync";
 import { artistPath, daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
 
 export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
@@ -14,7 +16,8 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   // column doesn't exist, the query errors, and nobody is redirected.
   const { data: profile, error: profileError } = await supabase.from("profiles").select("onboarded_at").eq("id", user!.id).maybeSingle();
   if (!profileError && profile && !profile.onboarded_at) redirect("/welcome");
-  const [entriesRes, listRes, snoozeRes] = await Promise.all([
+  const since14 = new Date(Date.now() - 14 * 86400_000).toISOString().slice(0, 10);
+  const [entriesRes, listRes, snoozeRes, lfmLinkRes, lfmRes] = await Promise.all([
     supabase
       .from("entries")
       .select("*, album:albums(*)")
@@ -24,7 +27,20 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
       .limit(200),
     supabase.from("to_listen").select("album:albums(*)").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(3),
     supabase.from("rediscover_snoozed").select("album_id").eq("user_id", user!.id).gte("until", todayIso()),
+    supabase.from("lastfm_links").select("username").eq("user_id", user!.id).maybeSingle(),
+    supabase
+      .from("lastfm_suggestions")
+      .select("id, deezer_id, title, artist, cover, played_on, tracks_played, total_tracks", { count: "exact" })
+      .eq("user_id", user!.id)
+      .eq("status", "pending")
+      .gte("played_on", since14)
+      .order("played_on", { ascending: false })
+      .limit(3),
   ]);
+  // Before migration 0010 these tables don't exist: then there's simply nothing from Last.fm.
+  const lastfmLinked = !lfmLinkRes.error && !!lfmLinkRes.data;
+  const suggestions = (lfmRes.error ? [] : lfmRes.data ?? []) as Suggestion[];
+  const moreSuggestions = Math.max(0, (lfmRes.count ?? 0) - suggestions.length);
   const snoozed = new Set(((snoozeRes.data ?? []) as { album_id: string }[]).map((r) => r.album_id));
   const entries = (entriesRes.data ?? []) as unknown as EntryWithAlbum[];
   const toListen = ((listRes.data ?? []) as unknown as { album: Album }[]).map((r) => r.album).filter(Boolean);
@@ -92,6 +108,9 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           <p className="eyebrow">Your music diary</p>
           <h1 className="title-xl">Diary</h1>
         </div>
+
+        {lastfmLinked ? <LastfmSync /> : null}
+        <LastfmSuggestions items={suggestions} more={moreSuggestions} />
 
         {rediscover ? (
           <div className="card highlight stack gap-12">

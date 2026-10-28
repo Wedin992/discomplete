@@ -39,9 +39,11 @@ type Props = {
   explore?: { artist: string; following: boolean } | null;
   /** The record's tracklist, for picking up to three favourites. */
   tracks?: FavTrack[];
+  /** Logging a Last.fm suggestion: it's marked as logged when saved. */
+  suggestionId?: string;
 };
 
-export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, explore = null, tracks = [] }: Props) {
+export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, explore = null, tracks = [], suggestionId }: Props) {
   const editing = !!entryId;
   const [format, setFormat] = useState(initial.format);
   const [rating, setRating] = useState(initial.rating);
@@ -49,7 +51,7 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
   const [isPrivate, setIsPrivate] = useState(initial.isPrivate);
   const [isAnon, setIsAnon] = useState(initial.isAnonymous);
   // New-to-me vs heard it before: offered for a record's first entry (and when editing that one).
-  const offerBefore = editing ? initial.kind === "first" || initial.kind === "before" : loggedBefore === 0;
+  const offerBefore = editing ? initial.kind === "first" || initial.kind === "before" : loggedBefore === 0 && !suggestionId;
   const [heardBefore, setHeardBefore] = useState(initial.kind === "before");
   const [favs, setFavs] = useState<FavTrack[]>(initial.favTracks ?? []);
   const [showTracks, setShowTracks] = useState((initial.favTracks ?? []).length > 0);
@@ -69,6 +71,7 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
       <input type="hidden" name="format" value={format} />
       <input type="hidden" name="rating" value={rating} />
       <input type="hidden" name="fav_tracks" value={JSON.stringify(favs)} />
+      {suggestionId ? <input type="hidden" name="suggestion_id" value={suggestionId} /> : null}
       {offerBefore ? <input type="hidden" name="kind_choice" value={heardBefore ? "before" : "first"} /> : null}
       {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
 

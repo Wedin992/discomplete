@@ -3,12 +3,19 @@ import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
+import { LastfmCard } from "./LastfmCard";
+import { lastfmConfigured } from "@/lib/lastfm";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ lastfm?: string }> }) {
+  const { lastfm } = await searchParams;
   const { supabase, user } = await getUser();
-  const { data } = await supabase.from("profiles").select("username, display_name").eq("id", user!.id).maybeSingle();
+  const [{ data }, linkRes] = await Promise.all([
+    supabase.from("profiles").select("username, display_name").eq("id", user!.id).maybeSingle(),
+    supabase.from("lastfm_links").select("username, autolog, synced_at").eq("user_id", user!.id).maybeSingle(),
+  ]);
+  const link = linkRes.error ? null : (linkRes.data as { username: string; autolog: boolean; synced_at: string | null } | null);
   return (
     <section className="stack gap-28 narrow" style={{ maxWidth: 560 }}>
       <div>
@@ -20,6 +27,7 @@ export default async function SettingsPage() {
         <p className="muted small">This is how your public notes are signed. Anonymous notes never show it.</p>
         <ProfileForm username={data?.username ?? ""} displayName={data?.display_name ?? ""} />
       </div>
+      <LastfmCard link={link} status={linkRes.error ? (lastfm ? "setup" : undefined) : lastfm} configured={lastfmConfigured() && !linkRes.error} />
       <div className="card stack gap-8">
         <h2 className="eyebrow">Your taste</h2>
         <p className="muted">The artists you love shape your picks in Discover.</p>

@@ -30,6 +30,11 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ deezerI
     }
   }
 
-  const next = request.nextUrl.searchParams.get("then") === "log" ? logPath(album) : recordPath(album);
+  const sp = request.nextUrl.searchParams;
+  // From a Last.fm suggestion: carry the day it was played (and the suggestion) to the log form.
+  const extra = new URLSearchParams();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(sp.get("date") ?? "")) extra.set("date", sp.get("date")!);
+  if (/^[0-9a-f-]{36}$/i.test(sp.get("suggestion") ?? "")) extra.set("suggestion", sp.get("suggestion")!);
+  const next = sp.get("then") === "log" ? logPath(album) + (extra.size ? `?${extra}` : "") : recordPath(album);
   return NextResponse.redirect(new URL(next, origin));
 }

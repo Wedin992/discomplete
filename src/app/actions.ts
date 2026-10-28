@@ -7,6 +7,8 @@ import { TAGS, logPath, recordPath, todayIso, type Album } from "@/lib/format";
 import { translateToEnglish } from "@/lib/translate";
 import { getAlbum } from "@/lib/deezer";
 import { dismissPick, shufflePicks } from "@/lib/discover-store";
+import { getLastfmUser, LastfmError, looseName } from "@/lib/lastfm";
+import { logAlbumListen, syncLastfm } from "@/lib/lastfm-sync";
 import { SLOTS, type Slot } from "@/lib/discover";
 
 async function requireUser() {
@@ -185,6 +187,8 @@ export async function saveEntry(formData: FormData) {
   if (error) throw new Error("Could not save the entry.");
 
   await supabase.from("to_listen").delete().eq("user_id", user.id).eq("album_id", albumId);
+  const suggestionId = String(formData.get("suggestion_id") ?? "");
+  if (/^[0-9a-f-]{36}$/i.test(suggestionId)) await supabase.from("lastfm_suggestions").update({ status: "logged" }).eq("id", suggestionId).eq("user_id", user.id);
   await syncExplore(supabase, user.id, albumId, formData);
   revalidatePath("/", "layout");
   redirect(kindChoice === "before" && !count ? "/?saved=before" : "/?saved=1");
@@ -372,4 +376,77 @@ export async function quickRate(deezerId: number, rating: number): Promise<{ sta
   await supabase.from("to_listen").delete().eq("user_id", user.id).eq("album_id", albumId);
   revalidatePath("/", "layout");
   return { status: "added" };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Spotify via Last.fm
+// ─────────────────────────────────────────────────────────────
+export async function connectLastfm(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const raw = String(formData.get("username") ?? "").trim().replace(/^@/, "").replace(/^https?:\/\/(www\.)?last\.fm\/user\//i, "").replace(/\/.*$/, "");
+  if (!/^[A-Za-z0-9_-]{2,32}$/.test(raw)) redirect("/settings?lastfm=invalid#lastfm");
+  let name = raw;
+  try {
+    name = (await getLastfmUser(raw)).name;
+  } catch (e) {
+    redirect(`/settings?lastfm=${e instanceof LastfmError && e.code === 6 ? "notfound" : "unavailable"}#lastfm`);
+  }
+  const { error } = await supabase.from("lastfm_links").upsert({ user_id: user.id, username: name, synced_at: null }, { onConflict: "user_id" });
+  if (error) redirect("/settings?lastfm=setup#lastfm");
+  await syncLastfm(supabase, user.id, { force: true });
+  revalidatePath("/", "layout");
+  redirect("/settings?lastfm=connected#lastfm");
+}
+
+export async function disconnectLastfm() {
+  const { supabase, user } = await requireUser();
+  await supabase.from("lastfm_suggestions").delete().eq("user_id", user.id).eq("status", "pending");
+  await supabase.from("lastfm_links").delete().eq("user_id", user.id);
+  revalidatePath("/", "layout");
+  redirect("/settings#lastfm");
+}
+
+export async function setLastfmAutolog(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  await supabase.from("lastfm_links").update({ autolog: formData.get("on") === "1" }).eq("user_id", user.id);
+  revalidatePath("/settings");
+}
+
+export async function syncLastfmNow() {
+  const { supabase, user } = await requireUser();
+  const res = await syncLastfm(supabase, user.id, { force: true });
+  revalidatePath("/", "layout");
+  redirect(`/settings?lastfm=${res.error ? "unavailable" : `synced-${res.added}`}#lastfm`);
+}
+
+/** Stars on a "Looks like you listened to …" suggestion: logs it on the day it was played. */
+export async function rateSuggestion(id: string, rating: number): Promise<{ status: "added" | "updated" | "logged" | "error" }> {
+  const { supabase, user } = await requireUser();
+  if (!/^[0-9a-f-]{36}$/i.test(id) || !Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  const { data } = await supabase.from("lastfm_suggestions").select("deezer_id, played_on, status").eq("id", id).eq("user_id", user.id).maybeSingle();
+  const s = data as { deezer_id: number; played_on: string; status: string } | null;
+  if (!s) return { status: "error" };
+  if (s.status === "logged") return { status: "logged" };
+  if (!(await logAlbumListen(supabase, user.id, s.deezer_id, s.played_on, rating))) return { status: "error" };
+  await supabase.from("lastfm_suggestions").update({ status: "logged" }).eq("id", id).eq("user_id", user.id);
+  revalidatePath("/", "layout");
+  return { status: "added" };
+}
+
+/** "Not now", or never suggest this album / artist again. */
+export async function dismissSuggestion(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  const mute = String(formData.get("mute") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+  const { data } = await supabase.from("lastfm_suggestions").select("deezer_id, title, artist").eq("id", id).eq("user_id", user.id).maybeSingle();
+  const s = data as { deezer_id: number; title: string; artist: string } | null;
+  if (!s) return;
+  await supabase.from("lastfm_suggestions").update({ status: "dismissed" }).eq("id", id).eq("user_id", user.id);
+  if (mute === "album") await supabase.from("lastfm_muted").upsert({ user_id: user.id, kind: "album", key: String(s.deezer_id), label: s.title });
+  if (mute === "artist") {
+    await supabase.from("lastfm_muted").upsert({ user_id: user.id, kind: "artist", key: looseName(s.artist), label: s.artist });
+    await supabase.from("lastfm_suggestions").update({ status: "dismissed" }).eq("user_id", user.id).eq("status", "pending").eq("artist", s.artist);
+  }
+  revalidatePath("/", "layout");
 }
