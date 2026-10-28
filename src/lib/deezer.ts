@@ -224,3 +224,12 @@ export async function findAlbum(artist: string, title: string): Promise<FoundAlb
   const plain = await get<{ data: DzAlbumLite[] }>(`/search/album?q=${encodeURIComponent(`${artist} ${title}`)}&limit=10`, 2592000).catch(() => ({ data: [] }));
   return pick(plain.data ?? []);
 }
+
+export type AlbumTrack = { id: number; title: string; position: number; duration: number };
+
+/** A record's tracklist, in order (for picking favourite tracks). */
+export async function getAlbumTracks(deezerId: number): Promise<AlbumTrack[]> {
+  type Row = { id: number; title: string; title_short?: string; track_position?: number; disk_number?: number; duration?: number };
+  const res = await get<{ data: Row[] }>(`/album/${deezerId}/tracks?limit=200`, 86400);
+  return (res.data ?? []).map((t, i) => ({ id: t.id, title: t.title_short || t.title, position: t.track_position ?? i + 1, duration: t.duration ?? 0 }));
+}

@@ -91,6 +91,17 @@ export async function saveEntry(formData: FormData) {
   const listenedOn = /^\d{4}-\d{2}-\d{2}$/.test(listenedOnRaw) && listenedOnRaw <= todayIso() ? listenedOnRaw : todayIso();
 
   const kindChoice = String(formData.get("kind_choice") ?? "");
+  let favTracks: { id: number; title: string; position: number }[] | null = null;
+  try {
+    const raw = JSON.parse(String(formData.get("fav_tracks") ?? "null"));
+    if (Array.isArray(raw))
+      favTracks = raw
+        .filter((t) => t && Number.isInteger(t.id) && t.id > 0 && typeof t.title === "string")
+        .slice(0, 3)
+        .map((t) => ({ id: t.id, title: String(t.title).slice(0, 200), position: Number.isInteger(t.position) ? t.position : 0 }));
+  } catch {
+    favTracks = null;
+  }
   const fields: Record<string, unknown> = {
     listened_on: listenedOn,
     rating,
@@ -99,6 +110,7 @@ export async function saveEntry(formData: FormData) {
     tags,
     is_private: isPrivate,
     is_anonymous: isAnonymous,
+    ...(favTracks ? { fav_tracks: favTracks } : {}),
   };
 
   // English translation for others to read: only for public notes, made once when the
@@ -121,14 +133,16 @@ export async function saveEntry(formData: FormData) {
   }
 
   // Until migration 0003 has run, the translation columns don't exist: save without them.
+  // Older databases may lack the translation (0003) or favourite-track (0009) columns: save without them.
   const withoutTranslation = () => {
     const rest = { ...fields };
     delete rest.note_lang;
     delete rest.note_en;
+    delete rest.fav_tracks;
     return rest;
   };
   const missingColumn = (e: { code?: string; message?: string } | null) =>
-    !!e && (e.code === "PGRST204" || e.code === "42703" || /note_(en|lang)/.test(e.message ?? ""));
+    !!e && (e.code === "PGRST204" || e.code === "42703" || /note_(en|lang)|fav_tracks/.test(e.message ?? ""));
 
   if (entryId) {
     // Editing: first listen / relisten stays as it was logged.

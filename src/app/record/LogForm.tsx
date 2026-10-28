@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { saveEntry } from "@/app/actions";
-import { FORMATS, RATING_LABELS, TAGS } from "@/lib/format";
+import { FORMATS, RATING_LABELS, TAGS, type FavTrack } from "@/lib/format";
 
 function SaveButton({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus();
@@ -24,6 +24,7 @@ export type EntryDraft = {
   listenedOn: string;
   /** "first" or "before": offered when this is the record's only entry. */
   kind?: string;
+  favTracks?: FavTrack[];
 };
 
 type Props = {
@@ -36,9 +37,11 @@ type Props = {
   loggedBefore?: number;
   /** Offer "I want to hear more from <artist>" when the artist is known. */
   explore?: { artist: string; following: boolean } | null;
+  /** The record's tracklist, for picking up to three favourites. */
+  tracks?: FavTrack[];
 };
 
-export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, explore = null }: Props) {
+export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, explore = null, tracks = [] }: Props) {
   const editing = !!entryId;
   const [format, setFormat] = useState(initial.format);
   const [rating, setRating] = useState(initial.rating);
@@ -48,6 +51,10 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
   // New-to-me vs heard it before: offered for a record's first entry (and when editing that one).
   const offerBefore = editing ? initial.kind === "first" || initial.kind === "before" : loggedBefore === 0;
   const [heardBefore, setHeardBefore] = useState(initial.kind === "before");
+  const [favs, setFavs] = useState<FavTrack[]>(initial.favTracks ?? []);
+  const [showTracks, setShowTracks] = useState((initial.favTracks ?? []).length > 0);
+  const toggleFav = (t: FavTrack) =>
+    setFavs((cur) => (cur.some((f) => f.id === t.id) ? cur.filter((f) => f.id !== t.id) : cur.length >= 3 ? cur : [...cur, t].sort((a, b) => a.position - b.position)));
 
   const visHelp = isPrivate
     ? "Private — only you will see this entry, and the rating isn’t counted."
@@ -61,6 +68,7 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
       {editing ? <input type="hidden" name="entry_id" value={entryId} /> : null}
       <input type="hidden" name="format" value={format} />
       <input type="hidden" name="rating" value={rating} />
+      <input type="hidden" name="fav_tracks" value={JSON.stringify(favs)} />
       {offerBefore ? <input type="hidden" name="kind_choice" value={heardBefore ? "before" : "first"} /> : null}
       {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
 
@@ -139,6 +147,32 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
             <label htmlFor="explore_artist"><strong>I want to hear more from {explore.artist}</strong></label>
           </div>
           <p className="muted small" style={{ paddingLeft: 34 }}>Their other albums show up under To listen, so you know what to play next.</p>
+        </div>
+      ) : null}
+
+      {tracks.length ? (
+        <div className="stack gap-12">
+          <button type="button" className="fav-toggle" aria-expanded={showTracks} onClick={() => setShowTracks((v) => !v)}>
+            <span><strong>Favourite tracks</strong> <span className="muted" style={{ fontWeight: 400 }}>(optional, up to 3)</span></span>
+            <span className="mono small muted">{favs.length ? favs.map((f) => f.title).join(", ") : showTracks ? "Hide" : "Pick"}</span>
+          </button>
+          {showTracks ? (
+            <ol className="fav-list" aria-label="Tracklist">
+              {tracks.map((t) => {
+                const on = favs.some((f) => f.id === t.id);
+                const full = !on && favs.length >= 3;
+                return (
+                  <li key={t.id}>
+                    <button type="button" className={`fav-track${on ? " on" : ""}`} aria-pressed={on} disabled={full} onClick={() => toggleFav(t)}>
+                      <span className="mono muted fav-pos">{t.position}</span>
+                      <span className="fav-title">{t.title}</span>
+                      <span className="fav-heart" aria-hidden="true">{on ? "♥" : "♡"}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : null}
         </div>
       ) : null}
 

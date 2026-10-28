@@ -18,13 +18,16 @@ export async function RecordView({ album }: { album: Album }) {
   const id = album.id;
   const { supabase, user } = await getUser();
 
-  const [statsRes, notesRes, mineRes, listRes, collRes] = await Promise.all([
+  const [statsRes, notesRes, mineRes, listRes, collRes, topRes] = await Promise.all([
     supabase.rpc("album_stats", { p_album: id }).maybeSingle(),
     supabase.rpc("album_public_notes", { p_album: id, p_limit: 20 }),
     supabase.from("entries").select("*").eq("album_id", id).eq("user_id", user!.id).order("listened_on", { ascending: false }).order("created_at", { ascending: false }),
     supabase.from("to_listen").select("album_id").eq("album_id", id).eq("user_id", user!.id).maybeSingle(),
     supabase.from("collection").select("vinyl, cd, wishlist").eq("album_id", id).eq("user_id", user!.id).maybeSingle(),
+    supabase.rpc("album_top_tracks", { p_album: id, p_limit: 5 }),
   ]);
+  // Before migration 0009 the function doesn't exist: the section just doesn't show.
+  const topTracks = (topRes.error ? [] : topRes.data ?? []) as { track_id: number; title: string; track_position: number; fans: number }[];
 
   const stats = statsRes.data as Stats | null;
   const notes = (notesRes.data ?? []) as PublicNote[];
@@ -123,6 +126,21 @@ export async function RecordView({ album }: { album: Album }) {
             ))}
             <p className="muted small" style={{ marginTop: 4 }}>Anonymous ratings count. Private ones don’t.</p>
           </div>
+          {topTracks.length ? (
+            <div className="card stack gap-8" style={{ flex: "1 1 260px", minWidth: 0 }}>
+              <p className="eyebrow">Fans’ favourite tracks</p>
+              <ol className="stack gap-8" style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                {topTracks.map((t, i) => (
+                  <li key={t.track_id} className="row gap-12" style={{ flexWrap: "nowrap" }}>
+                    <span className="mono" style={{ flex: "0 0 22px", color: "var(--accent)", fontWeight: 500 }}>{i + 1}</span>
+                    <span style={{ flex: "1 1 auto", minWidth: 0, fontWeight: 700 }}>{t.title}</span>
+                    <span className="mono small muted" style={{ flex: "0 0 auto" }}>♥ {t.fans}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="muted small" style={{ marginTop: 4 }}>New to this record? Start with these.</p>
+            </div>
+          ) : null}
           <div className="stack gap-12" style={{ flex: "999 1 420px", minWidth: 0 }}>
             {notes.length ? (
               notes.map((n) => {
@@ -163,6 +181,7 @@ export async function RecordView({ album }: { album: Album }) {
                 {e.rating ? <span className="stars">{stars(e.rating)}</span> : null}
               </div>
               <div className="stack gap-4" style={{ flex: "1 1 300px", minWidth: 0 }}>
+                {e.fav_tracks?.length ? <p className="fav-line">♥ {e.fav_tracks.map((t) => t.title).join(" · ")}</p> : null}
                 {e.note ? <NoteText note={e.note} lang={e.note_lang} english={e.note_en} /> : e.kind === "before" ? <Link href={`/entry/${e.id}/edit`} className="muted" style={{ textDecoration: "none" }}>No words yet — write about it →</Link> : <p>—</p>}
                 <div className="row gap-16" style={{ justifyContent: "space-between" }}>
                   <span className="mono muted" style={{ fontSize: 11 }}>{visibilityLabel(e)}</span>

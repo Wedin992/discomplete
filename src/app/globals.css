@@ -287,3 +287,18 @@ body { -webkit-tap-highlight-color: transparent; }
 .quick-result { display: flex; align-items: center; gap: 16px; padding: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
 .mode-switch { display: flex; gap: 8px; flex-wrap: wrap; }
 .heard-it { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* Favourite tracks */
+.fav-toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 0 16px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); color: var(--text); text-align: left; }
+.fav-toggle .mono { max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fav-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.fav-list li + li { border-top: 1px solid var(--line); }
+.fav-track { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 0 16px; background: transparent; border: 0; color: var(--text); text-align: left; }
+.fav-track:hover { background: var(--surface); }
+.fav-track.on { background: var(--surface); }
+.fav-track:disabled { opacity: 0.45; }
+.fav-pos { flex: 0 0 22px; font-size: 12px; }
+.fav-title { flex: 1 1 auto; min-width: 0; }
+.fav-heart { flex: 0 0 auto; font-size: 20px; color: var(--muted); }
+.fav-track.on .fav-heart { color: var(--accent); }
+.fav-line { margin: 0; font-size: 14px; color: var(--text-soft); }

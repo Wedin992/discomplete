@@ -6,6 +6,7 @@ import { Cover } from "@/components/Cover";
 import { DeleteEntryButton } from "@/components/DeleteEntryButton";
 import { kindLabel, longDate, recordPath, todayIso, type EntryWithAlbum } from "@/lib/format";
 import { LogForm } from "@/app/record/LogForm";
+import { getAlbumTracks } from "@/lib/deezer";
 
 export const metadata: Metadata = { title: "Edit entry" };
 
@@ -20,6 +21,7 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
   const exploreRes = album.deezer_artist_id
     ? await supabase.from("explore_artists").select("deezer_artist_id").eq("user_id", user!.id).eq("deezer_artist_id", album.deezer_artist_id).maybeSingle()
     : null;
+  const tracks = album.deezer_id ? (await getAlbumTracks(album.deezer_id).catch(() => [])).map((t) => ({ id: t.id, title: t.title, position: t.position })) : [];
   const explore = exploreRes && !exploreRes.error ? { artist: album.artist, following: !!exploreRes.data } : null;
 
   return (
@@ -37,6 +39,7 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
         albumId={album.id}
         entryId={entry.id}
         explore={explore}
+        tracks={tracks}
         today={todayIso()}
         initial={{
           format: entry.format,
@@ -47,6 +50,7 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
           isAnonymous: entry.is_anonymous,
           listenedOn: entry.listened_on,
           kind: entry.kind,
+          favTracks: entry.fav_tracks ?? [],
         }}
       />
       <div className="card-dashed row gap-12" style={{ justifyContent: "space-between" }}>

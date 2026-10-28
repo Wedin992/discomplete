@@ -5,10 +5,12 @@ import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { artistPath, longDate, todayIso, type Album } from "@/lib/format";
 import { LogForm } from "./LogForm";
+import { getAlbumTracks } from "@/lib/deezer";
 
 export async function LogView({ album }: { album: Album }) {
   const id = album.id;
   const { supabase, user } = await getUser();
+  const tracksP = album.deezer_id ? getAlbumTracks(album.deezer_id).catch(() => []) : Promise.resolve([]);
   const [countRes, collRes, exploreRes] = await Promise.all([
     supabase.from("entries").select("id", { count: "exact", head: true }).eq("album_id", id).eq("user_id", user!.id),
     supabase.from("collection").select("vinyl, cd").eq("album_id", id).eq("user_id", user!.id).maybeSingle(),
@@ -22,6 +24,7 @@ export async function LogView({ album }: { album: Album }) {
   const owned = collRes.data as { vinyl: boolean; cd: boolean } | null;
   const defaultFormat = owned?.vinyl ? "vinyl" : owned?.cd ? "cd" : "stream";
   const today = todayIso();
+  const tracks = (await tracksP).map((t) => ({ id: t.id, title: t.title, position: t.position }));
 
   return (
     <section className="stack gap-28 narrow" style={{ maxWidth: 720 }}>
@@ -42,6 +45,7 @@ export async function LogView({ album }: { album: Album }) {
         today={today}
         loggedBefore={before}
         explore={explore}
+        tracks={tracks}
         initial={{ format: defaultFormat, rating: 0, note: "", tags: [], isPrivate: false, isAnonymous: false, listenedOn: today }}
       />
     </section>

@@ -50,6 +50,8 @@ export function artistPath(name: string, deezerArtistId: number | null | undefin
 
 export const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
+export type FavTrack = { id: number; title: string; position: number };
+
 export type Entry = {
   id: string;
   album_id: string;
@@ -57,6 +59,7 @@ export type Entry = {
   rating: number | null;
   format: "stream" | "vinyl" | "cd";
   kind: "first" | "relisten" | "before";
+  fav_tracks?: FavTrack[] | null;
   note: string | null;
   /** Detected language of the note and its English translation (migration 0003). */
   note_lang?: string | null;

@@ -22,6 +22,7 @@ export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
           <span>{entry.kind === "before" ? "Heard before" : `${kindLabel(entry.kind)} · ${formatLabel(entry.format)}`}</span>
           {entry.tags.length ? <span>{entry.tags.join(" · ")}</span> : null}
         </div>
+        {entry.fav_tracks?.length ? <p className="fav-line">♥ {entry.fav_tracks.map((t) => t.title).join(" · ")}</p> : null}
         {entry.note ? (
           <div style={{ marginTop: 2 }}>
             <NoteText note={entry.note} lang={entry.note_lang} english={entry.note_en} />
