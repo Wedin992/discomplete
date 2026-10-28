@@ -41,12 +41,12 @@ export async function getLastfmUser(username: string): Promise<{ name: string; p
 export type Scrobble = { artist: string; album: string; track: string; uts: number };
 
 /** Scrobbles since `fromUts` (oldest first), up to `maxPages` × 200. */
-export async function getRecentScrobbles(username: string, fromUts: number, maxPages = 5): Promise<Scrobble[]> {
+export async function getRecentScrobbles(username: string, fromUts: number, maxPages = 5, revalidate = 0): Promise<Scrobble[]> {
   type T = { artist?: { "#text"?: string; name?: string }; album?: { "#text"?: string }; name?: string; date?: { uts?: string }; "@attr"?: { nowplaying?: string } };
   type R = { recenttracks?: { track?: T[] | T; "@attr"?: { totalPages?: string } } };
   const out: Scrobble[] = [];
   for (let page = 1; page <= maxPages; page++) {
-    const r = await call<R>("user.getrecenttracks", { user: username, from: Math.floor(fromUts), limit: 200, page });
+    const r = await call<R>("user.getrecenttracks", { user: username, from: Math.floor(fromUts), limit: 200, page }, revalidate);
     const raw = r.recenttracks?.track;
     const tracks = Array.isArray(raw) ? raw : raw ? [raw] : [];
     for (const t of tracks) {

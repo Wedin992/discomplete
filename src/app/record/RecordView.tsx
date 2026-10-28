@@ -6,6 +6,7 @@ import { Cover } from "@/components/Cover";
 import { NoteText } from "@/components/NoteText";
 import { whenLabel, artistPath, duration, formatLabel, kindLabel, logPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
 import { toggleCollection, toggleToListen } from "@/app/actions";
+import { RecordTracks } from "./RecordTracks";
 
 type Stats = { rating_count: number; avg_rating: number | null; r1: number; r2: number; r3: number; r4: number; r5: number };
 type PublicNote = {
@@ -108,6 +109,10 @@ export async function RecordView({ album }: { album: Album }) {
           </div>
         </div>
       </div>
+
+      <Suspense fallback={null}>
+        <RecordTracks album={album} />
+      </Suspense>
 
       <section className="stack gap-20">
         <h2 className="title-l">What others think</h2>
