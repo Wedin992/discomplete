@@ -6,6 +6,29 @@ import { getUser } from "@/lib/supabase/server";
 import { baseTitle, getArtist, getArtistAlbums, type ArtistAlbum } from "@/lib/deezer";
 import { artistPath, recordPath, stars, type Album } from "@/lib/format";
 import { openFromDeezer, setExploring } from "@/app/actions";
+import { Suspense } from "react";
+import { getArtistBio } from "@/lib/wiki";
+
+async function Bio({ name }: { name: string }) {
+  const bio = await getArtistBio(name).catch(() => null);
+  if (!bio) return null;
+  return (
+    <div className="stack gap-4">
+      <p className="artist-bio">{bio.text}</p>
+      <a href={bio.url} target="_blank" rel="noopener noreferrer" className="mono muted" style={{ fontSize: 11 }}>
+        Read more on Wikipedia ↗
+      </a>
+    </div>
+  );
+}
+
+function BioPlaceholder() {
+  return (
+    <div className="stack gap-8" aria-hidden="true" style={{ maxWidth: 560 }}>
+      {[100, 94, 70].map((w) => <span key={w} className="skeleton" style={{ width: `${w}%`, height: 14, borderRadius: 4 }} />)}
+    </div>
+  );
+}
 
 type Params = Promise<{ slug: string }>;
 type Filter = "all" | "logged" | "not-yet";
@@ -82,27 +105,33 @@ export default async function ArtistPage({ params, searchParams }: { params: Par
 
   return (
     <div className="stack gap-28">
-      <div className="row gap-28" style={{ alignItems: "center" }}>
-        {artist.picture ? <img src={artist.picture} alt="" width={160} height={160} className="artist-photo" /> : null}
-        <div className="stack gap-12" style={{ flex: "999 1 320px", minWidth: 0 }}>
+      <div className="artist-head">
+        {artist.picture ? <img src={artist.picture} alt="" width={200} height={200} className="artist-photo" /> : null}
+        <div className="stack gap-8" style={{ minWidth: 0 }}>
           <p className="eyebrow">Artist</p>
           <h1 className="title-xl" style={{ marginTop: 0 }}>{artist.name}</h1>
-          <div className="stack gap-8" style={{ maxWidth: 420 }}>
-            <p style={{ fontWeight: 700 }}>
-              {loggedCount} of {records.length} {records.length === 1 ? "album" : "albums"} logged
-              {loggedCount && loggedCount === records.length ? " — complete!" : ""}
-            </p>
-            <div className="bar" style={{ height: 10 }} aria-hidden="true"><span style={{ width: `${pct}%` }} /></div>
-          </div>
-          <form action={setExploring}>
-            <input type="hidden" name="deezer_artist_id" value={id} />
-            <input type="hidden" name="artist" value={artist.name} />
-            <input type="hidden" name="on" value={exploring ? "0" : "1"} />
-            <button type="submit" className="btn btn-sm pill" aria-pressed={exploring}>
-              {exploring ? "✓ Exploring — suggestions in To listen" : "I want to hear more"}
-            </button>
-          </form>
+          <Suspense fallback={<BioPlaceholder />}>
+            <Bio name={artist.name} />
+          </Suspense>
         </div>
+      </div>
+
+      <div className="stack gap-12">
+        <div className="stack gap-8" style={{ maxWidth: 420 }}>
+          <p style={{ fontWeight: 700 }}>
+            {loggedCount} of {records.length} {records.length === 1 ? "album" : "albums"} logged
+            {loggedCount && loggedCount === records.length ? " — complete!" : ""}
+          </p>
+          <div className="bar" style={{ height: 10 }} aria-hidden="true"><span style={{ width: `${pct}%` }} /></div>
+        </div>
+        <form action={setExploring}>
+          <input type="hidden" name="deezer_artist_id" value={id} />
+          <input type="hidden" name="artist" value={artist.name} />
+          <input type="hidden" name="on" value={exploring ? "0" : "1"} />
+          <button type="submit" className="btn btn-sm pill" aria-pressed={exploring}>
+            {exploring ? "✓ Exploring — suggestions in To listen" : "I want to hear more"}
+          </button>
+        </form>
       </div>
 
       <nav aria-label="Filter albums" className="row gap-8">
