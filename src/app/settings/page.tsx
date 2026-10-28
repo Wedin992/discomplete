@@ -5,6 +5,9 @@ import { signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
 import { LastfmCard } from "./LastfmCard";
 import { lastfmConfigured } from "@/lib/lastfm";
+import { isOwner } from "@/lib/owner";
+import { longDate } from "@/lib/format";
+import { REVISIONS } from "./guide/content";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -39,6 +42,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <p><strong>Android:</strong> <span className="muted">open it in Chrome, tap the ⋮ menu, then “Install app”.</span></p>
         <p className="muted small">It opens full screen like any other app, and stays in sync with the web.</p>
       </div>
+      {isOwner(user!.email) ? (
+        <div className="card stack gap-8">
+          <h2 className="eyebrow">Guide · only you</h2>
+          <p className="muted">How everything works right now. Version {REVISIONS[0].version}, updated {longDate(REVISIONS[0].date)}.</p>
+          <Link href="/settings/guide" className="btn" style={{ alignSelf: "flex-start" }}>Open the guide</Link>
+        </div>
+      ) : null}
       <div className="card stack gap-12">
         <h2 className="eyebrow">Signed in as</h2>
         <p>{user!.email}</p>

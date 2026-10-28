@@ -69,3 +69,8 @@ The service-role key is never needed by the app.
 
 - Supabase's built-in email sender is rate-limited (a few emails per hour). Fine for personal use; add your own SMTP (e.g. Resend) under *Authentication → Emails* before inviting others.
 - Covers are loaded from Deezer's CDN, not copied.
+
+## Owner guide
+
+`/settings/guide` is a guide only the owner sees (emails in `OWNER_EMAILS`, default kevin.wedin@ci.se).
+Content lives in `src/app/settings/guide/content.ts`: when a feature changes, edit the sections and add a new revision at the top of `REVISIONS`.
