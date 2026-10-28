@@ -286,3 +286,4 @@ body { -webkit-tap-highlight-color: transparent; }
 .quick-rate.compact .quick-star { width: 28px; height: 32px; font-size: 19px; }
 .quick-result { display: flex; align-items: center; gap: 16px; padding: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
 .mode-switch { display: flex; gap: 8px; flex-wrap: wrap; }
+.heard-it { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }

@@ -5,6 +5,7 @@ import { getPicks } from "@/lib/discover-store";
 import { SLOT_LABEL } from "@/lib/discover";
 import { logFromDeezer, notForMe, queueFromDeezer, shuffleDiscover } from "@/app/actions";
 import { PendingButton } from "@/components/PendingButton";
+import { HeardIt } from "./HeardIt";
 import { artistPath } from "@/lib/format";
 
 /** Three picks with roles, plus Shuffle. Used for "Today's three" and for a genre. */
@@ -57,6 +58,7 @@ export async function ThreePicks({ scope, source }: { scope: string; source: str
                   </form>
                 ) : null}
               </div>
+              <HeardIt deezerId={p.deezerId} title={p.title} scope={scope} slot={p.slot} canSwap={persisted} />
             </div>
           </li>
         ))}

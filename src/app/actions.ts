@@ -307,6 +307,17 @@ export async function notForMe(formData: FormData) {
   revalidatePath("/discover", "layout");
 }
 
+/** After "Already heard it": a new pick in that slot, without marking the old one "Not for me". */
+export async function swapPick(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const scope = String(formData.get("scope") ?? "");
+  const slot = String(formData.get("slot") ?? "") as Slot;
+  const deezerId = Number(formData.get("deezer_id"));
+  if (!validScope(scope) || !SLOTS.includes(slot) || !Number.isInteger(deezerId) || deezerId <= 0) return;
+  await dismissPick(supabase, user.id, scope, slot, deezerId, false);
+  revalidatePath("/discover", "layout");
+}
+
 /** "Not now" on a "Remember this?" reminder: don't bring that record up again for six months. */
 export async function snoozeRediscover(formData: FormData) {
   const { supabase, user } = await requireUser();

@@ -96,18 +96,20 @@ export async function shufflePicks(supabase: Supabase, userId: string, scope: st
 }
 
 /** "Not for me": remember it, and swap just that one. */
-export async function dismissPick(supabase: Supabase, userId: string, scope: string, slot: Slot, deezerId: number) {
+export async function dismissPick(supabase: Supabase, userId: string, scope: string, slot: Slot, deezerId: number, remember = true) {
   const before = await load(supabase, userId, scope);
   const pick = before.current?.picks.find((p) => p.slot === slot && p.deezerId === deezerId);
   if (!before.persisted || !before.current || !pick) return;
-  await supabase
-    .from("discover_dismissed")
-    .upsert({ user_id: userId, deezer_id: pick.deezerId, deezer_artist_id: pick.artistId, artist: pick.artist }, { onConflict: "user_id,deezer_id" });
+  // "Not for me" remembers it; a swap after "Already heard it" doesn't (the record is on your shelf now).
+  if (remember)
+    await supabase
+      .from("discover_dismissed")
+      .upsert({ user_id: userId, deezer_id: pick.deezerId, deezer_artist_id: pick.artistId, artist: pick.artist }, { onConflict: "user_id,deezer_id" });
 
   const { today, signals, current } = await load(supabase, userId, scope);
   const all = current?.picks ?? [];
   const n = all.length + (signals.dismissed.length % 7);
-  const { picks: fresh } = await build(signals, scope, `${userId}|${today}|${scope}|swap${n}|${deezerId}`, excluding(all), [slot]);
+  const { picks: fresh } = await build(signals, scope, `${userId}|${today}|${scope}|${remember ? "swap" : "heard"}${n}|${deezerId}`, excluding(all), [slot]);
   const next = all.flatMap((p) => (p.slot === slot && p.deezerId === deezerId ? fresh.slice(0, 1) : [p]));
   await supabase
     .from("discover_picks")
