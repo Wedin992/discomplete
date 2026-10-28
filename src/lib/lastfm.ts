@@ -78,7 +78,7 @@ export async function getTopAlbums(username: string, limit = 30): Promise<TopAlb
 const loose = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/\(.*?\)|\[.*?\]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 
 export const SESSION_GAP_H = 3; // a pause longer than this starts a new listening session
-export const MIN_SHARE = 0.7; // share of the album's tracks played in one session
+export const MIN_SHARE = 0.4; // share of the album's tracks played in one session
 export const MIN_TRACKS = 5; // …and at least this many (or the whole album if it's shorter)
 
 export type AlbumListen = {

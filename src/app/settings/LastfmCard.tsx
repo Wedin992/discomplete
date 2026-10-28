@@ -20,7 +20,7 @@ export function LastfmCard({ link, status, configured }: { link: { username: str
       {link ? (
         <>
           <p>
-            Connected to Last.fm as <strong>{link.username}</strong>. When you play most of an album, it shows up in your diary as a suggestion.
+            Connected to Last.fm as <strong>{link.username}</strong>. When you play a good part of an album, it shows up in your diary as a suggestion.
           </p>
           <form action={setLastfmAutolog} className="check">
             <input type="hidden" name="on" value={link.autolog ? "0" : "1"} />
@@ -42,7 +42,7 @@ export function LastfmCard({ link, status, configured }: { link: { username: str
       ) : (
         <>
           <p style={{ fontWeight: 700, fontSize: 17 }}>Using Spotify? Fill your diary automatically.</p>
-          <p className="muted">When you play a whole album, Discomplete suggests logging it — one tap, on the right day. Songs and playlists are ignored.</p>
+          <p className="muted">When you play an album, Discomplete suggests logging it — one tap, on the right day. Songs and playlists are ignored.</p>
           <ol className="lfm-steps muted">
             <li>Create a free account on <a href="https://www.last.fm/join" target="_blank" rel="noopener noreferrer">last.fm</a> (or log in).</li>
             <li>On Last.fm: Settings → Applications → <strong>Spotify Scrobbling → Connect</strong>.</li>
