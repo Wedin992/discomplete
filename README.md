@@ -72,5 +72,5 @@ The service-role key is never needed by the app.
 
 ## Owner guide
 
-`/settings/guide` is a guide only the owner sees (emails in `OWNER_EMAILS`, default kevin.wedin@ci.se).
+`/settings/guide` is a guide only the owner sees (emails in `OWNER_EMAILS`, default kevinwedin@gmail.com).
 Content lives in `src/app/settings/guide/content.ts`: when a feature changes, edit the sections and add a new revision at the top of `REVISIONS`.
