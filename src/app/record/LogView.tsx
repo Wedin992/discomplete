@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ListenOn, ListenOnPlaceholder } from "@/components/ListenOn";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
-import { longDate, todayIso, type Album } from "@/lib/format";
+import { artistPath, longDate, todayIso, type Album } from "@/lib/format";
 import { LogForm } from "./LogForm";
 
 export async function LogView({ album }: { album: Album }) {
@@ -30,7 +30,7 @@ export async function LogView({ album }: { album: Album }) {
         <div style={{ flex: "1 1 260px", minWidth: 0 }}>
           <p className="eyebrow">Logging · {longDate(today)}</p>
           <h1 className="title-m" style={{ marginTop: 4 }}>{album.title}</h1>
-          <p className="muted" style={{ marginTop: 4 }}>{album.artist}{album.release_year ? ` · ${album.release_year}` : ""}</p>
+          <p className="muted" style={{ marginTop: 4 }}>{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}{album.release_year ? ` · ${album.release_year}` : ""}</p>
         </div>
         <Link href="/log" className="btn">Change record</Link>
       </div>

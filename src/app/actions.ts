@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
-import { TAGS, logPath, todayIso, type Album } from "@/lib/format";
+import { TAGS, logPath, recordPath, todayIso, type Album } from "@/lib/format";
 import { translateToEnglish } from "@/lib/translate";
 import { getAlbum } from "@/lib/deezer";
 
@@ -245,4 +245,31 @@ export async function skipOnboarding() {
   await supabase.from("profiles").update({ onboarded_at: new Date().toISOString() }).eq("id", user.id);
   revalidatePath("/", "layout");
   redirect("/");
+}
+
+/** Tapping a record on an artist page: save it to the catalogue if needed, then open its page. */
+export async function openFromDeezer(formData: FormData) {
+  const { supabase } = await requireUser();
+  const deezerId = Number(formData.get("deezer_id"));
+  if (!Number.isInteger(deezerId) || deezerId <= 0) return;
+  const albumId = await ensureAlbum(supabase, deezerId);
+  if (!albumId) return;
+  const { data } = await supabase.from("albums").select("*").eq("id", albumId).maybeSingle();
+  redirect(data ? recordPath(data as Album) : "/");
+}
+
+/** "I want to hear more" on an artist page. */
+export async function setExploring(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const artistId = Number(formData.get("deezer_artist_id"));
+  const artist = String(formData.get("artist") ?? "").slice(0, 300);
+  if (!Number.isInteger(artistId) || artistId <= 0 || !artist) return;
+  if (formData.get("on") === "1") {
+    await supabase
+      .from("explore_artists")
+      .upsert({ user_id: user.id, deezer_artist_id: artistId, artist }, { onConflict: "user_id,deezer_artist_id", ignoreDuplicates: true });
+  } else {
+    await supabase.from("explore_artists").delete().eq("user_id", user.id).eq("deezer_artist_id", artistId);
+  }
+  revalidatePath("/", "layout");
 }

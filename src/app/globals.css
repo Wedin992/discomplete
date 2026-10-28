@@ -137,6 +137,17 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
 @keyframes toast { 0%, 85% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 .error { color: var(--danger); }
 
+/* artist page */
+.artist-photo { width: 160px; height: 160px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; background: #2f2f33; }
+.disc-cover { position: relative; display: block; border-radius: 4px; }
+.disc-cover.logged { outline: 3px solid var(--accent); outline-offset: 2px; }
+.disc-badge { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.tile-form { display: contents; }
+button.tile { background: none; border: 0; padding: 0; text-align: left; font: inherit; color: inherit; }
+.artist-link { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+.artist-link:hover { color: var(--accent-hover); border-bottom-color: currentColor; }
+@media (max-width: 720px) { .artist-photo { width: 112px; height: 112px; } }
+
 /* log search sheet (opens instantly over the current page) */
 .sheet { position: fixed; inset: 0; z-index: 40; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; animation: sheet-in 140ms ease-out; }
 .sheet-inner { padding-top: calc(24px + env(safe-area-inset-top)); padding-bottom: calc(40px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 24px; max-width: 760px; }

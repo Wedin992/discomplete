@@ -4,7 +4,7 @@ import { ListenOn, ListenOnPlaceholder } from "@/components/ListenOn";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { NoteText } from "@/components/NoteText";
-import { duration, formatLabel, kindLabel, logPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
+import { artistPath, duration, formatLabel, kindLabel, logPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
 import { toggleCollection, toggleToListen } from "@/app/actions";
 
 type Stats = { rating_count: number; avg_rating: number | null; r1: number; r2: number; r3: number; r4: number; r5: number };
@@ -51,7 +51,7 @@ export async function RecordView({ album }: { album: Album }) {
         <div className="stack gap-16" style={{ flex: "999 1 420px", minWidth: 0 }}>
           <p className="eyebrow">{metaLine}</p>
           <h1 className="title-xl" style={{ fontSize: "clamp(40px, 7vw, 68px)", lineHeight: 0.92 }}>{album.title}</h1>
-          <p style={{ fontSize: 24 }}>{album.artist}</p>
+          <p style={{ fontSize: 24 }}>{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}</p>
           {facts ? <div className="row gap-8"><span className="chip" style={{ fontSize: 12, padding: "5px 12px" }}>{facts}</span></div> : null}
           <div className="row gap-12" style={{ marginTop: 4 }}>
             <Link href={logPath(album)} className="btn btn-primary btn-lg">Log this listen</Link>

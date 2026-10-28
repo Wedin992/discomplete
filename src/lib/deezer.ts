@@ -197,3 +197,10 @@ export async function getYears(ids: number[]): Promise<Record<number, number | n
   const rows = await Promise.all(ids.map((id) => getAlbum(id).then((a) => [id, a.release_year] as const).catch(() => [id, null] as const)));
   return Object.fromEntries(rows);
 }
+
+export type ArtistInfo = { id: number; name: string; picture: string; albums: number; fans: number };
+
+export async function getArtist(artistId: number): Promise<ArtistInfo> {
+  const a = await get<{ id: number; name: string; picture_xl?: string; picture_big?: string; nb_album?: number; nb_fan?: number }>(`/artist/${artistId}`, 86400);
+  return { id: a.id, name: a.name, picture: a.picture_xl ?? a.picture_big ?? "", albums: a.nb_album ?? 0, fans: a.nb_fan ?? 0 };
+}

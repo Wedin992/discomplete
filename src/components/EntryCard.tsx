@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Cover } from "@/components/Cover";
 import { VisibilityIcon } from "@/components/Icons";
-import { formatLabel, kindLabel, recordPath, stars, visibilityLabel, type EntryWithAlbum } from "@/lib/format";
+import { artistPath, formatLabel, kindLabel, recordPath, stars, visibilityLabel, type EntryWithAlbum } from "@/lib/format";
 import { DeleteEntryButton } from "@/components/DeleteEntryButton";
 import { NoteText } from "@/components/NoteText";
 
@@ -15,7 +15,7 @@ export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
       <div className="entry-body">
         <div className="row gap-4" style={{ alignItems: "baseline", columnGap: 10 }}>
           <Link href={recordPath(a)} className="link-button entry-title">{a.title}</Link>
-          <span className="muted">{a.artist}</span>
+          {artistPath(a.artist, a.deezer_artist_id) ? <Link href={artistPath(a.artist, a.deezer_artist_id)!} className="muted artist-link">{a.artist}</Link> : <span className="muted">{a.artist}</span>}
         </div>
         <div className="meta">
           {entry.rating ? <span className="stars" aria-label={`${entry.rating} of 5`}>{stars(entry.rating)}</span> : null}

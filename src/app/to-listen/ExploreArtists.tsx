@@ -1,7 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 import { getUser } from "@/lib/supabase/server";
 import { baseTitle, getArtistAlbums, type ArtistAlbum } from "@/lib/deezer";
+import Link from "next/link";
 import { logFromDeezer, queueFromDeezer, stopExploring } from "@/app/actions";
+import { artistPath } from "@/lib/format";
 
 type Followed = { deezer_artist_id: number; artist: string; from: { title: string } | null };
 type Known = { deezer_id: number | null; title: string; deezer_artist_id: number | null };
@@ -55,7 +57,7 @@ export async function ExploreArtists() {
         <div key={s.deezer_artist_id} className="card stack gap-16">
           <div className="row gap-12" style={{ justifyContent: "space-between" }}>
             <div className="stack" style={{ minWidth: 0 }}>
-              <span style={{ fontWeight: 700, fontSize: 18 }}>{s.artist}</span>
+              <Link href={artistPath(s.artist, s.deezer_artist_id)!} className="artist-link" style={{ fontWeight: 700, fontSize: 18, alignSelf: "flex-start" }}>{s.artist}</Link>
               {s.from ? <span className="mono muted" style={{ fontSize: 11 }}>Because you logged {s.from.title}</span> : null}
             </div>
             <form action={stopExploring}>

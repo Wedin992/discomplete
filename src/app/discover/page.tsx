@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { getUser } from "@/lib/supabase/server";
 import { buildSuggestions, UNLOCK_AT, type KnownRecord, type LikedRecord } from "@/lib/discover";
 import { logFromDeezer, queueFromDeezer } from "@/app/actions";
+import { artistPath } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Discover" };
 
@@ -92,7 +93,7 @@ async function Suggestions({ rows, favourites, userId }: { rows: Row[]; favourit
           <img src={p.cover} alt="" className="cover cover-full" width={250} height={250} loading="lazy" />
           <div className="stack" style={{ minWidth: 0 }}>
             <span style={{ fontWeight: 700, lineHeight: 1.25 }}>{p.title}</span>
-            <span className="muted" style={{ fontSize: 14 }}>{p.artist}{p.year ? ` · ${p.year}` : ""}</span>
+            <span className="muted" style={{ fontSize: 14 }}><Link href={artistPath(p.artist, p.artistId)!} className="artist-link">{p.artist}</Link>{p.year ? ` · ${p.year}` : ""}</span>
             <span className="mono muted" style={{ fontSize: 11, marginTop: 4 }}>Because you liked {p.because.join(" and ")}</span>
           </div>
           <div className="row gap-8">

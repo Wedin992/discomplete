@@ -28,6 +28,26 @@ export function logPath(a: Linkable) {
   return `${recordPath(a)}/log`;
 }
 
+/** Same rules as the database's slugify(): "Björk" → "bjork", "Simon & Garfunkel" → "simon-and-garfunkel". */
+export function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/æ/g, "ae")
+    .replace(/ß/g, "ss")
+    .replace(/&/g, " and ")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ø/g, "o")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** /artist/metallica-119 — the Deezer artist id at the end keeps it unique. */
+export function artistPath(name: string, deezerArtistId: number | null | undefined) {
+  if (!deezerArtistId) return null;
+  return `/artist/${slugify(name) || "artist"}-${deezerArtistId}`;
+}
+
 export const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
 export type Entry = {
