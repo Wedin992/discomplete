@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { ListenOn, ListenOnPlaceholder } from "@/components/ListenOn";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { longDate, todayIso, type Album } from "@/lib/format";
@@ -32,6 +34,9 @@ export async function LogView({ album }: { album: Album }) {
         </div>
         <Link href="/log" className="btn">Change record</Link>
       </div>
+      <Suspense fallback={<ListenOnPlaceholder />}>
+        <ListenOn album={album} />
+      </Suspense>
       <LogForm
         albumId={album.id}
         today={today}

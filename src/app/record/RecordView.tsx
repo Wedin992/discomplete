@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { ListenOn, ListenOnPlaceholder } from "@/components/ListenOn";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { NoteText } from "@/components/NoteText";
@@ -59,6 +61,9 @@ export async function RecordView({ album }: { album: Album }) {
               <button type="submit" className="btn btn-lg" aria-pressed={inList}>{inList ? "✓ On your To listen" : "+ To listen"}</button>
             </form>
           </div>
+          <Suspense fallback={<ListenOnPlaceholder />}>
+            <ListenOn album={album} />
+          </Suspense>
           <div className="stack gap-8">
             <p className="eyebrow">In your collection</p>
             <div className="row gap-8">
