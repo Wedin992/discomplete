@@ -30,10 +30,12 @@ export async function ThreePicks({ scope, source }: { scope: string; source: str
       <ol className="three" aria-label="Three records for you">
         {picks.map((p) => (
           <li key={`${p.slot}-${p.deezerId}`} className="pick">
-            {p.cover ? <img src={p.cover} alt="" className="cover pick-cover" width={250} height={250} /> : <span className="cover pick-cover skeleton" aria-hidden="true" />}
+            <Link href={`/open/${p.deezerId}`} prefetch={false} className="pick-cover-link" tabIndex={-1} aria-hidden="true">
+              {p.cover ? <img src={p.cover} alt="" className="cover pick-cover" width={250} height={250} /> : <span className="cover pick-cover skeleton" />}
+            </Link>
             <div className="pick-body">
               <p className="eyebrow pick-role">{SLOT_LABEL[p.slot]}</p>
-              <p className="pick-title">{p.title}</p>
+              <p className="pick-title"><Link href={`/open/${p.deezerId}`} prefetch={false} className="pick-title-link">{p.title}</Link></p>
               <p className="muted" style={{ fontSize: 14 }}>
                 <Link href={artistPath(p.artist, p.artistId)!} className="artist-link">{p.artist}</Link>
                 {p.year ? ` · ${p.year}` : ""}

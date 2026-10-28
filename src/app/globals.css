@@ -302,3 +302,8 @@ body { -webkit-tap-highlight-color: transparent; }
 .fav-heart { flex: 0 0 auto; font-size: 20px; color: var(--muted); }
 .fav-track.on .fav-heart { color: var(--accent); }
 .fav-line { margin: 0; font-size: 14px; color: var(--text-soft); }
+.pick-cover-link { display: block; flex: 0 0 auto; border-radius: 4px; }
+.pick-cover-link:hover img { outline: 2px solid var(--line-strong); }
+.pick-title-link { color: var(--text); text-decoration: none; }
+.pick-title-link:hover { color: var(--accent-hover); text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 760px) { .pick-cover-link { width: 104px; flex: 0 0 104px; } .pick-cover-link .pick-cover { width: 100%; } }

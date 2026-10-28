@@ -9,7 +9,7 @@ export function HeardIt({ deezerId, title, scope, slot, canSwap }: { deezerId: n
   const [open, setOpen] = useState(false);
   if (!open)
     return (
-      <button type="button" className="btn-text small" style={{ minHeight: 40 }} onClick={() => setOpen(true)} aria-expanded={false}>
+      <button type="button" className="btn-text small" style={{ minHeight: 40, alignSelf: "flex-start", textAlign: "left" }} onClick={() => setOpen(true)} aria-expanded={false}>
         Already heard it
       </button>
     );
