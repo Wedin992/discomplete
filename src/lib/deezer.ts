@@ -204,3 +204,23 @@ export async function getArtist(artistId: number): Promise<ArtistInfo> {
   const a = await get<{ id: number; name: string; picture_xl?: string; picture_big?: string; nb_album?: number; nb_fan?: number }>(`/artist/${artistId}`, 86400);
   return { id: a.id, name: a.name, picture: a.picture_xl ?? a.picture_big ?? "", albums: a.nb_album ?? 0, fans: a.nb_fan ?? 0 };
 }
+
+export type FoundAlbum = { deezerId: number; artistId: number; artist: string; title: string; cover: string };
+const loose = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+
+/** Find a specific record on Deezer by artist and title (e.g. one picked from Wikidata). */
+export async function findAlbum(artist: string, title: string): Promise<FoundAlbum | null> {
+  const a = loose(artist);
+  const t = loose(baseTitle(title) || title);
+  const pick = (rows: DzAlbumLite[]) => {
+    const same = rows.filter((r) => loose(r.artist.name) === a && (r.record_type ?? "album") === "album");
+    const exact = same.filter((r) => loose(baseTitle(r.title) || r.title) === t);
+    const hit = exact.find((r) => isPlainTitle(r.title)) ?? exact[0] ?? same.find((r) => loose(r.title).startsWith(t));
+    return hit ? { deezerId: hit.id, artistId: hit.artist.id, artist: hit.artist.name, title: hit.title, cover: hit.cover_medium } : null;
+  };
+  const strict = await get<{ data: DzAlbumLite[] }>(`/search/album?q=${encodeURIComponent(`artist:"${artist}" album:"${title}"`)}&limit=10`, 2592000).catch(() => ({ data: [] }));
+  const found = pick(strict.data ?? []);
+  if (found) return found;
+  const plain = await get<{ data: DzAlbumLite[] }>(`/search/album?q=${encodeURIComponent(`${artist} ${title}`)}&limit=10`, 2592000).catch(() => ({ data: [] }));
+  return pick(plain.data ?? []);
+}

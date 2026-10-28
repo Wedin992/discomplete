@@ -6,6 +6,8 @@ import { getUser } from "@/lib/supabase/server";
 import { TAGS, logPath, recordPath, todayIso, type Album } from "@/lib/format";
 import { translateToEnglish } from "@/lib/translate";
 import { getAlbum } from "@/lib/deezer";
+import { dismissPick, shufflePicks } from "@/lib/discover-store";
+import { SLOTS, type Slot } from "@/lib/discover";
 
 async function requireUser() {
   const { supabase, user } = await getUser();
@@ -272,4 +274,27 @@ export async function setExploring(formData: FormData) {
     await supabase.from("explore_artists").delete().eq("user_id", user.id).eq("deezer_artist_id", artistId);
   }
   revalidatePath("/", "layout");
+}
+
+// ─────────────────────────────────────────────────────────────
+// Discover: Shuffle and "Not for me"
+// ─────────────────────────────────────────────────────────────
+const validScope = (s: string) => s === "daily" || /^genre:[a-z0-9-]{2,60}$/.test(s);
+
+export async function shuffleDiscover(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const scope = String(formData.get("scope") ?? "");
+  if (!validScope(scope)) return;
+  await shufflePicks(supabase, user.id, scope);
+  revalidatePath("/discover", "layout");
+}
+
+export async function notForMe(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const scope = String(formData.get("scope") ?? "");
+  const slot = String(formData.get("slot") ?? "") as Slot;
+  const deezerId = Number(formData.get("deezer_id"));
+  if (!validScope(scope) || !SLOTS.includes(slot) || !Number.isInteger(deezerId) || deezerId <= 0) return;
+  await dismissPick(supabase, user.id, scope, slot, deezerId);
+  revalidatePath("/discover", "layout");
 }

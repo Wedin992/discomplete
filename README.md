@@ -30,6 +30,7 @@ Not yet: "More like this" recommendations, Last.fm import, following friends.
 4. **Project Settings → API:** copy the *Project URL* and the *anon public* key.
 5. *(Optional)* **Translations:** run `supabase/migrations/0003_translations.sql` and add `DEEPL_API_KEY` in Vercel (DeepL API, free Developer plan). Public notes not in English get an English translation; private notes are never sent to DeepL.
 6. *(Optional)* **Exact Spotify links:** create an app at developer.spotify.com and add `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in Vercel. Without them the Spotify button opens a search.
+7. **Discover — Today's three:** run `supabase/migrations/0006_discover_three.sql` (keeps the day's picks, Shuffle, "Not for me" and taste-neighbour picks). Genre picks are built but switched off; set `DISCOVER_GENRES=1` in Vercel to try them.
 6. **Sign-up quiz and artist suggestions:** run `0004_explore_artists.sql` and `0005_onboarding.sql`.
 7. **Authentication → Emails → Templates:** in both *Magic Link* and *Confirm signup*, add the code so people can sign in inside the installed app (where email links open the browser instead):
    ```html
