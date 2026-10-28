@@ -11,7 +11,11 @@ import { artistPath } from "@/lib/format";
 /** Three picks with roles, plus Shuffle. Used for "Today's three" and for a genre. */
 export async function ThreePicks({ scope, source }: { scope: string; source: string }) {
   const { supabase, user } = await getUser();
-  const { picks, shufflesLeft, persisted, empty } = await getPicks(supabase, user!.id, scope);
+  const [{ picks, shufflesLeft, persisted, empty }, queuedRes] = await Promise.all([
+    getPicks(supabase, user!.id, scope),
+    supabase.from("to_listen").select("album:albums(deezer_id)").eq("user_id", user!.id),
+  ]);
+  const queued = new Set(((queuedRes.data ?? []) as unknown as { album: { deezer_id: number | null } | null }[]).map((r) => r.album?.deezer_id).filter(Boolean));
 
   if (!picks.length)
     return (
@@ -42,11 +46,15 @@ export async function ThreePicks({ scope, source }: { scope: string; source: str
               </p>
               <p className="mono muted pick-reason">{p.reason}</p>
               <div className="row gap-8 pick-actions">
-                <form action={queueFromDeezer}>
-                  <input type="hidden" name="deezer_id" value={p.deezerId} />
-                  <input type="hidden" name="source" value={`Discover · ${p.reason}`.slice(0, 200)} />
-                  <PendingButton className="btn btn-sm" pending="Adding…">+ To listen</PendingButton>
-                </form>
+                {queued.has(p.deezerId) ? (
+                  <Link href="/to-listen" className="btn btn-sm pill" aria-pressed="true">✓ In To listen</Link>
+                ) : (
+                  <form action={queueFromDeezer}>
+                    <input type="hidden" name="deezer_id" value={p.deezerId} />
+                    <input type="hidden" name="source" value={`Discover · ${p.reason}`.slice(0, 200)} />
+                    <PendingButton className="btn btn-sm" pending="Adding…">+ To listen</PendingButton>
+                  </form>
+                )}
                 <form action={logFromDeezer}>
                   <input type="hidden" name="deezer_id" value={p.deezerId} />
                   <PendingButton className="btn-text small" style={{ minHeight: 40 }} pending="Opening…">Log it</PendingButton>
