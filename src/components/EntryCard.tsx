@@ -19,7 +19,7 @@ export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
         </div>
         <div className="meta">
           {entry.rating ? <span className="stars" aria-label={`${entry.rating} of 5`}>{stars(entry.rating)}</span> : null}
-          <span>{kindLabel(entry.kind)} · {formatLabel(entry.format)}</span>
+          <span>{entry.kind === "before" ? "Heard before" : `${kindLabel(entry.kind)} · ${formatLabel(entry.format)}`}</span>
           {entry.tags.length ? <span>{entry.tags.join(" · ")}</span> : null}
         </div>
         {entry.note ? (

@@ -31,8 +31,9 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const today = todayIso();
 
   // Records you knew from before Discomplete go on the shelf, not on a day in the diary.
+  // Once you write about one, it shows in the diary on the day you wrote it.
   const fromBefore = entries.filter((e) => e.kind === "before");
-  const dated = entries.filter((e) => e.kind !== "before");
+  const dated = entries.filter((e) => e.kind !== "before" || !!e.note);
 
   // Group by day
   const groups: { label: string; items: EntryWithAlbum[] }[] = [];
@@ -45,7 +46,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
 
   // This month
   const month = today.slice(0, 7);
-  const monthEntries = dated.filter((e) => e.listened_on.startsWith(month));
+  const monthEntries = dated.filter((e) => e.kind !== "before" && e.listened_on.startsWith(month));
   const tagCount = new Map<string, number>();
   monthEntries.forEach((e) => e.tags.forEach((t) => tagCount.set(t, (tagCount.get(t) ?? 0) + 1)));
   const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t]) => t).join(", ");

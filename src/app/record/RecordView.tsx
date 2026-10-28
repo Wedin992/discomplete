@@ -30,6 +30,9 @@ export async function RecordView({ album }: { album: Album }) {
   const notes = (notesRes.data ?? []) as PublicNote[];
   const mine = (mineRes.data ?? []) as Entry[];
   const inList = !!listRes.data;
+  const dated = mine.filter((e) => e.kind !== "before");
+  const onlyBefore = mine.length > 0 && dated.length === 0;
+  const bestRating = mine.reduce((m, e) => Math.max(m, e.rating ?? 0), 0);
   const coll = (collRes.data ?? { vinyl: false, cd: false, wishlist: false }) as { vinyl: boolean; cd: boolean; wishlist: boolean };
 
   const total = stats?.rating_count ?? 0;
@@ -53,14 +56,36 @@ export async function RecordView({ album }: { album: Album }) {
           <h1 className="title-xl" style={{ fontSize: "clamp(40px, 7vw, 68px)", lineHeight: 0.92 }}>{album.title}</h1>
           <p style={{ fontSize: 24 }}>{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}</p>
           {facts ? <div className="row gap-8"><span className="chip" style={{ fontSize: 12, padding: "5px 12px" }}>{facts}</span></div> : null}
-          <div className="row gap-12" style={{ marginTop: 4 }}>
-            <Link href={logPath(album)} className="btn btn-primary btn-lg">Log this listen</Link>
-            <form action={toggleToListen}>
-              <input type="hidden" name="album_id" value={album.id} />
-              <input type="hidden" name="source" value="Saved from the record page" />
-              <button type="submit" className="btn btn-lg" aria-pressed={inList}>{inList ? "✓ On your To listen" : "+ To listen"}</button>
-            </form>
-          </div>
+          {mine.length ? (
+            <div className="card stack gap-12" style={{ marginTop: 4 }}>
+              <p className="row gap-8" style={{ alignItems: "baseline" }}>
+                <strong>{onlyBefore ? "On your shelf · Heard before" : `In your diary · ${dated.length === 1 ? `logged ${whenLabel(dated[0])}` : `${dated.length} listens, last ${whenLabel(dated[0])}`}`}</strong>
+                {bestRating ? <span className="stars">{stars(bestRating)}</span> : null}
+              </p>
+              <div className="row gap-12">
+                {onlyBefore ? (
+                  <>
+                    <Link href={`/entry/${mine[0].id}/edit`} className="btn btn-primary">{mine[0].note ? "Edit what you wrote" : "Write about it"}</Link>
+                    <Link href={logPath(album)} className="btn">Played it again</Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href={logPath(album)} className="btn btn-primary">Log another listen</Link>
+                    <Link href={`/entry/${dated[0].id}/edit`} className="btn">Edit latest</Link>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="row gap-12" style={{ marginTop: 4 }}>
+              <Link href={logPath(album)} className="btn btn-primary btn-lg">Log this listen</Link>
+              <form action={toggleToListen}>
+                <input type="hidden" name="album_id" value={album.id} />
+                <input type="hidden" name="source" value="Saved from the record page" />
+                <button type="submit" className="btn btn-lg" aria-pressed={inList}>{inList ? "✓ On your To listen" : "+ To listen"}</button>
+              </form>
+            </div>
+          )}
           <Suspense fallback={<ListenOnPlaceholder />}>
             <ListenOn album={album} />
           </Suspense>
@@ -134,11 +159,11 @@ export async function RecordView({ album }: { album: Album }) {
             <div key={e.id} className="card row gap-20" style={{ alignItems: "flex-start" }}>
               <div className="stack mono small muted" style={{ flex: "0 0 150px" }}>
                 <span>{whenLabel(e)}</span>
-                <span style={{ textTransform: "uppercase" }}>{kindLabel(e.kind)} · {formatLabel(e.format)}</span>
+                <span style={{ textTransform: "uppercase" }}>{e.kind === "before" ? kindLabel(e.kind) : `${kindLabel(e.kind)} · ${formatLabel(e.format)}`}</span>
                 {e.rating ? <span className="stars">{stars(e.rating)}</span> : null}
               </div>
               <div className="stack gap-4" style={{ flex: "1 1 300px", minWidth: 0 }}>
-                {e.note ? <NoteText note={e.note} lang={e.note_lang} english={e.note_en} /> : <p>—</p>}
+                {e.note ? <NoteText note={e.note} lang={e.note_lang} english={e.note_en} /> : e.kind === "before" ? <Link href={`/entry/${e.id}/edit`} className="muted" style={{ textDecoration: "none" }}>No words yet — write about it →</Link> : <p>—</p>}
                 <div className="row gap-16" style={{ justifyContent: "space-between" }}>
                   <span className="mono muted" style={{ fontSize: 11 }}>{visibilityLabel(e)}</span>
                   <Link href={`/entry/${e.id}/edit`} className="btn-text small" style={{ minHeight: 32, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Edit</Link>
