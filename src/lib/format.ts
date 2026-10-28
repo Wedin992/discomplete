@@ -56,7 +56,7 @@ export type Entry = {
   listened_on: string;
   rating: number | null;
   format: "stream" | "vinyl" | "cd";
-  kind: "first" | "relisten";
+  kind: "first" | "relisten" | "before";
   note: string | null;
   /** Detected language of the note and its English translation (migration 0003). */
   note_lang?: string | null;
@@ -89,7 +89,12 @@ export function formatLabel(f: string) {
 }
 
 export function kindLabel(k: string) {
-  return k === "relisten" ? "Relisten" : "First listen";
+  return k === "relisten" ? "Relisten" : k === "before" ? "Heard before" : "First listen";
+}
+
+/** When it was heard: a date, or "Before Discomplete" for records you knew already. */
+export function whenLabel(e: { kind: string; listened_on: string }) {
+  return e.kind === "before" ? "Before Discomplete" : shortDate(e.listened_on);
 }
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];

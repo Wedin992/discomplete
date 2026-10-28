@@ -7,9 +7,10 @@ import { Search } from "./Search";
 
 export const metadata: Metadata = { title: "Log a listen" };
 
-export default async function LogPage({ searchParams }: { searchParams: Promise<{ error?: string; q?: string }> }) {
+export default async function LogPage({ searchParams }: { searchParams: Promise<{ error?: string; q?: string; mode?: string }> }) {
   const { supabase } = await getUser();
-  const { error, q } = await searchParams;
+  const { error, q, mode } = await searchParams;
+  const before = mode === "before";
   const { data } = await supabase
     .from("entries")
     .select("album:albums(*)")
@@ -29,11 +30,11 @@ export default async function LogPage({ searchParams }: { searchParams: Promise<
   return (
     <section className="stack gap-28 narrow">
       <div>
-        <p className="eyebrow">Log a listen</p>
-        <h1 className="title-xl">What did you listen to?</h1>
+        <p className="eyebrow">{before ? "Heard before" : "Log a listen"}</p>
+        <h1 className="title-xl">{before ? "Records you know" : "What did you listen to?"}</h1>
       </div>
       {error ? <p className="error" role="alert">Couldn’t open that record. Try again in a moment.</p> : null}
-      <Search initialQuery={q ?? ""}>
+      <Search key={before ? "before" : "log"} initialQuery={q ?? ""} initialMode={before ? "before" : "log"} modeLinks>
         {recent.length ? (
           <div className="stack gap-12">
             <p className="eyebrow">Recently logged</p>

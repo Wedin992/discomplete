@@ -22,6 +22,8 @@ export type EntryDraft = {
   isPrivate: boolean;
   isAnonymous: boolean;
   listenedOn: string;
+  /** "first" or "before": offered when this is the record's only entry. */
+  kind?: string;
 };
 
 type Props = {
@@ -43,6 +45,9 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
   const [tags, setTags] = useState<string[]>(initial.tags);
   const [isPrivate, setIsPrivate] = useState(initial.isPrivate);
   const [isAnon, setIsAnon] = useState(initial.isAnonymous);
+  // New-to-me vs heard it before: offered for a record's first entry (and when editing that one).
+  const offerBefore = editing ? initial.kind === "first" || initial.kind === "before" : loggedBefore === 0;
+  const [heardBefore, setHeardBefore] = useState(initial.kind === "before");
 
   const visHelp = isPrivate
     ? "Private — only you will see this entry, and the rating isn’t counted."
@@ -56,6 +61,7 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
       {editing ? <input type="hidden" name="entry_id" value={entryId} /> : null}
       <input type="hidden" name="format" value={format} />
       <input type="hidden" name="rating" value={rating} />
+      {offerBefore ? <input type="hidden" name="kind_choice" value={heardBefore ? "before" : "first"} /> : null}
       {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
 
       <fieldset className="stack gap-8">
@@ -67,14 +73,25 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
             </button>
           ))}
         </div>
-        {!editing ? (
-          <p className="mono small muted">
-            {loggedBefore
-              ? `You’ve logged this ${loggedBefore}× before — saved as a relisten, so you can compare.`
-              : "First time in your diary — saved as a first listen."}
-          </p>
+        {!editing && loggedBefore ? (
+          <p className="mono small muted">You’ve logged this {loggedBefore}× before — saved as a relisten, so you can compare.</p>
         ) : null}
       </fieldset>
+
+      {offerBefore ? (
+        <fieldset className="stack gap-8">
+          <legend>Is it new to you?</legend>
+          <div className="row gap-8">
+            <button type="button" className="btn pill" aria-pressed={!heardBefore} onClick={() => setHeardBefore(false)}>First listen</button>
+            <button type="button" className="btn pill" aria-pressed={heardBefore} onClick={() => setHeardBefore(true)}>Heard it before</button>
+          </div>
+          <p className="mono small muted">
+            {heardBefore
+              ? "An old favourite or one you know from way back — no date needed. It goes on your shelf, not today’s diary."
+              : "First time you’ve properly listened to it."}
+          </p>
+        </fieldset>
+      ) : null}
 
       <fieldset>
         <legend style={{ marginBottom: 6 }}>Rating <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></legend>
@@ -125,10 +142,12 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
         </div>
       ) : null}
 
-      <div className="field" style={{ maxWidth: 260 }}>
-        <label htmlFor="listened_on" className="label">Listened on</label>
-        <input id="listened_on" name="listened_on" type="date" defaultValue={initial.listenedOn} max={today} className="input" />
-      </div>
+      {heardBefore ? null : (
+        <div className="field" style={{ maxWidth: 260 }}>
+          <label htmlFor="listened_on" className="label">Listened on</label>
+          <input id="listened_on" name="listened_on" type="date" defaultValue={initial.listenedOn} max={today} className="input" />
+        </div>
+      )}
 
       <div className="card stack gap-8">
         <p className="eyebrow">Who sees this</p>

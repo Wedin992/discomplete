@@ -32,6 +32,7 @@ Not yet: "More like this" recommendations, Last.fm import, following friends.
 6. *(Optional)* **Exact Spotify links:** create an app at developer.spotify.com and add `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in Vercel. Without them the Spotify button opens a search.
 7. **Discover — Today's three:** run `supabase/migrations/0006_discover_three.sql` (keeps the day's picks, Shuffle, "Not for me" and taste-neighbour picks). Genre picks are built but switched off; set `DISCOVER_GENRES=1` in Vercel to try them.
 8. **"Remember this?" reminders:** run `supabase/migrations/0007_rediscover.sql` (lets "Not now" snooze a record for six months).
+9. **"Heard it before":** run `supabase/migrations/0008_heard_before.sql` (lets entries be records you knew from before, with no date).
 6. **Sign-up quiz and artist suggestions:** run `0004_explore_artists.sql` and `0005_onboarding.sql`.
 7. **Authentication → Emails → Templates:** in both *Magic Link* and *Confirm signup*, add the code so people can sign in inside the installed app (where email links open the browser instead):
    ```html

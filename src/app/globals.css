@@ -274,3 +274,15 @@ body { -webkit-tap-highlight-color: transparent; }
   .pick-title { font-size: 17px; }
   .pick-actions .btn-sm { height: 36px; padding: 0 12px; font-size: 13px; }
 }
+
+/* Quick mode: rate records you know */
+.quick-rate { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.quick-stars { display: flex; }
+.quick-star { width: 40px; height: 40px; border: 0; background: none; padding: 0; font-size: 26px; line-height: 1; color: var(--star-off, #4a4a4f); }
+.quick-star.on { color: var(--accent); }
+.quick-star:disabled { opacity: 1; cursor: progress; }
+.quick-status { font-size: 11px; color: var(--muted); }
+.quick-rate.compact { gap: 4px 8px; }
+.quick-rate.compact .quick-star { width: 28px; height: 32px; font-size: 19px; }
+.quick-result { display: flex; align-items: center; gap: 16px; padding: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.mode-switch { display: flex; gap: 8px; flex-wrap: wrap; }

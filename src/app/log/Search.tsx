@@ -4,7 +4,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ChevronIcon, SearchIcon } from "@/components/Icons";
+import Link from "next/link";
 import { logFromDeezer } from "@/app/actions";
+import { QuickRate } from "@/components/QuickRate";
 import type { SearchAlbum, SearchTrack } from "@/lib/deezer";
 
 const TRIES = ["and justice for all", "kent", "rumours"];
@@ -20,10 +22,19 @@ function ResultButton({ children, transparent }: { children: React.ReactNode; tr
   );
 }
 
-type Props = { initialQuery: string; children?: React.ReactNode; autoFocus?: boolean };
+export type SearchMode = "log" | "before";
+type Props = {
+  initialQuery: string;
+  children?: React.ReactNode;
+  autoFocus?: boolean;
+  initialMode?: SearchMode;
+  /** On the /log page the switch navigates (so the page title follows); in the sheet it's local. */
+  modeLinks?: boolean;
+};
 
-export function Search({ initialQuery, children, autoFocus = true }: Props) {
+export function Search({ initialQuery, children, autoFocus = true, initialMode = "log", modeLinks = false }: Props) {
   const [query, setQuery] = useState(initialQuery);
+  const [mode, setMode] = useState<SearchMode>(initialMode);
   const [albums, setAlbums] = useState<SearchAlbum[]>([]);
   const [tracks, setTracks] = useState<SearchTrack[]>([]);
   const [years, setYears] = useState<Record<number, number | null>>({});
@@ -69,8 +80,32 @@ export function Search({ initialQuery, children, autoFocus = true }: Props) {
   const empty = query.trim().length < 2;
   const none = status === "done" && !albums.length && !tracks.length;
 
+  const modes: { value: SearchMode; label: string }[] = [
+    { value: "log", label: "Log a listen" },
+    { value: "before", label: "Add records you know" },
+  ];
+  const q = query.trim() ? `&q=${encodeURIComponent(query.trim())}` : "";
+
   return (
     <div className="stack gap-28">
+      <div className="stack gap-8">
+        <div className="mode-switch" role="group" aria-label="What are you adding?">
+          {modes.map((m) =>
+            modeLinks ? (
+              <Link key={m.value} href={m.value === "log" ? `/log${q ? `?${q.slice(1)}` : ""}` : `/log?mode=before${q}`} replace scroll={false} className="btn btn-sm pill" aria-pressed={mode === m.value} onClick={() => setMode(m.value)}>
+                {m.label}
+              </Link>
+            ) : (
+              <button key={m.value} type="button" className="btn btn-sm pill" aria-pressed={mode === m.value} onClick={() => setMode(m.value)}>
+                {m.label}
+              </button>
+            )
+          )}
+        </div>
+        {mode === "before" ? (
+          <p className="muted small">Records you’ve heard over the years: search, tap the stars, next. No dates, no notes — they go on your shelf and help Discover learn your taste.</p>
+        ) : null}
+      </div>
       <div className="field">
         <label htmlFor="search" className="muted small" style={{ fontWeight: 400 }}>Search albums, artists or tracks</label>
         <div className="search-box">
@@ -110,6 +145,17 @@ export function Search({ initialQuery, children, autoFocus = true }: Props) {
           <h2 className="eyebrow">Albums</h2>
           {albums.map((a) => {
             const year = a.year ?? years[a.deezerId] ?? null;
+            if (mode === "before")
+              return (
+                <div key={a.deezerId} className="quick-result">
+                  <img src={a.cover} alt="" width={64} height={64} className="cover cover-64" />
+                  <span className="result-text">
+                    <span style={{ fontSize: 17, fontWeight: 700 }}>{a.title}</span>
+                    <span className="muted" style={{ fontSize: 14 }}>{a.artist}{year ? ` · ${year}` : ""}</span>
+                    <QuickRate deezerId={a.deezerId} title={a.title} />
+                  </span>
+                </div>
+              );
             return (
               <form key={a.deezerId} action={logFromDeezer}>
                 <input type="hidden" name="deezer_id" value={a.deezerId} />
@@ -130,7 +176,7 @@ export function Search({ initialQuery, children, autoFocus = true }: Props) {
         </div>
       ) : null}
 
-      {tracks.length ? (
+      {tracks.length && mode === "log" ? (
         <div className="stack gap-12">
           <h2 className="eyebrow">Tracks</h2>
           {tracks.map((t) => (

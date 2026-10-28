@@ -30,9 +30,13 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const toListen = ((listRes.data ?? []) as unknown as { album: Album }[]).map((r) => r.album).filter(Boolean);
   const today = todayIso();
 
+  // Records you knew from before Discomplete go on the shelf, not on a day in the diary.
+  const fromBefore = entries.filter((e) => e.kind === "before");
+  const dated = entries.filter((e) => e.kind !== "before");
+
   // Group by day
   const groups: { label: string; items: EntryWithAlbum[] }[] = [];
-  for (const e of entries) {
+  for (const e of dated) {
     const label = (e.listened_on === today ? "Today · " : "") + longDate(e.listened_on);
     const last = groups[groups.length - 1];
     if (last && last.label === label) last.items.push(e);
@@ -41,7 +45,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
 
   // This month
   const month = today.slice(0, 7);
-  const monthEntries = entries.filter((e) => e.listened_on.startsWith(month));
+  const monthEntries = dated.filter((e) => e.listened_on.startsWith(month));
   const tagCount = new Map<string, number>();
   monthEntries.forEach((e) => e.tags.forEach((t) => tagCount.set(t, (tagCount.get(t) ?? 0) + 1)));
   const topTags = [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t]) => t).join(", ");
@@ -100,7 +104,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
                   You gave {rediscover.e.album.title} {stars(rediscover.e.rating)}
                 </p>
                 <p className="muted">
-                  Last played {ago(rediscover.gap)}. Want to hear it again — or something else by {rediscover.e.album.artist}?
+                  {latest.get(rediscover.e.album_id)!.kind === "before" ? "One of your old favourites." : `Last played ${ago(rediscover.gap)}.`} Want to hear it again — or something else by {rediscover.e.album.artist}?
                 </p>
               </div>
             </div>
@@ -178,6 +182,24 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         ) : null}
 
         <div className="card stack gap-12">
+          <div className="row gap-8" style={{ justifyContent: "space-between" }}>
+            <h2 className="eyebrow">Heard before · {fromBefore.length}</h2>
+            <Link href="/log?mode=before" className="btn-text small" style={{ color: "var(--accent)", minHeight: 32, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>+ Add</Link>
+          </div>
+          {fromBefore.length ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 6 }}>
+              {fromBefore.slice(0, 12).map((e) => (
+                <Link key={e.id} href={recordPath(e.album)} className="tile" aria-label={`${e.album.title}${e.rating ? `, ${e.rating} of 5` : ""}`}>
+                  <Cover album={e.album} size="full" />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="muted" style={{ fontSize: 14 }}>Records you’ve loved for years? Add them in seconds — no dates needed.</p>
+          )}
+        </div>
+
+        <div className="card stack gap-12">
           <h2 className="eyebrow">Next up · To listen</h2>
           {toListen.length ? (
             toListen.map((a) => (
@@ -198,7 +220,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
 
       {saved ? (
         <div className="toast" role="status">
-          {saved === "edited" ? "Changes saved" : saved === "deleted" ? "Entry deleted" : "Saved to your diary"}
+          {saved === "edited" ? "Changes saved" : saved === "deleted" ? "Entry deleted" : saved === "before" ? "Added to your shelf" : "Saved to your diary"}
         </div>
       ) : null}
     </div>

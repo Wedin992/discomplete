@@ -90,6 +90,7 @@ export async function saveEntry(formData: FormData) {
   const listenedOnRaw = String(formData.get("listened_on") ?? "");
   const listenedOn = /^\d{4}-\d{2}-\d{2}$/.test(listenedOnRaw) && listenedOnRaw <= todayIso() ? listenedOnRaw : todayIso();
 
+  const kindChoice = String(formData.get("kind_choice") ?? "");
   const fields: Record<string, unknown> = {
     listened_on: listenedOn,
     rating,
@@ -133,8 +134,11 @@ export async function saveEntry(formData: FormData) {
     // Editing: first listen / relisten stays as it was logged.
     const update = (values: Record<string, unknown>) =>
       supabase.from("entries").update({ ...values, updated_at: new Date().toISOString() }).eq("id", entryId).eq("user_id", user.id);
+    // The first entry of a record can switch between "first listen" and "heard it before".
+    if ((kindChoice === "first" || kindChoice === "before") && (before as { kind?: string } | null)?.kind !== "relisten") fields.kind = kindChoice;
     let { error } = await update(fields);
     if (missingColumn(error)) ({ error } = await update(withoutTranslation()));
+    if (error && fields.kind === "before") ({ error } = await update({ ...withoutTranslation(), kind: "first" })); // before migration 0008
     if (error) throw new Error("Could not save your changes.");
     await syncExplore(supabase, user.id, albumId, formData);
     revalidatePath("/", "layout");
@@ -152,16 +156,20 @@ export async function saveEntry(formData: FormData) {
       ...values,
       user_id: user.id,
       album_id: albumId,
-      kind: (count ?? 0) > 0 ? "relisten" : "first",
+      kind: (count ?? 0) > 0 ? "relisten" : kindChoice === "before" ? "before" : "first",
     });
   let { error } = await insert(fields);
   if (missingColumn(error)) ({ error } = await insert(withoutTranslation()));
+  if (error && kindChoice === "before" && !count) {
+    // Before migration 0008 'before' isn't allowed yet: save it as a first listen.
+    ({ error } = await supabase.from("entries").insert({ ...withoutTranslation(), user_id: user.id, album_id: albumId, kind: "first" }));
+  }
   if (error) throw new Error("Could not save the entry.");
 
   await supabase.from("to_listen").delete().eq("user_id", user.id).eq("album_id", albumId);
   await syncExplore(supabase, user.id, albumId, formData);
   revalidatePath("/", "layout");
-  redirect("/?saved=1");
+  redirect(kindChoice === "before" && !count ? "/?saved=before" : "/?saved=1");
 }
 
 export async function deleteEntry(formData: FormData) {
@@ -308,4 +316,31 @@ export async function snoozeRediscover(formData: FormData) {
   until.setUTCMonth(until.getUTCMonth() + 6);
   await supabase.from("rediscover_snoozed").upsert({ user_id: user.id, album_id: albumId, until: until.toISOString().slice(0, 10) }, { onConflict: "user_id,album_id" });
   revalidatePath("/");
+}
+
+/**
+ * Quick mode, "records you know": rate a record straight from search or the artist page.
+ * Saved as heard-before (no date, no note). If it's already on your shelf the rating is updated;
+ * a record already logged with a date is left as it is.
+ */
+export async function quickRate(deezerId: number, rating: number): Promise<{ status: "added" | "updated" | "logged" | "error" }> {
+  const { supabase, user } = await requireUser();
+  if (!Number.isInteger(deezerId) || deezerId <= 0 || !Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  const albumId = await ensureAlbum(supabase, deezerId);
+  if (!albumId) return { status: "error" };
+  const { data: existing } = await supabase.from("entries").select("id, kind").eq("user_id", user.id).eq("album_id", albumId);
+  const rows = (existing ?? []) as { id: string; kind: string }[];
+  if (rows.some((r) => r.kind !== "before")) return { status: "logged" };
+  if (rows.length) {
+    const { error } = await supabase.from("entries").update({ rating, updated_at: new Date().toISOString() }).eq("id", rows[0].id).eq("user_id", user.id);
+    if (error) return { status: "error" };
+    revalidatePath("/", "layout");
+    return { status: "updated" };
+  }
+  let { error } = await supabase.from("entries").insert({ user_id: user.id, album_id: albumId, rating, kind: "before", listened_on: todayIso() });
+  if (error) ({ error } = await supabase.from("entries").insert({ user_id: user.id, album_id: albumId, rating, kind: "first", listened_on: todayIso() })); // before migration 0008
+  if (error) return { status: "error" };
+  await supabase.from("to_listen").delete().eq("user_id", user.id).eq("album_id", albumId);
+  revalidatePath("/", "layout");
+  return { status: "added" };
 }

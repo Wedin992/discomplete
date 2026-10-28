@@ -8,6 +8,7 @@ import { artistPath, recordPath, stars, type Album } from "@/lib/format";
 import { openFromDeezer, setExploring } from "@/app/actions";
 import { Suspense } from "react";
 import { getArtistBio } from "@/lib/wiki";
+import { QuickRate } from "@/components/QuickRate";
 
 async function Bio({ name }: { name: string }) {
   const bio = await getArtistBio(name).catch(() => null);
@@ -171,13 +172,19 @@ export default async function ArtistPage({ params, searchParams }: { params: Par
                 )}
               </>
             );
-            return s.album ? (
-              <Link key={d.deezerId} href={recordPath(s.album)} className="tile">{inner}</Link>
+            const tile = s.album ? (
+              <Link href={recordPath(s.album)} className="tile">{inner}</Link>
             ) : (
-              <form key={d.deezerId} action={openFromDeezer} className="tile-form">
+              <form action={openFromDeezer} className="tile-form">
                 <input type="hidden" name="deezer_id" value={d.deezerId} />
                 <button type="submit" className="tile">{inner}</button>
               </form>
+            );
+            return (
+              <div key={d.deezerId} className="stack gap-4" style={{ minWidth: 0 }}>
+                {tile}
+                {s.logged ? null : <QuickRate deezerId={d.deezerId} title={d.title} compact />}
+              </div>
             );
           })}
         </div>

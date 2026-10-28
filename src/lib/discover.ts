@@ -69,8 +69,9 @@ export function tasteProfile(s: Signals): Map<number, Taste> {
   for (const e of s.entries) {
     const r = e.rating;
     let w = r == null ? 0.3 : ({ 1: -2, 2: -1, 3: 1, 4: 2, 5: 3 } as Record<number, number>)[r] ?? 0;
-    if (e.kind === "relisten" && w > 0) w += 1; // coming back to a record is a strong signal
-    const age = Math.max(0, (now - Date.parse(e.listened_on)) / DAY);
+    if ((e.kind === "relisten" || e.kind === "before") && w > 0) w += 1; // coming back to a record, or an old favourite: a strong signal
+    // A record known from before Discomplete counts as taste, not as recent listening.
+    const age = e.kind === "before" ? 365 : Math.max(0, (now - Date.parse(e.listened_on)) / DAY);
     w *= 0.5 + 0.5 * Math.exp(-age / 180); // what you've played lately counts more
     add(e.album.deezer_artist_id, e.album.artist, w, "rating", r && r >= 3 ? { title: e.album.title, rating: r } : undefined);
   }

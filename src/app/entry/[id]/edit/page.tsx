@@ -27,7 +27,7 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
       <div className="row gap-16">
         <Cover album={album} size="96" />
         <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-          <p className="eyebrow">Editing · {kindLabel(entry.kind)} · {longDate(entry.listened_on)}</p>
+          <p className="eyebrow">Editing · {kindLabel(entry.kind)}{entry.kind === "before" ? "" : ` · ${longDate(entry.listened_on)}`}</p>
           <h1 className="title-m" style={{ marginTop: 4 }}>{album.title}</h1>
           <p className="muted" style={{ marginTop: 4 }}>{album.artist}{album.release_year ? ` · ${album.release_year}` : ""}</p>
         </div>
@@ -46,6 +46,7 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
           isPrivate: entry.is_private,
           isAnonymous: entry.is_anonymous,
           listenedOn: entry.listened_on,
+          kind: entry.kind,
         }}
       />
       <div className="card-dashed row gap-12" style={{ justifyContent: "space-between" }}>

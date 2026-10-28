@@ -1,0 +1,44 @@
+"use client";
+import { useState, useTransition } from "react";
+import { quickRate } from "@/app/actions";
+
+const MESSAGES = { added: "On your shelf", updated: "Rating updated", logged: "Already in your diary", error: "Couldn’t save — try again" } as const;
+
+/** Five tap-to-rate stars that save a record as "heard before" right away. */
+export function QuickRate({ deezerId, title, initial = 0, compact = false }: { deezerId: number; title: string; initial?: number; compact?: boolean }) {
+  const [rating, setRating] = useState(initial);
+  const [status, setStatus] = useState<keyof typeof MESSAGES | null>(initial ? "added" : null);
+  const [pending, start] = useTransition();
+
+  const rate = (n: number) => {
+    setRating(n);
+    start(async () => {
+      const res = await quickRate(deezerId, n);
+      setStatus(res.status);
+      if (res.status === "error" || res.status === "logged") setRating(initial);
+    });
+  };
+
+  return (
+    <div className={`quick-rate${compact ? " compact" : ""}`} role="group" aria-label={`Rate ${title}`}>
+      <div className="quick-stars">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={`quick-star${n <= rating ? " on" : ""}`}
+            aria-label={`${n} ${n === 1 ? "star" : "stars"}`}
+            aria-pressed={n === rating}
+            disabled={pending}
+            onClick={() => rate(n)}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      <span className="mono quick-status" aria-live="polite">
+        {pending ? "Saving…" : status ? (status === "added" || status === "updated" ? `✓ ${MESSAGES[status]}` : MESSAGES[status]) : compact ? "I know this" : "Tap to rate"}
+      </span>
+    </div>
+  );
+}

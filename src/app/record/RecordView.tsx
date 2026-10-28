@@ -4,7 +4,7 @@ import { ListenOn, ListenOnPlaceholder } from "@/components/ListenOn";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { NoteText } from "@/components/NoteText";
-import { artistPath, duration, formatLabel, kindLabel, logPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
+import { whenLabel, artistPath, duration, formatLabel, kindLabel, logPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
 import { toggleCollection, toggleToListen } from "@/app/actions";
 
 type Stats = { rating_count: number; avg_rating: number | null; r1: number; r2: number; r3: number; r4: number; r5: number };
@@ -133,7 +133,7 @@ export async function RecordView({ album }: { album: Album }) {
           {mine.map((e) => (
             <div key={e.id} className="card row gap-20" style={{ alignItems: "flex-start" }}>
               <div className="stack mono small muted" style={{ flex: "0 0 150px" }}>
-                <span>{shortDate(e.listened_on)}</span>
+                <span>{whenLabel(e)}</span>
                 <span style={{ textTransform: "uppercase" }}>{kindLabel(e.kind)} · {formatLabel(e.format)}</span>
                 {e.rating ? <span className="stars">{stars(e.rating)}</span> : null}
               </div>
