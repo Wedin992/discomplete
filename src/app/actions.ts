@@ -470,4 +470,5 @@ export async function backToToListen(formData: FormData) {
   await parkInToListen(supabase, user.id, (data as { deezer_id: number }).deezer_id);
   await supabase.from("lastfm_suggestions").update({ status: "dismissed" }).eq("id", id).eq("user_id", user.id);
   revalidatePath("/", "layout");
+  redirect("/?saved=tolisten");
 }

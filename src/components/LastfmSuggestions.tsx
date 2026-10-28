@@ -148,7 +148,7 @@ export function Turntable({ items }: { items: Suggestion[] }) {
                 </details>
                 <form action={backToToListen}>
                   <input type="hidden" name="id" value={s.id} />
-                  <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Put it back</PendingButton>
+                  <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Move to To listen</PendingButton>
                 </form>
               </div>
             </div>
