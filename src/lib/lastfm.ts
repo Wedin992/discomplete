@@ -80,6 +80,13 @@ const loose = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/
 export const SESSION_GAP_H = 3; // a pause longer than this starts a new listening session
 export const MIN_SHARE = 0.4; // share of the album's tracks played in one session
 export const MIN_TRACKS = 5; // …and at least this many (or the whole album if it's shorter)
+export const COMPLETE_SHARE = 0.7; // from here it counts as having heard the album
+export const DONE_SHARE = 0.9; // an album you're "on" counts as finished from here
+export const SETTLE_MIN = 45; // wait this long after the last track before suggesting (you may just be on a break)
+
+/** How a scrobble's album is recognised across syncs. */
+export const albumKey = (artist: string, album: string) => `${loose(artist)}|${loose(baseTitle(album) || album)}`;
+export const trackKey = (track: string) => loose(track);
 
 export type AlbumListen = {
   deezerId: number;
@@ -90,30 +97,36 @@ export type AlbumListen = {
   playedOn: string; // YYYY-MM-DD, Stockholm
   tracksPlayed: number;
   totalTracks: number;
+  key: string; // albumKey of the scrobbles
+  tracks: string[]; // trackKey of each distinct track played
+  lastUts: number;
 };
 
 const stockholmDay = (uts: number) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm" }).format(new Date(uts * 1000));
 
 /** Groups scrobbles into sessions per album and keeps the ones that look like playing the album. */
-export async function spotAlbumListens(scrobbles: Scrobble[]): Promise<AlbumListen[]> {
-  type Session = { artist: string; album: string; start: number; last: number; tracks: Set<string> };
+export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> = new Set()): Promise<AlbumListen[]> {
+  type Session = { key: string; artist: string; album: string; start: number; last: number; tracks: Set<string> };
   const open = new Map<string, Session>();
   const done: Session[] = [];
   for (const s of scrobbles) {
-    const key = `${loose(s.artist)}|${loose(baseTitle(s.album) || s.album)}`;
+    const key = albumKey(s.artist, s.album);
+    if (skip.has(key)) continue; // already being followed
     const cur = open.get(key);
     if (cur && s.uts - cur.last <= SESSION_GAP_H * 3600) {
       cur.tracks.add(loose(s.track));
       cur.last = s.uts;
     } else {
       if (cur) done.push(cur);
-      open.set(key, { artist: s.artist, album: s.album, start: s.uts, last: s.uts, tracks: new Set([loose(s.track)]) });
+      open.set(key, { key, artist: s.artist, album: s.album, start: s.uts, last: s.uts, tracks: new Set([loose(s.track)]) });
     }
   }
   done.push(...open.values());
 
-  // Only sessions with a handful of different tracks are worth a Deezer lookup.
-  const candidates = done.filter((s) => s.tracks.size >= Math.min(4, MIN_TRACKS)).slice(-40);
+  // Only sessions with a handful of different tracks are worth a Deezer lookup — and only once
+  // they've settled: a session that's still going (or on a short break) waits.
+  const settled = Date.now() / 1000 - SETTLE_MIN * 60;
+  const candidates = done.filter((s) => s.tracks.size >= Math.min(4, MIN_TRACKS) && s.last <= settled).slice(-40);
   const found = await Promise.all(
     candidates.map(async (s) => {
       const hit = await findAlbum(s.artist, s.album).catch(() => null);
@@ -132,6 +145,9 @@ export async function spotAlbumListens(scrobbles: Scrobble[]): Promise<AlbumList
         playedOn: stockholmDay(s.start),
         tracksPlayed: played,
         totalTracks: total,
+        key: s.key,
+        tracks: [...s.tracks],
+        lastUts: s.last,
       } satisfies AlbumListen;
     })
   );

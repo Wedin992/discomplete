@@ -5,7 +5,7 @@ import { Cover } from "@/components/Cover";
 import { EntryCard } from "@/components/EntryCard";
 import { rng } from "@/lib/discover";
 import { snoozeRediscover } from "@/app/actions";
-import { LastfmSuggestions, type Suggestion } from "@/components/LastfmSuggestions";
+import { LastfmSuggestions, Turntable, type Suggestion } from "@/components/LastfmSuggestions";
 import { LastfmSync } from "@/components/LastfmSync";
 import { artistPath, daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
 
@@ -30,17 +30,21 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
     supabase.from("lastfm_links").select("username").eq("user_id", user!.id).maybeSingle(),
     supabase
       .from("lastfm_suggestions")
-      .select("id, deezer_id, title, artist, cover, played_on, tracks_played, total_tracks", { count: "exact" })
+      .select("id, deezer_id, title, artist, cover, played_on, tracks_played, total_tracks, status")
       .eq("user_id", user!.id)
-      .eq("status", "pending")
+      .in("status", ["pending", "listening", "finished"])
       .gte("played_on", since14)
       .order("played_on", { ascending: false })
-      .limit(3),
+      .limit(20),
   ]);
   // Before migration 0010 these tables don't exist: then there's simply nothing from Last.fm.
   const lastfmLinked = !lfmLinkRes.error && !!lfmLinkRes.data;
-  const suggestions = (lfmRes.error ? [] : lfmRes.data ?? []) as Suggestion[];
-  const moreSuggestions = Math.max(0, (lfmRes.count ?? 0) - suggestions.length);
+  const lfmAll = (lfmRes.error ? [] : lfmRes.data ?? []) as Suggestion[];
+  const turntable = lfmAll.filter((s) => s.status === "listening").slice(0, 2);
+  // Finished ones ("how was it?") first, then the newest; three at most.
+  const asks = lfmAll.filter((s) => s.status !== "listening").sort((a, b) => (a.status === "finished" ? -1 : 0) - (b.status === "finished" ? -1 : 0));
+  const suggestions = asks.slice(0, 3);
+  const moreSuggestions = Math.max(0, asks.length - suggestions.length);
   const snoozed = new Set(((snoozeRes.data ?? []) as { album_id: string }[]).map((r) => r.album_id));
   const entries = (entriesRes.data ?? []) as unknown as EntryWithAlbum[];
   const toListen = ((listRes.data ?? []) as unknown as { album: Album }[]).map((r) => r.album).filter(Boolean);
@@ -110,6 +114,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </div>
 
         {lastfmLinked ? <LastfmSync /> : null}
+        <Turntable items={turntable} />
         <LastfmSuggestions items={suggestions} more={moreSuggestions} />
 
         {rediscover ? (

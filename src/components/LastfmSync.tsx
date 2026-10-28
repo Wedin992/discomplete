@@ -9,8 +9,8 @@ export function LastfmSync() {
     let cancelled = false;
     fetch("/api/lastfm/sync", { method: "POST" })
       .then((r) => r.json())
-      .then((r: { added?: number }) => {
-        if (!cancelled && r.added) router.refresh();
+      .then((r: { added?: number; changed?: number }) => {
+        if (!cancelled && (r.added || r.changed)) router.refresh();
       })
       .catch(() => {});
     return () => {

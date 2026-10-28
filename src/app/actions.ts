@@ -8,7 +8,7 @@ import { translateToEnglish } from "@/lib/translate";
 import { getAlbum } from "@/lib/deezer";
 import { dismissPick, shufflePicks } from "@/lib/discover-store";
 import { getLastfmUser, LastfmError, looseName } from "@/lib/lastfm";
-import { logAlbumListen, syncLastfm } from "@/lib/lastfm-sync";
+import { logAlbumListen, parkInToListen, syncLastfm } from "@/lib/lastfm-sync";
 import { SLOTS, type Slot } from "@/lib/discover";
 
 async function requireUser() {
@@ -448,5 +448,26 @@ export async function dismissSuggestion(formData: FormData) {
     await supabase.from("lastfm_muted").upsert({ user_id: user.id, kind: "artist", key: looseName(s.artist), label: s.artist });
     await supabase.from("lastfm_suggestions").update({ status: "dismissed" }).eq("user_id", user.id).eq("status", "pending").eq("artist", s.artist);
   }
+  revalidatePath("/", "layout");
+}
+
+/** "I'm on it": the album goes on the turntable and its progress follows your scrobbles. */
+export async function onTheTurntable(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+  await supabase.from("lastfm_suggestions").update({ status: "listening" }).eq("id", id).eq("user_id", user.id);
+  revalidatePath("/", "layout");
+}
+
+/** "I'll get back to it" / "Put it back": into To listen, off the diary. */
+export async function backToToListen(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return;
+  const { data } = await supabase.from("lastfm_suggestions").select("deezer_id").eq("id", id).eq("user_id", user.id).maybeSingle();
+  if (!data) return;
+  await parkInToListen(supabase, user.id, (data as { deezer_id: number }).deezer_id);
+  await supabase.from("lastfm_suggestions").update({ status: "dismissed" }).eq("id", id).eq("user_id", user.id);
   revalidatePath("/", "layout");
 }

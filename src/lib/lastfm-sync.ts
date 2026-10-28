@@ -1,7 +1,7 @@
 // Server-only: turns new scrobbles into "Looks like you listened to …" suggestions.
 import type { getUser } from "@/lib/supabase/server";
 import { getAlbum } from "@/lib/deezer";
-import { getRecentScrobbles, lastfmConfigured, looseName, spotAlbumListens, type AlbumListen } from "@/lib/lastfm";
+import { albumKey, COMPLETE_SHARE, DONE_SHARE, getRecentScrobbles, lastfmConfigured, looseName, spotAlbumListens, trackKey, type AlbumListen, type Scrobble } from "@/lib/lastfm";
 import { todayIso } from "@/lib/format";
 
 type Supabase = Awaited<ReturnType<typeof getUser>>["supabase"];
@@ -40,13 +40,20 @@ export async function logAlbumListen(supabase: Supabase, userId: string, deezerI
   return true;
 }
 
+/** "I'll get back to it" (or left on the turntable for days): into To listen. */
+export async function parkInToListen(supabase: Supabase, userId: string, deezerId: number) {
+  const albumId = await ensureAlbumId(supabase, deezerId);
+  if (!albumId) return;
+  await supabase.from("to_listen").upsert({ user_id: userId, album_id: albumId, source: "Started on Spotify" }, { onConflict: "user_id,album_id", ignoreDuplicates: true });
+}
+
 function daysAgo(n: number) {
   const d = new Date(todayIso() + "T12:00:00Z");
   d.setUTCDate(d.getUTCDate() - n);
   return d.toISOString().slice(0, 10);
 }
 
-export async function syncLastfm(supabase: Supabase, userId: string, opts: { force?: boolean } = {}): Promise<{ added: number; error?: string }> {
+export async function syncLastfm(supabase: Supabase, userId: string, opts: { force?: boolean } = {}): Promise<{ added: number; changed?: number; error?: string }> {
   if (!lastfmConfigured()) return { added: 0, error: "not-configured" };
   const { data: linkRow, error: linkErr } = await supabase.from("lastfm_links").select("username, autolog, synced_at").eq("user_id", userId).maybeSingle();
   if (linkErr || !linkRow) return { added: 0 };
@@ -56,9 +63,9 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
 
   // A little overlap with the last sync, so a session that was still going isn't cut in half.
   const from = link.synced_at ? Date.parse(link.synced_at) / 1000 - 6 * 3600 : now / 1000 - FIRST_LOOK_DAYS * 86400;
-  let listens: AlbumListen[];
+  let scrobbles: Scrobble[];
   try {
-    listens = await spotAlbumListens(await getRecentScrobbles(link.username, from));
+    scrobbles = await getRecentScrobbles(link.username, from);
   } catch (e) {
     return { added: 0, error: e instanceof Error ? e.message : "Last.fm error" };
   }
@@ -66,24 +73,70 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
   const since = daysAgo(FIRST_LOOK_DAYS + 7);
   const [mutedRes, sugRes, entriesRes] = await Promise.all([
     supabase.from("lastfm_muted").select("kind, key").eq("user_id", userId),
-    supabase.from("lastfm_suggestions").select("deezer_id, played_on").eq("user_id", userId).gte("played_on", since),
+    supabase.from("lastfm_suggestions").select("id, deezer_id, played_on, status, lfm_key, tracks, total_tracks, last_played_at").eq("user_id", userId).gte("played_on", since),
     supabase.from("entries").select("listened_on, album:albums!inner(deezer_id)").eq("user_id", userId).gte("listened_on", since),
   ]);
+  type Row = { id: string; deezer_id: number; played_on: string; status: string; lfm_key: string | null; tracks: string[] | null; total_tracks: number; last_played_at: string | null };
   const muted = new Set(((mutedRes.data ?? []) as { kind: string; key: string }[]).map((m) => `${m.kind}:${m.key}`));
-  const earlier = (sugRes.data ?? []) as { deezer_id: number; played_on: string }[];
+  const earlier = (sugRes.data ?? []) as Row[];
   const logged = new Set(((entriesRes.data ?? []) as unknown as { listened_on: string; album: { deezer_id: number } }[]).map((e) => `${e.album.deezer_id}|${e.listened_on}`));
   const within7 = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) < 7 * 86400_000;
 
+  // 1. Albums already suggested or on the turntable: add whatever you've played of them since.
+  const active = earlier.filter((r) => (r.status === "pending" || r.status === "listening") && r.lfm_key);
+  const byKey = new Map(active.map((r) => [r.lfm_key!, r]));
+  const grown = new Map<string, { tracks: Set<string>; last: number }>();
+  for (const sc of scrobbles) {
+    const row = byKey.get(albumKey(sc.artist, sc.album));
+    if (!row) continue;
+    const g = grown.get(row.id) ?? { tracks: new Set(row.tracks ?? []), last: row.last_played_at ? Date.parse(row.last_played_at) / 1000 : 0 };
+    g.tracks.add(trackKey(sc.track));
+    g.last = Math.max(g.last, sc.uts);
+    grown.set(row.id, g);
+  }
+  let changed = 0;
+  for (const row of active) {
+    const g = grown.get(row.id);
+    const tracks = g ? [...g.tracks] : row.tracks ?? [];
+    const last = g ? g.last * 1000 : row.last_played_at ? Date.parse(row.last_played_at) : Date.parse(row.played_on);
+    const share = Math.min(tracks.length, row.total_tracks) / Math.max(1, row.total_tracks);
+    const quietH = (now - last) / 3_600_000;
+    let status = row.status;
+    if (row.status === "listening") {
+      if (share >= DONE_SHARE || (quietH >= 24 && share >= COMPLETE_SHARE)) status = "finished"; // done: ask how it was
+      else if (quietH >= 72) status = "parked"; // left alone for days: it goes to To listen
+    }
+    if (!g && status === row.status) continue;
+    if (status === "parked") {
+      await parkInToListen(supabase, userId, row.deezer_id);
+      status = "dismissed";
+    }
+    await supabase
+      .from("lastfm_suggestions")
+      .update({ tracks, tracks_played: Math.min(tracks.length, row.total_tracks), last_played_at: new Date(last).toISOString(), status })
+      .eq("id", row.id)
+      .eq("user_id", userId);
+    changed++;
+  }
+
+  // 2. New album listens (sessions that have settled).
+  let listens: AlbumListen[] = [];
+  try {
+    listens = await spotAlbumListens(scrobbles, new Set(byKey.keys()));
+  } catch {
+    listens = [];
+  }
   let added = 0;
   for (const l of listens) {
     if (muted.has(`album:${l.deezerId}`) || muted.has(`artist:${looseName(l.artist)}`)) continue;
     if (logged.has(`${l.deezerId}|${l.playedOn}`)) continue; // already in the diary that day
     if (earlier.some((s) => s.deezer_id === l.deezerId && within7(s.played_on, l.playedOn))) continue; // once a week per record
-    earlier.push({ deezer_id: l.deezerId, played_on: l.playedOn });
+    earlier.push({ id: "", deezer_id: l.deezerId, played_on: l.playedOn, status: "pending", lfm_key: l.key, tracks: l.tracks, total_tracks: l.totalTracks, last_played_at: null });
 
+    const complete = l.tracksPlayed / l.totalTracks >= COMPLETE_SHARE;
     let status: "pending" | "logged" = "pending";
-    if (link.autolog && (await logAlbumListen(supabase, userId, l.deezerId, l.playedOn, null))) status = "logged";
-    const { error } = await supabase.from("lastfm_suggestions").insert({
+    if (complete && link.autolog && (await logAlbumListen(supabase, userId, l.deezerId, l.playedOn, null))) status = "logged";
+    const base = {
       user_id: userId,
       deezer_id: l.deezerId,
       deezer_artist_id: l.deezerArtistId,
@@ -94,9 +147,11 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
       tracks_played: l.tracksPlayed,
       total_tracks: l.totalTracks,
       status,
-    });
+    };
+    let { error } = await supabase.from("lastfm_suggestions").insert({ ...base, lfm_key: l.key, tracks: l.tracks, last_played_at: new Date(l.lastUts * 1000).toISOString() });
+    if (error) ({ error } = await supabase.from("lastfm_suggestions").insert(base)); // before migration 0011
     if (!error && status === "pending") added++;
   }
   await supabase.from("lastfm_links").update({ synced_at: new Date(now).toISOString() }).eq("user_id", userId);
-  return { added };
+  return { added, changed };
 }
