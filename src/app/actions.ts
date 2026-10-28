@@ -132,17 +132,23 @@ export async function saveEntry(formData: FormData) {
     }
   }
 
-  // Until migration 0003 has run, the translation columns don't exist: save without them.
-  // Older databases may lack the translation (0003) or favourite-track (0009) columns: save without them.
-  const withoutTranslation = () => {
-    const rest = { ...fields };
-    delete rest.note_lang;
-    delete rest.note_en;
-    delete rest.fav_tracks;
-    return rest;
+  // An older database may lack a column (translations: 0003, favourite tracks: 0009). Then save
+  // again without just that column, so the rest — the translation included — is still saved.
+  type Result = { error: { code?: string; message?: string } | null };
+  const OPTIONAL: Record<string, string[]> = { fav_tracks: ["fav_tracks"], note_lang: ["note_lang", "note_en"], note_en: ["note_lang", "note_en"] };
+  const saveWith = async (run: (values: Record<string, unknown>) => PromiseLike<Result>, values: Record<string, unknown>) => {
+    let current = { ...values };
+    let res = await run(current);
+    for (let i = 0; i < 3 && res.error && (res.error.code === "PGRST204" || res.error.code === "42703"); i++) {
+      const msg = res.error.message ?? "";
+      const col = Object.keys(OPTIONAL).find((c) => msg.includes(c) && c in current);
+      if (!col) break;
+      current = { ...current };
+      for (const c of OPTIONAL[col]) delete current[c];
+      res = await run(current);
+    }
+    return { ...res, saved: current };
   };
-  const missingColumn = (e: { code?: string; message?: string } | null) =>
-    !!e && (e.code === "PGRST204" || e.code === "42703" || /note_(en|lang)|fav_tracks/.test(e.message ?? ""));
 
   if (entryId) {
     // Editing: first listen / relisten stays as it was logged.
@@ -150,9 +156,8 @@ export async function saveEntry(formData: FormData) {
       supabase.from("entries").update({ ...values, updated_at: new Date().toISOString() }).eq("id", entryId).eq("user_id", user.id);
     // The first entry of a record can switch between "first listen" and "heard it before".
     if ((kindChoice === "first" || kindChoice === "before") && (before as { kind?: string } | null)?.kind !== "relisten") fields.kind = kindChoice;
-    let { error } = await update(fields);
-    if (missingColumn(error)) ({ error } = await update(withoutTranslation()));
-    if (error && fields.kind === "before") ({ error } = await update({ ...withoutTranslation(), kind: "first" })); // before migration 0008
+    let { error, saved } = await saveWith(update, fields);
+    if (error && fields.kind === "before") ({ error } = await saveWith(update, { ...saved, kind: "first" })); // before migration 0008
     if (error) throw new Error("Could not save your changes.");
     await syncExplore(supabase, user.id, albumId, formData);
     revalidatePath("/", "layout");
@@ -172,11 +177,10 @@ export async function saveEntry(formData: FormData) {
       album_id: albumId,
       kind: (count ?? 0) > 0 ? "relisten" : kindChoice === "before" ? "before" : "first",
     });
-  let { error } = await insert(fields);
-  if (missingColumn(error)) ({ error } = await insert(withoutTranslation()));
+  let { error, saved } = await saveWith(insert, fields);
   if (error && kindChoice === "before" && !count) {
     // Before migration 0008 'before' isn't allowed yet: save it as a first listen.
-    ({ error } = await supabase.from("entries").insert({ ...withoutTranslation(), user_id: user.id, album_id: albumId, kind: "first" }));
+    ({ error } = await saveWith((v) => supabase.from("entries").insert({ ...v, user_id: user.id, album_id: albumId, kind: "first" }), saved));
   }
   if (error) throw new Error("Could not save the entry.");
 
