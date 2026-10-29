@@ -3,6 +3,7 @@ import type { getUser } from "@/lib/supabase/server";
 import { getAlbum } from "@/lib/deezer";
 import { albumKey, COMPLETE_SHARE, DONE_SHARE, SETTLE_MIN, getRecentScrobbles, lastfmConfigured, looseName, spotAlbumListens, trackKey, type AlbumListen, type Scrobble } from "@/lib/lastfm";
 import { todayIso } from "@/lib/format";
+import { listeningProgress } from "@/lib/progress";
 
 type Supabase = Awaited<ReturnType<typeof getUser>>["supabase"];
 export type Link = { username: string; autolog: boolean; synced_at: string | null };
@@ -162,6 +163,55 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     if (error) ({ error } = await supabase.from("lastfm_suggestions").insert(base)); // before migration 0011
     if (!error && status === "pending") added++;
   }
+  added += await finishedFromToListen(supabase, userId, muted);
   await supabase.from("lastfm_links").update({ synced_at: new Date(now).toISOString() }).eq("user_id", userId);
   return { added, changed };
+}
+
+/**
+ * Albums in To listen that you've since played (nearly) all of — over several sittings, or with tracks you ticked
+ * yourself — come back to the diary as "You finished … — how was it?".
+ */
+async function finishedFromToListen(supabase: Supabase, userId: string, muted: Set<string>): Promise<number> {
+  type A = { id: string; deezer_id: number | null; deezer_artist_id: number | null; artist: string; title: string; cover_medium: string | null };
+  const { data } = await supabase.from("to_listen").select("album:albums!inner(id, deezer_id, deezer_artist_id, artist, title, cover_medium)").eq("user_id", userId);
+  const albums = ((data ?? []) as unknown as { album: A }[]).map((r) => r.album).filter((a) => a?.deezer_id);
+  if (!albums.length) return 0;
+  const progress = await listeningProgress(supabase, userId, albums).catch(() => new Map());
+  const done = albums.filter((a) => {
+    const p = progress.get(a.deezer_id!);
+    return p && p.total && p.played / p.total >= COMPLETE_SHARE && !muted.has(`album:${a.deezer_id}`) && !muted.has(`artist:${looseName(a.artist)}`);
+  });
+  if (!done.length) return 0;
+  // Already asked (or answered) about it as a whole listen? Then leave it. A put-aside half listen doesn't count.
+  const { data: prior } = await supabase
+    .from("lastfm_suggestions")
+    .select("deezer_id, status, tracks_played, total_tracks")
+    .eq("user_id", userId)
+    .in("deezer_id", done.map((a) => a.deezer_id!))
+    .gte("played_on", daysAgo(30));
+  const asked = new Set(
+    ((prior ?? []) as { deezer_id: number; status: string; tracks_played: number; total_tracks: number }[])
+      .filter((r) => r.status !== "dismissed" || r.tracks_played / Math.max(1, r.total_tracks) >= COMPLETE_SHARE)
+      .map((r) => r.deezer_id)
+  );
+  let added = 0;
+  for (const a of done) {
+    if (asked.has(a.deezer_id!)) continue;
+    const p = progress.get(a.deezer_id!)!;
+    const { error } = await supabase.from("lastfm_suggestions").insert({
+      user_id: userId,
+      deezer_id: a.deezer_id,
+      deezer_artist_id: a.deezer_artist_id,
+      title: a.title,
+      artist: a.artist,
+      cover: a.cover_medium,
+      played_on: todayIso(),
+      tracks_played: p.played,
+      total_tracks: p.total,
+      status: "finished",
+    });
+    if (!error) added++;
+  }
+  return added;
 }
