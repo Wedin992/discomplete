@@ -159,7 +159,10 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
       total_tracks: l.totalTracks,
       status,
     };
-    let { error } = await supabase.from("lastfm_suggestions").insert({ ...base, lfm_key: l.key, tracks: l.tracks, last_played_at: new Date(l.lastUts * 1000).toISOString() });
+    const full: Record<string, unknown> = { ...base, lfm_key: l.key, tracks: l.tracks, last_played_at: new Date(l.lastUts * 1000).toISOString() };
+    // Logged automatically: the diary asks how it was (migration 0014).
+    let { error } = await supabase.from("lastfm_suggestions").insert(status === "logged" ? { ...full, review: "ask" } : full);
+    if (error && status === "logged") ({ error } = await supabase.from("lastfm_suggestions").insert(full)); // before migration 0014
     if (error) ({ error } = await supabase.from("lastfm_suggestions").insert(base)); // before migration 0011
     if (!error && status === "pending") added++;
   }

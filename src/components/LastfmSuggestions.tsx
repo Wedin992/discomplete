@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { backToToListen, dismissSuggestion, onTheTurntable, rateSuggestion } from "@/app/actions";
+import { backToToListen, dismissSuggestion, onTheTurntable, rateLogged, rateSuggestion, reviewLater, undoAutoLog } from "@/app/actions";
 import { QuickRate } from "@/components/QuickRate";
 import { PendingButton } from "@/components/PendingButton";
 import { daysBetween, longDate, todayIso } from "@/lib/format";
@@ -167,6 +167,72 @@ export function Turntable({ items }: { items: Suggestion[] }) {
           </div>
         );
       })}
+    </section>
+  );
+}
+
+export type Review = { s: Suggestion; entryId: string };
+
+/** Logged automatically from Spotify: "how was it?" — rate, write, or do it later. */
+export function AutoLogged({ items }: { items: Review[] }) {
+  if (!items.length) return null;
+  return (
+    <section className="card stack gap-16" aria-labelledby="auto-logged">
+      <div className="row gap-8" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+        <h2 id="auto-logged" className="eyebrow" style={{ color: "var(--accent)" }}>Logged from Spotify</h2>
+        <Link href="/settings#lastfm" className="btn-text small" style={{ ...textLink, minHeight: 32 }}>Settings</Link>
+      </div>
+      {items.map(({ s, entryId }) => (
+        <div key={s.id} className="lfm-item">
+          <Link href={`/open/${s.deezer_id}`} prefetch={false} tabIndex={-1} aria-hidden="true"><Cover s={s} /></Link>
+          <div className="stack gap-4" style={{ minWidth: 0, flex: "1 1 220px" }}>
+            <p style={{ fontWeight: 700 }}>
+              In your diary: <Link href={`/open/${s.deezer_id}`} prefetch={false} className="lfm-title">{s.title}</Link> — how was it?
+            </p>
+            <p className="muted small">{s.artist} · {s.tracks_played} of {s.total_tracks} tracks · {when(s.played_on)}</p>
+            <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateLogged.bind(null, s.id)} addedText="Rated" idleText="Review it" />
+            <div className="row gap-16" style={{ marginTop: 2 }}>
+              <Link href={`/entry/${entryId}/edit`} className="btn-text small" style={{ ...textLink, color: "var(--accent)" }}>Journal this listen →</Link>
+              <form action={reviewLater}>
+                <input type="hidden" name="id" value={s.id} />
+                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">I’ll do it later</PendingButton>
+              </form>
+              <details className="lfm-more">
+                <summary className="btn-text small">Not an album listen</summary>
+                <div className="lfm-menu">
+                  <form action={undoAutoLog}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Take it out of my diary</PendingButton>
+                  </form>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+/** Bottom of the diary: logged listens you said you'd review later. */
+export function WaitingReview({ items }: { items: Review[] }) {
+  if (!items.length) return null;
+  return (
+    <section className="stack gap-12" aria-labelledby="waiting-review">
+      <h2 id="waiting-review" className="eyebrow">Waiting for your review · {items.length}</h2>
+      {items.map(({ s, entryId }) => (
+        <div key={s.id} className="turntable-item">
+          <Link href={`/open/${s.deezer_id}`} prefetch={false} tabIndex={-1} aria-hidden="true"><Cover s={s} size={44} /></Link>
+          <div className="stack gap-4" style={{ minWidth: 0, flex: "1 1 auto" }}>
+            <Link href={`/open/${s.deezer_id}`} prefetch={false} className="turntable-title">{s.title}</Link>
+            <span className="muted small">{s.artist} · {when(s.played_on)}</span>
+            <div className="row gap-12" style={{ alignItems: "center" }}>
+              <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateLogged.bind(null, s.id)} addedText="Rated" idleText="" />
+              <Link href={`/entry/${entryId}/edit`} className="btn-text small" style={{ ...textLink, color: "var(--accent)" }}>Write</Link>
+            </div>
+          </div>
+        </div>
+      ))}
     </section>
   );
 }

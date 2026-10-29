@@ -5,7 +5,7 @@ import { Cover } from "@/components/Cover";
 import { EntryCard } from "@/components/EntryCard";
 import { rng } from "@/lib/discover";
 import { snoozeRediscover } from "@/app/actions";
-import { LastfmSuggestions, Turntable, type Suggestion } from "@/components/LastfmSuggestions";
+import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, type Suggestion } from "@/components/LastfmSuggestions";
 import { LastfmSync } from "@/components/LastfmSync";
 import { DiaryChallenges } from "@/components/ChallengeCards";
 import { Suspense } from "react";
@@ -19,7 +19,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const { data: profile, error: profileError } = await supabase.from("profiles").select("onboarded_at").eq("id", user!.id).maybeSingle();
   if (!profileError && profile && !profile.onboarded_at) redirect("/welcome");
   const since14 = new Date(Date.now() - 14 * 86400_000).toISOString().slice(0, 10);
-  const [entriesRes, listRes, snoozeRes, lfmLinkRes, lfmRes] = await Promise.all([
+  const [entriesRes, listRes, snoozeRes, lfmLinkRes, lfmRes, reviewRes] = await Promise.all([
     supabase
       .from("entries")
       .select("*, album:albums(*)")
@@ -38,6 +38,16 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
       .gte("played_on", since14)
       .order("played_on", { ascending: false })
       .limit(20),
+    // Logged automatically, not reviewed yet (migration 0014)
+    supabase
+      .from("lastfm_suggestions")
+      .select("id, deezer_id, title, artist, cover, played_on, tracks_played, total_tracks, status, review")
+      .eq("user_id", user!.id)
+      .eq("status", "logged")
+      .not("review", "is", null)
+      .gte("played_on", since14)
+      .order("played_on", { ascending: false })
+      .limit(30),
   ]);
   // Before migration 0010 these tables don't exist: then there's simply nothing from Last.fm.
   const lastfmLinked = !lfmLinkRes.error && !!lfmLinkRes.data;
@@ -49,6 +59,14 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const moreSuggestions = Math.max(0, asks.length - suggestions.length);
   const snoozed = new Set(((snoozeRes.data ?? []) as { album_id: string }[]).map((r) => r.album_id));
   const entries = (entriesRes.data ?? []) as unknown as EntryWithAlbum[];
+  // Logged automatically from Spotify and not rated or written about yet: ask now, or wait at the bottom.
+  const reviews: (Review & { later: boolean })[] = [];
+  for (const r of (reviewRes.error ? [] : reviewRes.data ?? []) as (Suggestion & { review: string })[]) {
+    const e = entries.find((x) => x.album?.deezer_id === r.deezer_id && x.listened_on === r.played_on);
+    if (e && e.rating === null && !e.note) reviews.push({ s: r, entryId: e.id, later: r.review === "later" });
+  }
+  const reviewNow = reviews.filter((r) => !r.later).slice(0, 3);
+  const reviewLaterList = [...reviews.filter((r) => r.later), ...reviews.filter((r) => !r.later).slice(3)];
   const toListen = ((listRes.data ?? []) as unknown as { album: Album }[]).map((r) => r.album).filter(Boolean);
   const today = todayIso();
 
@@ -117,6 +135,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
 
         {lastfmLinked ? <LastfmSync /> : null}
         <Turntable items={turntable} />
+        <AutoLogged items={reviewNow} />
         <LastfmSuggestions items={suggestions} more={moreSuggestions} />
         <Suspense fallback={null}>
           <DiaryChallenges />
@@ -179,6 +198,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
             <Link href="/log" className="btn btn-primary">Log a listen</Link>
           </div>
         )}
+        <WaitingReview items={reviewLaterList} />
       </section>
 
       <aside className="side stack gap-20">

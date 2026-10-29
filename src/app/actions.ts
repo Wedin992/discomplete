@@ -532,3 +532,53 @@ export async function stopChallenge(formData: FormData) {
   revalidatePath("/", "layout");
   redirect("/challenges");
 }
+
+// ─────────────────────────────────────────────────────────────
+// Logged automatically from Spotify: "how was it?"
+// ─────────────────────────────────────────────────────────────
+async function autoLogged(supabase: Supabase, userId: string, id: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data } = await supabase.from("lastfm_suggestions").select("id, deezer_id, played_on").eq("id", id).eq("user_id", userId).eq("status", "logged").maybeSingle();
+  const s = data as { id: string; deezer_id: number; played_on: string } | null;
+  if (!s) return null;
+  const { data: e } = await supabase
+    .from("entries")
+    .select("id, album:albums!inner(deezer_id)")
+    .eq("user_id", userId)
+    .eq("listened_on", s.played_on)
+    .eq("album.deezer_id", s.deezer_id)
+    .limit(1)
+    .maybeSingle();
+  return { s, entryId: (e as { id: string } | null)?.id ?? null };
+}
+
+/** Stars on an album that was logged automatically. */
+export async function rateLogged(id: string, rating: number): Promise<{ status: "added" | "updated" | "logged" | "error" }> {
+  const { supabase, user } = await requireUser();
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  const found = await autoLogged(supabase, user.id, id);
+  if (!found?.entryId) return { status: "error" };
+  const { error } = await supabase.from("entries").update({ rating, updated_at: new Date().toISOString() }).eq("id", found.entryId).eq("user_id", user.id);
+  if (error) return { status: "error" };
+  await supabase.from("lastfm_suggestions").update({ review: null }).eq("id", id).eq("user_id", user.id);
+  revalidatePath("/", "layout");
+  return { status: "added" };
+}
+
+/** "I'll do it later": it waits at the bottom of the diary. */
+export async function reviewLater(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("lastfm_suggestions").update({ review: "later" }).eq("id", id).eq("user_id", user.id);
+  revalidatePath("/");
+}
+
+/** Logged automatically, but it wasn't really an album listen: take it out of the diary. */
+export async function undoAutoLog(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const found = await autoLogged(supabase, user.id, String(formData.get("id") ?? ""));
+  if (!found) return;
+  if (found.entryId) await supabase.from("entries").delete().eq("id", found.entryId).eq("user_id", user.id);
+  await supabase.from("lastfm_suggestions").update({ status: "dismissed", review: null }).eq("id", found.s.id).eq("user_id", user.id);
+  revalidatePath("/", "layout");
+}

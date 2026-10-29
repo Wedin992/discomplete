@@ -38,6 +38,7 @@ Not yet: "More like this" recommendations, Last.fm import, following friends.
 12. **On the turntable:** run `supabase/migrations/0011_turntable.sql` (follows albums you've started until you finish them).
 13. **Tick tracks yourself:** run `supabase/migrations/0012_track_marks.sql` (mark a track as played on the record page when Last.fm missed it).
 14. **Challenges:** run `supabase/migrations/0013_challenges.sql` (complete an artist, or work through a curated list).
+15. **Review automatic logs:** run `supabase/migrations/0014_review_later.sql` (albums logged automatically from Spotify ask "how was it?").
 6. **Sign-up quiz and artist suggestions:** run `0004_explore_artists.sql` and `0005_onboarding.sql`.
 7. **Authentication → Emails → Templates:** in both *Magic Link* and *Confirm signup*, add the code so people can sign in inside the installed app (where email links open the browser instead):
    ```html
