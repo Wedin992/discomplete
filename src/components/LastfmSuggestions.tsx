@@ -4,6 +4,7 @@ import { backToToListen, dismissSuggestion, onTheTurntable, rateSuggestion } fro
 import { QuickRate } from "@/components/QuickRate";
 import { PendingButton } from "@/components/PendingButton";
 import { daysBetween, longDate, todayIso } from "@/lib/format";
+import { COMPLETE_SHARE } from "@/lib/lastfm";
 
 export type Suggestion = {
   id: string;
@@ -17,7 +18,7 @@ export type Suggestion = {
   status: "pending" | "listening" | "finished";
 };
 
-const COMPLETE = 0.7;
+const COMPLETE = COMPLETE_SHARE;
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 function when(day: string) {
   const ago = daysBetween(day, todayIso());
@@ -71,12 +72,22 @@ export function LastfmSuggestions({ items, more }: { items: Suggestion[]; more: 
         const started = s.status === "pending" && share(s) < COMPLETE;
         return (
           <div key={s.id} className="lfm-item">
-            <Cover s={s} />
+            <Link href={`/open/${s.deezer_id}`} prefetch={false} tabIndex={-1} aria-hidden="true"><Cover s={s} /></Link>
             <div className="stack gap-4" style={{ minWidth: 0, flex: "1 1 220px" }}>
               <p style={{ fontWeight: 700 }}>
-                {s.status === "finished" ? `You finished ${s.title} — how was it?` : started ? `You started ${s.title}` : `Looks like you listened to ${s.title}`}
+                {s.status === "finished" ? "You finished " : started ? "You started " : "Looks like you listened to "}
+                <Link href={`/open/${s.deezer_id}`} prefetch={false} className="lfm-title">{s.title}</Link>
+                {s.status === "finished" ? " — how was it?" : ""}
               </p>
-              <p className="muted small">{s.artist} · {s.tracks_played} of {s.total_tracks} tracks · {when(s.played_on)}</p>
+              <p className="muted small">
+                {s.artist} · {s.tracks_played} of {s.total_tracks} tracks · {when(s.played_on)}
+                {started ? (
+                  <>
+                    {" · "}
+                    <Link href={`/open/${s.deezer_id}#tracklist`} prefetch={false} style={{ color: "var(--accent)" }}>See what’s left</Link>
+                  </>
+                ) : null}
+              </p>
               {started ? (
                 <>
                   <div className="row gap-8" style={{ marginTop: 4 }}>
@@ -140,6 +151,7 @@ export function Turntable({ items }: { items: Suggestion[] }) {
                 <span style={{ width: `${pct}%` }} />
               </div>
               <div className="row gap-12">
+                <Link href={`/open/${s.deezer_id}#tracklist`} prefetch={false} className="btn-text small" style={{ minHeight: 36, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>What’s left</Link>
                 <details className="lfm-more">
                   <summary className="btn-text small" style={{ color: "var(--accent)" }}>Done? Rate it</summary>
                   <div className="lfm-menu">

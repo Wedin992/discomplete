@@ -198,7 +198,13 @@ export async function saveEntry(formData: FormData) {
 export async function deleteEntry(formData: FormData) {
   const { supabase, user } = await requireUser();
   const id = String(formData.get("id") ?? "");
+  const { data: gone } = await supabase.from("entries").select("listened_on, album:albums(deezer_id)").eq("id", id).eq("user_id", user.id).maybeSingle();
   await supabase.from("entries").delete().eq("id", id).eq("user_id", user.id);
+  // Logged from Spotify (by you or automatically) and then deleted: it goes back to being a suggestion,
+  // e.g. "You started …" when you hadn't really finished it.
+  const g = gone as unknown as { listened_on: string; album: { deezer_id: number | null } | null } | null;
+  if (g?.album?.deezer_id)
+    await supabase.from("lastfm_suggestions").update({ status: "pending" }).eq("user_id", user.id).eq("deezer_id", g.album.deezer_id).eq("played_on", g.listened_on).eq("status", "logged");
   revalidatePath("/", "layout");
   if (formData.get("redirect_to") === "/") redirect("/?saved=deleted");
 }

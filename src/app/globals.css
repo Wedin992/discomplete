@@ -347,3 +347,4 @@ body { -webkit-tap-highlight-color: transparent; }
 .lfm-msg { color: var(--accent); font-weight: 600; }
 .challenge-pick { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
 .challenge-grid .disc-cover:not(.logged) img { opacity: .55; filter: grayscale(.6); }
+.lfm-title { color: inherit; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }

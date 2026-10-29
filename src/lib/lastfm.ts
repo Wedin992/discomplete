@@ -81,7 +81,7 @@ export const SESSION_GAP_H = 3; // a pause longer than this starts a new listeni
 export const MIN_SHARE = 0.4; // share of the album's tracks played in one session
 export const MIN_TRACKS = 5; // …and at least this many (or the whole album if it's shorter)
 export const IN_ORDER_TRACKS = 3; // or: this many tracks back to back, in the album's own order — that's someone playing the album
-export const COMPLETE_SHARE = 0.7; // from here it counts as having heard the album
+export const COMPLETE_SHARE = 0.85; // from here it counts as having heard the album (12 of 15 is still "started")
 export const DONE_SHARE = 0.9; // an album you're "on" counts as finished from here
 export const SETTLE_MIN = 20; // wait this long after the last track before suggesting (you may just be on a break) — unless the album is basically done
 
