@@ -209,11 +209,16 @@ export type FoundAlbum = { deezerId: number; artistId: number; artist: string; t
 const loose = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 
 /** Find a specific record on Deezer by artist and title (e.g. one picked from Wikidata). */
-export async function findAlbum(artist: string, title: string): Promise<FoundAlbum | null> {
+export async function findAlbum(artist: string, title: string, opts: { relaxed?: boolean } = {}): Promise<FoundAlbum | null> {
   const a = loose(artist);
   const t = loose(baseTitle(title) || title);
+  // Relaxed: "The Jimi Hendrix Experience" ≈ "Jimi Hendrix", and any record type.
+  const sameArtist = (name: string) => {
+    const n = loose(name);
+    return n === a || (!!opts.relaxed && (n.includes(a.replace(/^the /, "")) || a.includes(n.replace(/^the /, ""))));
+  };
   const pick = (rows: DzAlbumLite[]) => {
-    const same = rows.filter((r) => loose(r.artist.name) === a && (r.record_type ?? "album") === "album");
+    const same = rows.filter((r) => sameArtist(r.artist.name) && (opts.relaxed || (r.record_type ?? "album") === "album"));
     const exact = same.filter((r) => loose(baseTitle(r.title) || r.title) === t);
     const hit = exact.find((r) => isPlainTitle(r.title)) ?? exact[0] ?? same.find((r) => loose(r.title).startsWith(t));
     return hit ? { deezerId: hit.id, artistId: hit.artist.id, artist: hit.artist.name, title: hit.title, cover: hit.cover_medium, tracks: hit.nb_tracks } : null;
@@ -222,7 +227,10 @@ export async function findAlbum(artist: string, title: string): Promise<FoundAlb
   const found = pick(strict.data ?? []);
   if (found) return found;
   const plain = await get<{ data: DzAlbumLite[] }>(`/search/album?q=${encodeURIComponent(`${artist} ${title}`)}&limit=10`, 2592000).catch(() => ({ data: [] }));
-  return pick(plain.data ?? []);
+  const second = pick(plain.data ?? []);
+  if (second || !opts.relaxed) return second;
+  const byTitle = await get<{ data: DzAlbumLite[] }>(`/search/album?q=${encodeURIComponent(title)}&limit=25`, 2592000).catch(() => ({ data: [] }));
+  return pick(byTitle.data ?? []);
 }
 
 export type AlbumTrack = { id: number; title: string; position: number; duration: number };

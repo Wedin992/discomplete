@@ -6,6 +6,17 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 6,
+    date: "2026-10-29",
+    changes: [
+      "Nytt: Challenges. Fullborda en artist (“Complete it” på artistsidan) eller beta av en lista: Swedish classics, Debuts that changed everything och One album a year: 2000–2024.",
+      "Allt i dagboken räknas, även “Heard before”, så skivor du redan hört bockas av direkt.",
+      "Varje utmaning drar en skiva om dagen (“Today’s pick”). Den syns i dagboken, i Discover och överst i To listen. Sätt stjärnor direkt om du redan kan den.",
+      "Skivsidan visar vilka utmaningar skivan ingår i (“Part of”), och dagboken visar “+1” när du nyss bockat av en.",
+      "Hittas från dagboken, Records-sidan och /challenges. Inga streaks, ingen stress.",
+    ],
+  },
+  {
     version: 5,
     date: "2026-10-29",
     changes: [
@@ -113,6 +124,16 @@ export const SECTIONS: Section[] = [
       "Från 90 % – eller 70 % följt av en paus på 20 minuter – räknas den som klar och appen frågar hur den var. Ligger den orörd i tre dagar flyttas den till To listen.",
       "Har du spelat minst 70 % av en skiva i To listen frågar dagboken hur den var. To listen visar påbörjade skivor överst under “Started”, och skivsidans låtlista har bockar för det du har spelat. Saknas en låt trycker du på ringen och bockar i den själv.",
       "“Not an album listen” stänger av förslag för en skiva eller en artist. Utan Last.fm syns inget av detta.",
+    ],
+  },
+  {
+    id: "challenges",
+    title: "Challenges",
+    body: [
+      "Två sorter: fullborda en artist – tryck “Complete it” på artistsidan – eller starta en av våra listor under Challenges (länk från dagboken och Records).",
+      "Allt i dagboken räknas, även “Heard before”. En annan utgåva av samma skiva räknas också.",
+      "Varje utmaning drar en skiva om dagen, “Today’s pick”. Den visas i dagboken, i Discover och i To listen och byts när du har loggat den. Kan du den redan sätter du stjärnor direkt.",
+      "Skivsidan visar “Part of” med de utmaningar skivan ingår i. “Stop this challenge” längst ned på utmaningens sida tar bort den – dina loggar påverkas inte.",
     ],
   },
   {

@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { TAGS, logPath, recordPath, todayIso, type Album } from "@/lib/format";
 import { translateToEnglish } from "@/lib/translate";
-import { getAlbum } from "@/lib/deezer";
+import { getAlbum, getArtist } from "@/lib/deezer";
+import { listBySlug } from "@/lib/challenge-lists";
 import { dismissPick, shufflePicks } from "@/lib/discover-store";
 import { getLastfmUser, LastfmError, looseName, trackKey } from "@/lib/lastfm";
 import { logAlbumListen, parkInToListen, syncLastfm } from "@/lib/lastfm-sync";
@@ -493,4 +494,35 @@ export async function markTrack(deezerId: number, track: string, on: boolean): P
   }
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Challenges
+// ─────────────────────────────────────────────────────────────
+/** Start a challenge: "artist" (ref = Deezer artist id) or "list" (ref = curated list slug). */
+export async function startChallenge(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const kind = String(formData.get("kind") ?? "");
+  const ref = String(formData.get("ref") ?? "");
+  let title: string | null = null;
+  if (kind === "list") title = listBySlug(ref)?.title ?? null;
+  if (kind === "artist" && /^\d{1,12}$/.test(ref)) title = await getArtist(Number(ref)).then((a) => a.name).catch(() => null);
+  if (!title) redirect("/challenges");
+  const { data: existing } = await supabase.from("challenges").select("id").eq("user_id", user.id).eq("kind", kind).eq("ref", ref).maybeSingle();
+  let id = (existing as { id: string } | null)?.id;
+  if (!id) {
+    const { data, error } = await supabase.from("challenges").insert({ user_id: user.id, kind, ref, title }).select("id").single();
+    if (error || !data) redirect("/challenges?error=setup");
+    id = (data as { id: string }).id;
+  }
+  revalidatePath("/", "layout");
+  redirect(`/challenges/${id}?started=1`);
+}
+
+export async function stopChallenge(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("challenges").delete().eq("id", id).eq("user_id", user.id);
+  revalidatePath("/", "layout");
+  redirect("/challenges");
 }

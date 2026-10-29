@@ -37,9 +37,10 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   return (
     <section className="stack gap-20">
       <div>
-        <p className="eyebrow">Your shelf</p>
+        <p className="eyebrow">Your collection</p>
         <h1 className="title-xl">Records</h1>
         <p className="muted" style={{ marginTop: 8 }}>Everything you’ve logged or own. Mark vinyl, CD or wishlist on any record page.</p>
+        <Link href="/challenges" className="btn btn-sm" style={{ marginTop: 12 }}>Challenges →</Link>
       </div>
       <nav aria-label="Filter records" className="row gap-8">
         {FILTERS.map((f) => (

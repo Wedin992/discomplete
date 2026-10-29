@@ -7,6 +7,7 @@ import { NoteText } from "@/components/NoteText";
 import { whenLabel, artistPath, duration, formatLabel, kindLabel, logPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
 import { toggleCollection, toggleToListen } from "@/app/actions";
 import { RecordTracks } from "./RecordTracks";
+import { PartOf } from "@/components/ChallengeCards";
 
 type Stats = { rating_count: number; avg_rating: number | null; r1: number; r2: number; r3: number; r4: number; r5: number };
 type PublicNote = {
@@ -60,6 +61,9 @@ export async function RecordView({ album }: { album: Album }) {
           <h1 className="title-xl" style={{ fontSize: "clamp(40px, 7vw, 68px)", lineHeight: 0.92 }}>{album.title}</h1>
           <p style={{ fontSize: 24 }}>{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}</p>
           {facts ? <div className="row gap-8"><span className="chip" style={{ fontSize: 12, padding: "5px 12px" }}>{facts}</span></div> : null}
+          <Suspense fallback={null}>
+            <PartOf deezerId={album.deezer_id} artist={album.artist} title={album.title} />
+          </Suspense>
           {mine.length ? (
             <div className="card stack gap-12" style={{ marginTop: 4 }}>
               <p className="row gap-8" style={{ alignItems: "baseline" }}>

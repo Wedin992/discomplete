@@ -5,7 +5,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { baseTitle, getArtist, getArtistAlbums, type ArtistAlbum } from "@/lib/deezer";
 import { artistPath, recordPath, stars, type Album } from "@/lib/format";
-import { openFromDeezer, setExploring } from "@/app/actions";
+import { openFromDeezer, setExploring, startChallenge } from "@/app/actions";
 import { Suspense } from "react";
 import { getArtistBio } from "@/lib/wiki";
 import { QuickRate } from "@/components/QuickRate";
@@ -69,12 +69,14 @@ export default async function ArtistPage({ params, searchParams }: { params: Par
   if (`/artist/${slug}` !== canonical) permanentRedirect(canonical + (filter !== "all" ? `?show=${filter}` : ""));
 
   const { supabase, user } = await getUser();
-  const [entriesRes, queuedRes, catalogRes, exploreRes] = await Promise.all([
+  const [entriesRes, queuedRes, catalogRes, exploreRes, challengeRes] = await Promise.all([
     supabase.from("entries").select("rating, listened_on, album:albums!inner(*)").eq("user_id", user!.id).eq("album.deezer_artist_id", id).order("listened_on", { ascending: false }),
     supabase.from("to_listen").select("album:albums!inner(deezer_id, title, deezer_artist_id)").eq("user_id", user!.id).eq("album.deezer_artist_id", id),
     supabase.from("albums").select("*").eq("deezer_artist_id", id),
     supabase.from("explore_artists").select("deezer_artist_id").eq("user_id", user!.id).eq("deezer_artist_id", id).maybeSingle(),
+    supabase.from("challenges").select("id").eq("user_id", user!.id).eq("kind", "artist").eq("ref", String(id)).maybeSingle(),
   ]);
+  const challengeId = challengeRes.error ? undefined : ((challengeRes.data as { id: string } | null)?.id ?? null);
 
   // Match by Deezer id, and by title so another edition of a record you logged counts too.
   const keyOf = (a: { deezer_id?: number | null; title: string }) => baseTitle(a.title);
@@ -125,6 +127,16 @@ export default async function ArtistPage({ params, searchParams }: { params: Par
           </p>
           <div className="bar" style={{ height: 10 }} aria-hidden="true"><span style={{ width: `${pct}%` }} /></div>
         </div>
+        <div className="row gap-8">
+        {challengeId ? (
+          <Link href={`/challenges/${challengeId}`} className="btn btn-sm pill" aria-pressed>✓ In your challenges</Link>
+        ) : challengeId === null && records.length > 1 && loggedCount < records.length ? (
+          <form action={startChallenge}>
+            <input type="hidden" name="kind" value="artist" />
+            <input type="hidden" name="ref" value={id} />
+            <button type="submit" className="btn btn-sm btn-primary">Complete it</button>
+          </form>
+        ) : null}
         <form action={setExploring}>
           <input type="hidden" name="deezer_artist_id" value={id} />
           <input type="hidden" name="artist" value={artist.name} />
@@ -133,6 +145,7 @@ export default async function ArtistPage({ params, searchParams }: { params: Par
             {exploring ? "✓ Exploring — suggestions in To listen" : "I want to hear more"}
           </button>
         </form>
+        </div>
       </div>
 
       <nav aria-label="Filter albums" className="row gap-8">

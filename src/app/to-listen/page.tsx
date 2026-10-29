@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ExploreArtists } from "./ExploreArtists";
+import { ChallengePicks } from "@/components/ChallengeCards";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { toggleToListen } from "@/app/actions";
@@ -54,6 +55,9 @@ export default async function ToListenPage() {
         <p className="eyebrow">Your queue</p>
         <h1 className="title-xl">To listen</h1>
       </div>
+      <Suspense fallback={null}>
+        <ChallengePicks heading="Next in your challenges" />
+      </Suspense>
       {started.length ? (
         <div className="stack gap-12">
           <h2 className="eyebrow">Started · from Spotify, last {PROGRESS_DAYS} days</h2>

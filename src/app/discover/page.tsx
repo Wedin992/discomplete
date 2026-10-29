@@ -7,6 +7,7 @@ import { GENRES, GENRES_ENABLED } from "@/lib/genre";
 import { longDate, todayIso } from "@/lib/format";
 import { ThreePicks, ThreeSkeleton } from "./ThreePicks";
 import { GenrePicker } from "./GenrePicker";
+import { ChallengePicks } from "@/components/ChallengeCards";
 
 export const metadata: Metadata = { title: "Discover" };
 
@@ -109,6 +110,10 @@ export default async function DiscoverPage() {
           </div>
         </div>
       )}
+
+      <Suspense fallback={null}>
+        <ChallengePicks heading="From your challenges" />
+      </Suspense>
 
       {GENRES_ENABLED ? (
         <section className="stack gap-16" aria-labelledby="by-genre">

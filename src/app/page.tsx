@@ -7,6 +7,8 @@ import { rng } from "@/lib/discover";
 import { snoozeRediscover } from "@/app/actions";
 import { LastfmSuggestions, Turntable, type Suggestion } from "@/components/LastfmSuggestions";
 import { LastfmSync } from "@/components/LastfmSync";
+import { DiaryChallenges } from "@/components/ChallengeCards";
+import { Suspense } from "react";
 import { artistPath, daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
 
 export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
@@ -116,6 +118,9 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         {lastfmLinked ? <LastfmSync /> : null}
         <Turntable items={turntable} />
         <LastfmSuggestions items={suggestions} more={moreSuggestions} />
+        <Suspense fallback={null}>
+          <DiaryChallenges />
+        </Suspense>
 
         {rediscover ? (
           <div className="card highlight stack gap-12">
