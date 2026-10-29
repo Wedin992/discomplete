@@ -538,8 +538,8 @@ export async function stopChallenge(formData: FormData) {
 // ─────────────────────────────────────────────────────────────
 async function autoLogged(supabase: Supabase, userId: string, id: string) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { data } = await supabase.from("lastfm_suggestions").select("id, deezer_id, played_on").eq("id", id).eq("user_id", userId).eq("status", "logged").maybeSingle();
-  const s = data as { id: string; deezer_id: number; played_on: string } | null;
+  const { data } = await supabase.from("lastfm_suggestions").select("id, deezer_id, played_on, title, artist").eq("id", id).eq("user_id", userId).eq("status", "logged").maybeSingle();
+  const s = data as { id: string; deezer_id: number; played_on: string; title: string; artist: string } | null;
   if (!s) return null;
   const { data: e } = await supabase
     .from("entries")
@@ -573,13 +573,19 @@ export async function reviewLater(formData: FormData) {
   revalidatePath("/");
 }
 
-/** Logged automatically, but it wasn't really an album listen: take it out of the diary. */
+/**
+ * Logged automatically, but it wasn't really an album listen: take it out of the diary —
+ * and, if you like, never log that album (or anything by that artist) from Spotify again.
+ */
 export async function undoAutoLog(formData: FormData) {
   const { supabase, user } = await requireUser();
   const found = await autoLogged(supabase, user.id, String(formData.get("id") ?? ""));
   if (!found) return;
+  const mute = String(formData.get("mute") ?? "");
   if (found.entryId) await supabase.from("entries").delete().eq("id", found.entryId).eq("user_id", user.id);
   await supabase.from("lastfm_suggestions").update({ status: "dismissed", review: null }).eq("id", found.s.id).eq("user_id", user.id);
+  if (mute === "album") await supabase.from("lastfm_muted").upsert({ user_id: user.id, kind: "album", key: String(found.s.deezer_id), label: found.s.title });
+  if (mute === "artist") await supabase.from("lastfm_muted").upsert({ user_id: user.id, kind: "artist", key: looseName(found.s.artist), label: found.s.artist });
   revalidatePath("/", "layout");
 }
 
@@ -589,4 +595,13 @@ export async function keepAsListened(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("lastfm_suggestions").update({ review: null }).eq("id", id).eq("user_id", user.id);
   revalidatePath("/");
+}
+
+/** Settings: undo "never log this album / artist". */
+export async function unmuteLastfm(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const kind = String(formData.get("kind") ?? "");
+  const key = String(formData.get("key") ?? "");
+  if ((kind === "album" || kind === "artist") && key) await supabase.from("lastfm_muted").delete().eq("user_id", user.id).eq("kind", kind).eq("key", key);
+  revalidatePath("/settings");
 }

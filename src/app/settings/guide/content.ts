@@ -6,12 +6,20 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 11,
+    date: "2026-10-29",
+    changes: [
+      "På automatiskt loggade skivor heter knappen nu “Remove — wasn’t an album listen”, med tre val: bara ta bort, ta bort och aldrig logga skivan igen, eller ta bort och aldrig logga artisten igen.",
+      "Under Settings → Spotify finns “Never logged from Spotify”, där du ser allt du stängt av och kan välja “Allow again”.",
+    ],
+  },
+  {
     version: 10,
     date: "2026-10-29",
     changes: [
       "Skivor som loggas automatiskt från Spotify frågar nu “how was it?” överst i dagboken: sätt stjärnor, “Journal this listen” för att skriva, eller “I’ll do it later”.",
       "“I’ll do it later” lägger skivan längst ned i dagboken under “Waiting for your review”, där du kan sätta stjärnor eller skriva när du har tid.",
-      "“Not an album listen” tar bort den automatiska loggen ur dagboken.",
+      "“Remove — wasn’t an album listen” tar bort den automatiska loggen ur dagboken (och kan stänga av skivan eller artisten).",
       "“Just listened” behåller lyssningen i dagboken utan betyg eller text och slutar fråga. Finns både överst och under “Waiting for your review”.",
     ],
   },
@@ -158,7 +166,7 @@ export const SECTIONS: Section[] = [
       "Från 90 % – eller 85 % följt av en paus på 20 minuter – räknas den som klar och appen frågar hur den var. Ligger den orörd i tre dagar flyttas den till To listen.",
       "Har du spelat minst 85 % av en skiva i To listen frågar dagboken hur den var. To listen visar påbörjade skivor överst under “Started”, och skivsidans låtlista har bockar för det du har spelat. Saknas en låt trycker du på ringen och bockar i den själv.",
       "Med “Log full albums automatically” påslaget loggas hela skivor direkt – dagboken frågar sedan “how was it?”. Välj stjärnor, “Journal this listen”, “Just listened” (behåll utan betyg) eller “I’ll do it later” (hamnar under “Waiting for your review” längst ned).",
-      "“Not an album listen” stänger av förslag för en skiva eller en artist. Utan Last.fm syns inget av detta.",
+      "“Not an album listen” på förslag stänger av förslag för en skiva eller en artist. Allt avstängt syns under Settings → “Never logged from Spotify”, där du kan slå på det igen. Utan Last.fm syns inget av detta.",
     ],
   },
   {

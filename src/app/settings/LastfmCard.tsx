@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { LastfmStatus } from "./LastfmStatus";
-import { connectLastfm, disconnectLastfm, setLastfmAutolog, syncLastfmNow } from "@/app/actions";
+import { connectLastfm, disconnectLastfm, setLastfmAutolog, syncLastfmNow, unmuteLastfm } from "@/app/actions";
 import { PendingButton } from "@/components/PendingButton";
 
 const MESSAGES: Record<string, { text: string; error?: boolean }> = {
@@ -13,7 +13,7 @@ const MESSAGES: Record<string, { text: string; error?: boolean }> = {
 };
 
 /** Settings: "Using Spotify? Fill your diary automatically" — via Last.fm, optional. */
-export function LastfmCard({ link, status, configured }: { link: { username: string; autolog: boolean; synced_at: string | null } | null; status?: string; configured: boolean }) {
+export function LastfmCard({ link, status, configured, muted = [] }: { link: { username: string; autolog: boolean; synced_at: string | null } | null; status?: string; configured: boolean; muted?: { kind: string; key: string; label: string | null }[] }) {
   const synced = status?.startsWith("synced-") ? Number(status.slice(7)) : null;
   const msg = synced !== null ? { text: synced ? `Found ${synced} new album ${synced === 1 ? "listen" : "listens"} — see your diary.` : "Up to date — no new album listens." } : status ? MESSAGES[status] : null;
   return (
@@ -35,6 +35,21 @@ export function LastfmCard({ link, status, configured }: { link: { username: str
             </PendingButton>
           </form>
           <p className="muted small">{link.autolog ? "Album listens go straight into your diary — you can rate or delete them later." : "Off: you confirm each one in your diary first."}</p>
+          {muted.length ? (
+            <details className="lfm-more">
+              <summary className="btn-text small">Never logged from Spotify · {muted.length}</summary>
+              <div className="stack gap-4 lfm-menu">
+                {muted.map((m) => (
+                  <form key={`${m.kind}:${m.key}`} action={unmuteLastfm} className="row gap-8" style={{ alignItems: "center", justifyContent: "space-between" }}>
+                    <input type="hidden" name="kind" value={m.kind} />
+                    <input type="hidden" name="key" value={m.key} />
+                    <span className="small">{m.label ?? m.key} <span className="muted">· {m.kind}</span></span>
+                    <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Allow again</PendingButton>
+                  </form>
+                ))}
+              </div>
+            </details>
+          ) : null}
           <div className="row gap-12">
             <Link href="/lastfm/top" className="btn btn-sm">Add albums you already know</Link>
             <form action={syncLastfmNow}>

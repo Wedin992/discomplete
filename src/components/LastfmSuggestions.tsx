@@ -202,12 +202,19 @@ export function AutoLogged({ items }: { items: Review[] }) {
                 <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">I’ll do it later</PendingButton>
               </form>
               <details className="lfm-more">
-                <summary className="btn-text small">Not an album listen</summary>
-                <div className="lfm-menu">
-                  <form action={undoAutoLog}>
-                    <input type="hidden" name="id" value={s.id} />
-                    <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Take it out of my diary</PendingButton>
-                  </form>
+                <summary className="btn-text small">Remove — wasn’t an album listen</summary>
+                <div className="stack gap-4 lfm-menu">
+                  {[
+                    { mute: "", label: "Just remove it" },
+                    { mute: "album", label: "Remove, and never log this album" },
+                    { mute: "artist", label: `Remove, and never log ${s.artist}` },
+                  ].map((o) => (
+                    <form key={o.mute} action={undoAutoLog}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <input type="hidden" name="mute" value={o.mute} />
+                      <PendingButton className="btn-text small" style={{ minHeight: 36, textAlign: "left" }} pending="…">{o.label}</PendingButton>
+                    </form>
+                  ))}
                 </div>
               </details>
             </div>
