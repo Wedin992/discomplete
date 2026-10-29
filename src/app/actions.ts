@@ -582,3 +582,11 @@ export async function undoAutoLog(formData: FormData) {
   await supabase.from("lastfm_suggestions").update({ status: "dismissed", review: null }).eq("id", found.s.id).eq("user_id", user.id);
   revalidatePath("/", "layout");
 }
+
+/** "Just listened": keep it in the diary as it is — no stars, no words — and stop asking. */
+export async function keepAsListened(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("lastfm_suggestions").update({ review: null }).eq("id", id).eq("user_id", user.id);
+  revalidatePath("/");
+}

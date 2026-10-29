@@ -12,6 +12,7 @@ export const REVISIONS: Revision[] = [
       "Skivor som loggas automatiskt från Spotify frågar nu “how was it?” överst i dagboken: sätt stjärnor, “Journal this listen” för att skriva, eller “I’ll do it later”.",
       "“I’ll do it later” lägger skivan längst ned i dagboken under “Waiting for your review”, där du kan sätta stjärnor eller skriva när du har tid.",
       "“Not an album listen” tar bort den automatiska loggen ur dagboken.",
+      "“Just listened” behåller lyssningen i dagboken utan betyg eller text och slutar fråga. Finns både överst och under “Waiting for your review”.",
     ],
   },
   {
@@ -156,7 +157,7 @@ export const SECTIONS: Section[] = [
       "Har du bara börjat står det “You started …”. Välj “I’m on it” så hamnar den under “On the turntable” med en mätare, eller “I’ll get back to it” så flyttas den till To listen.",
       "Från 90 % – eller 85 % följt av en paus på 20 minuter – räknas den som klar och appen frågar hur den var. Ligger den orörd i tre dagar flyttas den till To listen.",
       "Har du spelat minst 85 % av en skiva i To listen frågar dagboken hur den var. To listen visar påbörjade skivor överst under “Started”, och skivsidans låtlista har bockar för det du har spelat. Saknas en låt trycker du på ringen och bockar i den själv.",
-      "Med “Log full albums automatically” påslaget loggas hela skivor direkt – dagboken frågar sedan “how was it?”. Välj stjärnor, “Journal this listen” eller “I’ll do it later” (hamnar under “Waiting for your review” längst ned).",
+      "Med “Log full albums automatically” påslaget loggas hela skivor direkt – dagboken frågar sedan “how was it?”. Välj stjärnor, “Journal this listen”, “Just listened” (behåll utan betyg) eller “I’ll do it later” (hamnar under “Waiting for your review” längst ned).",
       "“Not an album listen” stänger av förslag för en skiva eller en artist. Utan Last.fm syns inget av detta.",
     ],
   },

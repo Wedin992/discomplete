@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { backToToListen, dismissSuggestion, onTheTurntable, rateLogged, rateSuggestion, reviewLater, undoAutoLog } from "@/app/actions";
+import { backToToListen, dismissSuggestion, onTheTurntable, keepAsListened, rateLogged, rateSuggestion, reviewLater, undoAutoLog } from "@/app/actions";
 import { QuickRate } from "@/components/QuickRate";
 import { PendingButton } from "@/components/PendingButton";
 import { daysBetween, longDate, todayIso } from "@/lib/format";
@@ -193,6 +193,10 @@ export function AutoLogged({ items }: { items: Review[] }) {
             <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateLogged.bind(null, s.id)} addedText="Rated" idleText="Review it" />
             <div className="row gap-16" style={{ marginTop: 2 }}>
               <Link href={`/entry/${entryId}/edit`} className="btn-text small" style={{ ...textLink, color: "var(--accent)" }}>Journal this listen →</Link>
+              <form action={keepAsListened}>
+                <input type="hidden" name="id" value={s.id} />
+                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Just listened</PendingButton>
+              </form>
               <form action={reviewLater}>
                 <input type="hidden" name="id" value={s.id} />
                 <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">I’ll do it later</PendingButton>
@@ -229,6 +233,10 @@ export function WaitingReview({ items }: { items: Review[] }) {
             <div className="row gap-12" style={{ alignItems: "center" }}>
               <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateLogged.bind(null, s.id)} addedText="Rated" idleText="" />
               <Link href={`/entry/${entryId}/edit`} className="btn-text small" style={{ ...textLink, color: "var(--accent)" }}>Write</Link>
+              <form action={keepAsListened}>
+                <input type="hidden" name="id" value={s.id} />
+                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Just listened</PendingButton>
+              </form>
             </div>
           </div>
         </div>
