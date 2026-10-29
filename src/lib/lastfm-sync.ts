@@ -1,14 +1,14 @@
 // Server-only: turns new scrobbles into "Looks like you listened to …" suggestions.
 import type { getUser } from "@/lib/supabase/server";
 import { getAlbum } from "@/lib/deezer";
-import { albumKey, COMPLETE_SHARE, DONE_SHARE, getRecentScrobbles, lastfmConfigured, looseName, spotAlbumListens, trackKey, type AlbumListen, type Scrobble } from "@/lib/lastfm";
+import { albumKey, COMPLETE_SHARE, DONE_SHARE, SETTLE_MIN, getRecentScrobbles, lastfmConfigured, looseName, spotAlbumListens, trackKey, type AlbumListen, type Scrobble } from "@/lib/lastfm";
 import { todayIso } from "@/lib/format";
 
 type Supabase = Awaited<ReturnType<typeof getUser>>["supabase"];
 export type Link = { username: string; autolog: boolean; synced_at: string | null };
 
 const FIRST_LOOK_DAYS = 14; // on connecting: look back this far
-const THROTTLE_MIN = 20; // don't ask Last.fm more often than this
+const THROTTLE_MIN = 10; // don't ask Last.fm more often than this
 export const SUGGESTION_DAYS = 14; // unanswered suggestions fade after this
 
 export async function ensureAlbumId(supabase: Supabase, deezerId: number): Promise<string | null> {
@@ -103,7 +103,7 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     const quietH = (now - last) / 3_600_000;
     let status = row.status;
     if (row.status === "listening") {
-      if (share >= DONE_SHARE || (quietH >= 24 && share >= COMPLETE_SHARE)) status = "finished"; // done: ask how it was
+      if (share >= DONE_SHARE || (quietH >= SETTLE_MIN / 60 && share >= COMPLETE_SHARE)) status = "finished"; // done (or most of it, then a pause): ask how it was
       else if (quietH >= 72) status = "parked"; // left alone for days: it goes to To listen
     }
     if (!g && status === row.status) continue;
@@ -130,8 +130,18 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
   for (const l of listens) {
     if (muted.has(`album:${l.deezerId}`) || muted.has(`artist:${looseName(l.artist)}`)) continue;
     if (logged.has(`${l.deezerId}|${l.playedOn}`)) continue; // already in the diary that day
-    if (earlier.some((s) => s.deezer_id === l.deezerId && within7(s.played_on, l.playedOn))) continue; // once a week per record
-    earlier.push({ id: "", deezer_id: l.deezerId, played_on: l.playedOn, status: "pending", lfm_key: l.key, tracks: l.tracks, total_tracks: l.totalTracks, last_played_at: null });
+    // Once a week per record — except a new, (nearly) whole listen after you'd put it aside or logged it:
+    // e.g. "I'll get back to it" on Monday, then the whole album on Wednesday.
+    const complete0 = l.tracksPlayed / l.totalTracks >= COMPLETE_SHARE;
+    const lastOf = (s: (typeof earlier)[number]) => (s.last_played_at ? Date.parse(s.last_played_at) : Date.parse(s.played_on + "T23:59:59Z"));
+    const blocked = earlier.some(
+      (s) =>
+        s.deezer_id === l.deezerId &&
+        within7(s.played_on, l.playedOn) &&
+        !(complete0 && (s.status === "dismissed" || s.status === "logged") && l.startUts * 1000 > lastOf(s))
+    );
+    if (blocked) continue;
+    earlier.push({ id: "", deezer_id: l.deezerId, played_on: l.playedOn, status: "pending", lfm_key: l.key, tracks: l.tracks, total_tracks: l.totalTracks, last_played_at: new Date(l.lastUts * 1000).toISOString() });
 
     const complete = l.tracksPlayed / l.totalTracks >= COMPLETE_SHARE;
     let status: "pending" | "logged" = "pending";

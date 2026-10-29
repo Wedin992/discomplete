@@ -82,7 +82,7 @@ export const MIN_SHARE = 0.4; // share of the album's tracks played in one sessi
 export const MIN_TRACKS = 5; // …and at least this many (or the whole album if it's shorter)
 export const COMPLETE_SHARE = 0.7; // from here it counts as having heard the album
 export const DONE_SHARE = 0.9; // an album you're "on" counts as finished from here
-export const SETTLE_MIN = 45; // wait this long after the last track before suggesting (you may just be on a break)
+export const SETTLE_MIN = 20; // wait this long after the last track before suggesting (you may just be on a break) — unless the album is basically done
 
 /** How a scrobble's album is recognised across syncs. */
 export const albumKey = (artist: string, album: string) => `${loose(artist)}|${loose(baseTitle(album) || album)}`;
@@ -100,6 +100,7 @@ export type AlbumListen = {
   key: string; // albumKey of the scrobbles
   tracks: string[]; // trackKey of each distinct track played
   lastUts: number;
+  startUts: number;
 };
 
 const stockholmDay = (uts: number) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm" }).format(new Date(uts * 1000));
@@ -126,7 +127,7 @@ export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> 
   // Only sessions with a handful of different tracks are worth a Deezer lookup — and only once
   // they've settled: a session that's still going (or on a short break) waits.
   const settled = Date.now() / 1000 - SETTLE_MIN * 60;
-  const candidates = done.filter((s) => s.tracks.size >= Math.min(4, MIN_TRACKS) && s.last <= settled).slice(-40);
+  const candidates = done.filter((s) => s.tracks.size >= Math.min(4, MIN_TRACKS)).slice(-40);
   const found = await Promise.all(
     candidates.map(async (s) => {
       const hit = await findAlbum(s.artist, s.album).catch(() => null);
@@ -136,6 +137,7 @@ export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> 
       if (!total) return null;
       const played = Math.min(s.tracks.size, total);
       if (played < Math.min(MIN_TRACKS, total) || played / total < MIN_SHARE) return null;
+      if (s.last > settled && played / total < DONE_SHARE) return null; // still going (or a short break) — unless it's basically done
       return {
         deezerId: hit.deezerId,
         deezerArtistId: hit.artistId,
@@ -148,6 +150,7 @@ export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> 
         key: s.key,
         tracks: [...s.tracks],
         lastUts: s.last,
+        startUts: s.start,
       } satisfies AlbumListen;
     })
   );

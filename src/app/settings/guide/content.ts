@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 5,
+    date: "2026-10-29",
+    changes: [
+      "Förslag från Spotify kommer snabbare: appen väntar 20 minuter efter sista låten (tidigare 45) och kollar Last.fm var 10:e minut (tidigare 20). Har du spelat minst 90 % av skivan föreslås den direkt.",
+      "En skiva på On the turntable räknas som klar när du har spelat 70 % och sedan pausat i 20 minuter (tidigare ett dygn).",
+      "Har du valt “I’ll get back to it” eller “Not now” och sedan lyssnar igenom hela skivan en annan gång, föreslås den igen – tidigare blockerades den i en vecka.",
+    ],
+  },
+  {
     version: 4,
     date: "2026-10-29",
     changes: [
@@ -98,9 +107,9 @@ export const SECTIONS: Section[] = [
     body: [
       "Under Settings → Spotify finns tre steg med knappar: skapa ett gratiskonto på Last.fm, koppla Spotify där (Applications → Spotify Scrobbling → Connect) och skriv in ditt Last.fm-namn. Därefter visar appen “✓ It’s working” och vad du spelar.",
       "“Add albums you already know” under Settings listar skivor du har spelat ungefär hela genom åren. Sätt stjärnor så hamnar de under “Heard before”.",
-      "När du har spelat minst 40 % av en skiva (och minst 5 låtar) föreslår dagboken den. Från 70 % står det “Looks like you listened to …” – sätt stjärnor så loggas den på rätt dag.",
+      "När du har spelat minst 40 % av en skiva (och minst 5 låtar) föreslår dagboken den, cirka 20 minuter efter sista låten – direkt om du spelat 90 %. Från 70 % står det “Looks like you listened to …” – sätt stjärnor så loggas den på rätt dag.",
       "Har du bara börjat står det “You started …”. Välj “I’m on it” så hamnar den under “On the turntable” med en mätare, eller “I’ll get back to it” så flyttas den till To listen.",
-      "Från 90 % räknas den som klar och appen frågar hur den var. Ligger den orörd i tre dagar flyttas den till To listen.",
+      "Från 90 % – eller 70 % följt av en paus på 20 minuter – räknas den som klar och appen frågar hur den var. Ligger den orörd i tre dagar flyttas den till To listen.",
       "To listen visar påbörjade skivor överst under “Started”, och skivsidans låtlista har bockar för det du har spelat. Saknas en låt trycker du på ringen och bockar i den själv.",
       "“Not an album listen” stänger av förslag för en skiva eller en artist. Utan Last.fm syns inget av detta.",
     ],
