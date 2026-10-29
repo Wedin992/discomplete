@@ -6,6 +6,13 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 14,
+    date: "2026-10-29",
+    changes: [
+      "Listorna under Challenges går att klicka på innan du startar dem (“See the albums”): du ser alla skivor, vilka du redan hört och hur långt du skulle ha kommit direkt.",
+    ],
+  },
+  {
     version: 13,
     date: "2026-10-29",
     changes: [

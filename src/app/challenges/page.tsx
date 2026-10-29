@@ -43,18 +43,21 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
         {LISTS.map((l) => (
           <div key={l.slug} className="card stack gap-8">
             <div className="row gap-8" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
-              <strong style={{ fontSize: 18 }}>{l.title}</strong>
+              <Link href={`/challenges/list/${l.slug}`} className="link-button" style={{ fontSize: 18 }}>{l.title}</Link>
               <span className="mono muted small">{l.items.length} albums</span>
             </div>
             <p className="muted">{l.blurb}</p>
             {started.has(l.slug) ? (
               <Link href={`/challenges/${views.find((v) => v.kind === "list" && v.ref === l.slug)!.id}`} className="btn btn-sm" style={{ alignSelf: "flex-start" }}>✓ Started — open</Link>
             ) : (
-              <form action={startChallenge}>
-                <input type="hidden" name="kind" value="list" />
-                <input type="hidden" name="ref" value={l.slug} />
-                <PendingButton className="btn btn-sm btn-primary" pending="Starting…">Start this list</PendingButton>
-              </form>
+              <div className="row gap-12">
+                <Link href={`/challenges/list/${l.slug}`} className="btn btn-sm">See the albums</Link>
+                <form action={startChallenge}>
+                  <input type="hidden" name="kind" value="list" />
+                  <input type="hidden" name="ref" value={l.slug} />
+                  <PendingButton className="btn btn-sm btn-primary" pending="Starting…">Start this list</PendingButton>
+                </form>
+              </div>
             )}
           </div>
         ))}
