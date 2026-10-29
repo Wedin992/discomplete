@@ -7,7 +7,7 @@ import { TAGS, logPath, recordPath, todayIso, type Album } from "@/lib/format";
 import { translateToEnglish } from "@/lib/translate";
 import { getAlbum } from "@/lib/deezer";
 import { dismissPick, shufflePicks } from "@/lib/discover-store";
-import { getLastfmUser, LastfmError, looseName } from "@/lib/lastfm";
+import { getLastfmUser, LastfmError, looseName, trackKey } from "@/lib/lastfm";
 import { logAlbumListen, parkInToListen, syncLastfm } from "@/lib/lastfm-sync";
 import { SLOTS, type Slot } from "@/lib/discover";
 
@@ -471,4 +471,26 @@ export async function backToToListen(formData: FormData) {
   await supabase.from("lastfm_suggestions").update({ status: "dismissed" }).eq("id", id).eq("user_id", user.id);
   revalidatePath("/", "layout");
   redirect("/?saved=tolisten");
+}
+
+/** Mark a track as played yourself (Last.fm missed it, or you heard it some other way) — or take your mark back. */
+export async function markTrack(deezerId: number, track: string, on: boolean): Promise<{ ok: boolean }> {
+  const { supabase, user } = await requireUser();
+  const key = trackKey(String(track ?? ""));
+  if (!Number.isInteger(deezerId) || deezerId <= 0 || !key || key.length > 300) return { ok: false };
+  if (on) {
+    const { error } = await supabase.from("track_marks").upsert({ user_id: user.id, deezer_id: deezerId, track: key }, { onConflict: "user_id,deezer_id,track", ignoreDuplicates: true });
+    if (error) return { ok: false };
+    // An album you're on (or were just suggested) counts it too, so its progress — and "finished" — follow.
+    const { data } = await supabase.from("lastfm_suggestions").select("id, tracks, total_tracks").eq("user_id", user.id).eq("deezer_id", deezerId).in("status", ["pending", "listening"]);
+    for (const r of (data ?? []) as { id: string; tracks: string[] | null; total_tracks: number }[]) {
+      const tracks = [...new Set([...(r.tracks ?? []), key])];
+      await supabase.from("lastfm_suggestions").update({ tracks, tracks_played: Math.min(tracks.length, r.total_tracks) }).eq("id", r.id).eq("user_id", user.id);
+    }
+  } else {
+    const { error } = await supabase.from("track_marks").delete().eq("user_id", user.id).eq("deezer_id", deezerId).eq("track", key);
+    if (error) return { ok: false };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

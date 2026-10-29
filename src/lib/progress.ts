@@ -24,6 +24,15 @@ export async function listeningProgress(
   // Cached for a few minutes: the window starts on the hour.
   const from = Math.floor(Date.now() / 3_600_000) * 3600 - PROGRESS_DAYS * 86400;
   const scrobbles = await getRecentScrobbles((data as { username: string }).username, from, 3, 300).catch(() => []);
+  const ids0 = albums.map((a) => a.deezer_id).filter((x): x is number => !!x);
+  const { data: marks } = await supabase
+    .from("track_marks")
+    .select("deezer_id, track")
+    .eq("user_id", userId)
+    .in("deezer_id", ids0)
+    .gte("created_at", new Date(from * 1000).toISOString());
+  const marked = new Map<number, string[]>();
+  for (const m of (marks ?? []) as { deezer_id: number; track: string }[]) marked.set(m.deezer_id, [...(marked.get(m.deezer_id) ?? []), m.track]);
   const byArtist = new Map<string, Set<string>>();
   for (const s of scrobbles) {
     const a = looseName(s.artist);
@@ -39,7 +48,7 @@ export async function listeningProgress(
   await Promise.all(
     albums.map(async (a) => {
       if (!a.deezer_id) return;
-      const heard = new Set([...(byArtist.get(looseName(a.artist)) ?? []), ...(fromSuggestions.get(a.deezer_id) ?? [])]);
+      const heard = new Set([...(byArtist.get(looseName(a.artist)) ?? []), ...(fromSuggestions.get(a.deezer_id) ?? []), ...(marked.get(a.deezer_id) ?? [])]);
       if (!heard.size) return;
       const tracks = await getAlbumTracks(a.deezer_id).catch(() => []);
       const played = tracks.filter((t) => heard.has(trackKey(t.title))).length;

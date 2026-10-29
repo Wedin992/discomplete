@@ -36,6 +36,7 @@ Not yet: "More like this" recommendations, Last.fm import, following friends.
 10. **Favourite tracks:** run `supabase/migrations/0009_favourite_tracks.sql` (up to three per entry, and the Fans' favourite tracks list on record pages).
 11. **Spotify via Last.fm (optional):** run `supabase/migrations/0010_lastfm.sql` and add `LASTFM_API_KEY` in Vercel (free key from last.fm/api/account/create). Users connect their Last.fm username in Settings; whole-album sessions in their scrobbles become "Looks like you listened to …" suggestions in the diary.
 12. **On the turntable:** run `supabase/migrations/0011_turntable.sql` (follows albums you've started until you finish them).
+13. **Tick tracks yourself:** run `supabase/migrations/0012_track_marks.sql` (mark a track as played on the record page when Last.fm missed it).
 6. **Sign-up quiz and artist suggestions:** run `0004_explore_artists.sql` and `0005_onboarding.sql`.
 7. **Authentication → Emails → Templates:** in both *Magic Link* and *Confirm signup*, add the code so people can sign in inside the installed app (where email links open the browser instead):
    ```html

@@ -2,6 +2,7 @@ import { getUser } from "@/lib/supabase/server";
 import { getAlbumTracks } from "@/lib/deezer";
 import { getRecentScrobbles, lastfmConfigured, looseName, trackKey } from "@/lib/lastfm";
 import type { Album } from "@/lib/format";
+import { TrackCheck } from "./TrackCheck";
 
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
@@ -9,16 +10,20 @@ const DAYS = 30;
 
 /**
  * The tracklist. With Last.fm connected, tracks you've played in the last 30 days get a check —
- * handy for an album you're partway through.
+ * handy for an album you're partway through. Any track can also be ticked by hand (Last.fm missed it,
+ * or you heard it somewhere else); those marks count for 30 days too.
  */
 export async function RecordTracks({ album }: { album: Album }) {
   if (!album.deezer_id) return null;
   const { supabase, user } = await getUser();
-  const [tracks, linkRes, sugRes] = await Promise.all([
+  const since = new Date(Date.now() - DAYS * 86400_000).toISOString();
+  const [tracks, linkRes, sugRes, marksRes] = await Promise.all([
     getAlbumTracks(album.deezer_id).catch(() => []),
     supabase.from("lastfm_links").select("username").eq("user_id", user!.id).maybeSingle(),
     supabase.from("lastfm_suggestions").select("tracks").eq("user_id", user!.id).eq("deezer_id", album.deezer_id),
+    supabase.from("track_marks").select("track").eq("user_id", user!.id).eq("deezer_id", album.deezer_id).gte("created_at", since),
   ]);
+  const canMark = !marksRes.error; // before migration 0012 there's nothing to tick
   if (!tracks.length) return null;
 
   const username = !linkRes.error && linkRes.data ? (linkRes.data as { username: string }).username : null;
@@ -31,18 +36,26 @@ export async function RecordTracks({ album }: { album: Album }) {
     const scrobbles = await getRecentScrobbles(username, from, 3, 300).catch(() => []);
     for (const s of scrobbles) if (looseName(s.artist) === artist) heard.add(trackKey(s.track));
   }
-  const played = tracks.filter((t) => heard.has(trackKey(t.title)));
-  const showChecks = !!username && played.length > 0;
+  // Your own marks — kept apart from scrobbles so only those can be unticked.
+  const marked = new Set(((marksRes.error ? [] : marksRes.data ?? []) as { track: string }[]).map((m) => m.track));
+  const isPlayed = (title: string) => heard.has(trackKey(title)) || marked.has(trackKey(title));
+  const played = tracks.filter((t) => isPlayed(t.title));
+  const showChecks = played.length > 0;
 
   const list = (
     <ol className="tracklist">
       {tracks.map((t) => {
-        const on = showChecks && heard.has(trackKey(t.title));
+        const key = trackKey(t.title);
+        const on = isPlayed(t.title);
         return (
           <li key={t.id} className={on ? "played" : undefined}>
             <span className="mono tl-pos">{t.position}</span>
             <span className="tl-title">{t.title}</span>
-            {showChecks ? <span className="tl-check" aria-label={on ? "Played" : "Not played yet"}>{on ? "✓" : ""}</span> : null}
+            {canMark ? (
+              <TrackCheck deezerId={album.deezer_id!} track={key} title={t.title} scrobbled={heard.has(key)} marked={marked.has(key)} />
+            ) : showChecks ? (
+              <span className="tl-check" aria-label={on ? "Played" : "Not played yet"}>{on ? "✓" : ""}</span>
+            ) : null}
             <span className="mono muted tl-dur">{t.duration ? mmss(t.duration) : ""}</span>
           </li>
         );
@@ -58,12 +71,13 @@ export async function RecordTracks({ album }: { album: Album }) {
       </div>
       <div className="bar" aria-hidden="true" style={{ maxWidth: 420 }}><span style={{ width: `${Math.round((played.length / tracks.length) * 100)}%` }} /></div>
       {list}
-      <p className="muted small">From your Spotify listening via Last.fm.</p>
+      <p className="muted small">{username ? "From your Spotify listening via Last.fm. " : ""}{canMark ? "Missing one? Tap the circle to tick it yourself." : ""}</p>
     </section>
   ) : (
     <details className="tracklist-details">
       <summary className="eyebrow">Tracklist · {tracks.length} tracks</summary>
       {list}
+      {canMark ? <p className="muted small" style={{ marginTop: 8 }}>Tap the circle on a track you’ve played to tick it.</p> : null}
     </details>
   );
 }

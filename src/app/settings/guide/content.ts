@@ -6,6 +6,14 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 3,
+    date: "2026-10-29",
+    changes: [
+      "Låtlistan på skivsidan: tryck på ringen vid en låt för att markera den som spelad själv – om Last.fm missade den eller du hörde den någon annanstans. Tryck igen för att ångra.",
+      "Dina egna markeringar räknas med i “x of y played”, i To listen och på On the turntable. Bockar från Last.fm går inte att ta bort.",
+    ],
+  },
+  {
     version: 2,
     date: "2026-10-29",
     changes: [
@@ -84,7 +92,7 @@ export const SECTIONS: Section[] = [
       "När du har spelat minst 40 % av en skiva (och minst 5 låtar) föreslår dagboken den. Från 70 % står det “Looks like you listened to …” – sätt stjärnor så loggas den på rätt dag.",
       "Har du bara börjat står det “You started …”. Välj “I’m on it” så hamnar den under “On the turntable” med en mätare, eller “I’ll get back to it” så flyttas den till To listen.",
       "Från 90 % räknas den som klar och appen frågar hur den var. Ligger den orörd i tre dagar flyttas den till To listen.",
-      "To listen visar påbörjade skivor överst under “Started”, och skivsidans låtlista har bockar för det du har spelat.",
+      "To listen visar påbörjade skivor överst under “Started”, och skivsidans låtlista har bockar för det du har spelat. Saknas en låt trycker du på ringen och bockar i den själv.",
       "“Not an album listen” stänger av förslag för en skiva eller en artist. Utan Last.fm syns inget av detta.",
     ],
   },
