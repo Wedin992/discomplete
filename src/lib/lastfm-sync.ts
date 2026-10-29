@@ -75,12 +75,14 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
   const [mutedRes, sugRes, entriesRes] = await Promise.all([
     supabase.from("lastfm_muted").select("kind, key").eq("user_id", userId),
     supabase.from("lastfm_suggestions").select("id, deezer_id, played_on, status, lfm_key, tracks, total_tracks, last_played_at").eq("user_id", userId).gte("played_on", since),
-    supabase.from("entries").select("listened_on, created_at, album:albums!inner(deezer_id)").eq("user_id", userId).or(`listened_on.gte.${since},created_at.gte.${since}`),
+    supabase.from("entries").select("listened_on, created_at, kind, album:albums!inner(deezer_id)").eq("user_id", userId).or(`listened_on.gte.${since},created_at.gte.${since}`),
   ]);
   type Row = { id: string; deezer_id: number; played_on: string; status: string; lfm_key: string | null; tracks: string[] | null; total_tracks: number; last_played_at: string | null };
   const muted = new Set(((mutedRes.data ?? []) as { kind: string; key: string }[]).map((m) => `${m.kind}:${m.key}`));
   const earlier = (sugRes.data ?? []) as Row[];
-  const logged = new Set(((entriesRes.data ?? []) as unknown as { listened_on: string; album: { deezer_id: number } }[]).map((e) => `${e.album.deezer_id}|${e.listened_on}`));
+  // Real listens only: having heard a record "before" doesn't stop today's listen from counting.
+  const dated = ((entriesRes.data ?? []) as unknown as { listened_on: string; kind: string; album: { deezer_id: number } }[]).filter((e) => e.kind !== "before");
+  const logged = new Set(dated.map((e) => `${e.album.deezer_id}|${e.listened_on}`));
   const within7 = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) < 7 * 86400_000;
 
   // 1. Albums already suggested or on the turntable: add whatever you've played of them since.
@@ -181,7 +183,7 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     const long = await getRecentScrobbles(link.username, Math.floor(now / 3_600_000) * 3600 - SCATTERED_DAYS * 86400, 3, 600);
     const followedKeys = new Set(earlier.map((s) => s.lfm_key).filter((k): k is string => !!k));
     const scattered = await spotScatteredListens(long, (k) => followedKeys.has(k));
-    const loggedAlbums = new Set(((entriesRes.data ?? []) as unknown as { album: { deezer_id: number } }[]).map((e) => e.album.deezer_id));
+    const loggedAlbums = new Set(dated.map((e) => e.album.deezer_id));
     for (const l of scattered) {
       if (muted.has(`album:${l.deezerId}`) || muted.has(`artist:${looseName(l.artist)}`)) continue;
       if (loggedAlbums.has(l.deezerId)) continue; // in the diary lately
