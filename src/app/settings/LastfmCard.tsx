@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { LastfmStatus } from "./LastfmStatus";
 import { connectLastfm, disconnectLastfm, setLastfmAutolog, syncLastfmNow } from "@/app/actions";
 import { PendingButton } from "@/components/PendingButton";
 
 const MESSAGES: Record<string, { text: string; error?: boolean }> = {
-  connected: { text: "Connected — we’ll look for album listens each time you open the app." },
+  connected: { text: "Connected! From now on, albums you play show up in your diary." },
   invalid: { text: "That doesn’t look like a Last.fm username.", error: true },
   notfound: { text: "We couldn’t find that Last.fm user. Check the spelling.", error: true },
   unavailable: { text: "Last.fm didn’t answer. If your recent listening is hidden on Last.fm, make it visible — otherwise try again in a moment.", error: true },
@@ -17,11 +19,15 @@ export function LastfmCard({ link, status, configured }: { link: { username: str
   return (
     <div id="lastfm" className="card stack gap-12">
       <h2 className="eyebrow">Spotify · optional</h2>
+      {msg ? <p className={msg.error ? "error small" : "small lfm-msg"} role="status">{msg.text}</p> : null}
       {link ? (
         <>
           <p>
             Connected to Last.fm as <strong>{link.username}</strong>. When you play a good part of an album, it shows up in your diary as a suggestion.
           </p>
+          <Suspense fallback={<div className="lfm-status muted small">Checking your connection…</div>}>
+            <LastfmStatus username={link.username} />
+          </Suspense>
           <form action={setLastfmAutolog} className="check">
             <input type="hidden" name="on" value={link.autolog ? "0" : "1"} />
             <PendingButton className="btn btn-sm pill" aria-pressed={link.autolog} pending="Saving…">
@@ -43,25 +49,45 @@ export function LastfmCard({ link, status, configured }: { link: { username: str
         <>
           <p style={{ fontWeight: 700, fontSize: 17 }}>Using Spotify? Fill your diary automatically.</p>
           <p className="muted">When you play an album, Discomplete suggests logging it — one tap, on the right day. Songs and playlists are ignored.</p>
-          <ol className="lfm-steps muted">
-            <li>Create a free account on <a href="https://www.last.fm/join" target="_blank" rel="noopener noreferrer">last.fm</a> (or log in).</li>
-            <li>On Last.fm: Settings → Applications → <strong>Spotify Scrobbling → Connect</strong>.</li>
-            <li>Type your Last.fm username here.</li>
-          </ol>
           {configured ? (
-            <form action={connectLastfm} className="row gap-8" style={{ alignItems: "flex-end" }}>
-              <div className="field" style={{ flex: "1 1 200px" }}>
-                <label htmlFor="lfm-user" className="label">Last.fm username</label>
-                <input id="lfm-user" name="username" className="input" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={60} required />
-              </div>
-              <PendingButton className="btn btn-primary" pending="Connecting…">Connect</PendingButton>
-            </form>
+            <ol className="lfm-wizard">
+              <li>
+                <span className="lfm-num" aria-hidden="true">1</span>
+                <div className="stack gap-8">
+                  <strong>Get a free Last.fm account</strong>
+                  <span className="muted small">Last.fm is the bridge: Spotify tells it what you play, and we read it from there.</span>
+                  <a href="https://www.last.fm/join" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ alignSelf: "flex-start" }}>Sign up on Last.fm ↗</a>
+                  <span className="muted small">Already have one? Skip to step 2.</span>
+                </div>
+              </li>
+              <li>
+                <span className="lfm-num" aria-hidden="true">2</span>
+                <div className="stack gap-8">
+                  <strong>Connect Spotify there</strong>
+                  <span className="muted small">Find “Spotify Scrobbling” and tap Connect. One time only.</span>
+                  <a href="https://www.last.fm/settings/applications" target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ alignSelf: "flex-start" }}>Open Last.fm → Applications ↗</a>
+                </div>
+              </li>
+              <li>
+                <span className="lfm-num" aria-hidden="true">3</span>
+                <div className="stack gap-8" style={{ flex: "1 1 auto", minWidth: 0 }}>
+                  <strong>Tell us your Last.fm name</strong>
+                  <form action={connectLastfm} className="row gap-8" style={{ alignItems: "flex-end" }}>
+                    <div className="field" style={{ flex: "1 1 160px" }}>
+                      <label htmlFor="lfm-user" className="label">Last.fm username</label>
+                      <input id="lfm-user" name="username" className="input" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={60} required placeholder="e.g. kevinw" />
+                    </div>
+                    <PendingButton className="btn btn-primary" pending="Connecting…">Connect</PendingButton>
+                  </form>
+                  <span className="muted small">We’ll show you right away when we can see your music.</span>
+                </div>
+              </li>
+            </ol>
           ) : (
             <p className="muted small">Coming soon.</p>
           )}
         </>
       )}
-      {msg ? <p className={msg.error ? "error small" : "small"} role="status">{msg.text}</p> : null}
       <p className="muted small">Uses only your public Last.fm listening history. Nothing is posted anywhere.</p>
     </div>
   );

@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 4,
+    date: "2026-10-29",
+    changes: [
+      "Koppla Spotify är nu en guide i tre steg under Settings, med knappar som öppnar rätt sida på Last.fm direkt.",
+      "När du har kopplat visar appen “✓ It’s working” och vad du spelar just nu (eller senast). Har inget dykt upp än står det “Waiting for your first song…” och appen kollar själv igen var 20:e sekund.",
+      "Är din lyssning dold på Last.fm säger appen det och länkar till rätt inställning.",
+    ],
+  },
+  {
     version: 3,
     date: "2026-10-29",
     changes: [
@@ -87,7 +96,7 @@ export const SECTIONS: Section[] = [
     id: "lastfm",
     title: "Spotify via Last.fm (valfritt)",
     body: [
-      "Skapa ett gratiskonto på last.fm, koppla Spotify under Last.fm → Settings → Applications, och skriv sedan ditt Last.fm-namn under Settings här i appen.",
+      "Under Settings → Spotify finns tre steg med knappar: skapa ett gratiskonto på Last.fm, koppla Spotify där (Applications → Spotify Scrobbling → Connect) och skriv in ditt Last.fm-namn. Därefter visar appen “✓ It’s working” och vad du spelar.",
       "“Add albums you already know” under Settings listar skivor du har spelat ungefär hela genom åren. Sätt stjärnor så hamnar de under “Heard before”.",
       "När du har spelat minst 40 % av en skiva (och minst 5 låtar) föreslår dagboken den. Från 70 % står det “Looks like you listened to …” – sätt stjärnor så loggas den på rätt dag.",
       "Har du bara börjat står det “You started …”. Välj “I’m on it” så hamnar den under “On the turntable” med en mätare, eller “I’ll get back to it” så flyttas den till To listen.",

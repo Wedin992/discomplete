@@ -337,3 +337,11 @@ body { -webkit-tap-highlight-color: transparent; }
 .tl-toggle.on::before { border-color: var(--accent); }
 .tl-toggle:disabled { opacity: .6; }
 .tl-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -6px; border-radius: 50%; }
+.lfm-wizard { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.lfm-wizard li { display: flex; gap: 14px; align-items: flex-start; }
+.lfm-num { flex: 0 0 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 14px; margin-top: -2px; }
+.lfm-status { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--line); }
+.lfm-status.ok { border-color: var(--accent); }
+.lfm-status.ok strong { color: var(--accent); }
+.lfm-status.warn { background: var(--surface); }
+.lfm-msg { color: var(--accent); font-weight: 600; }

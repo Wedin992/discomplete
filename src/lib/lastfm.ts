@@ -155,3 +155,20 @@ export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> 
 }
 
 export const looseName = loose;
+
+export type LatestPlay = { artist: string; track: string; uts: number | null; nowPlaying: boolean };
+
+/** The newest thing on someone's Last.fm (playing right now, or their last scrobble) — to show the connection works. */
+export async function getLatestPlay(username: string): Promise<LatestPlay | null> {
+  type T = { artist?: { "#text"?: string; name?: string }; name?: string; date?: { uts?: string }; "@attr"?: { nowplaying?: string } };
+  const r = await call<{ recenttracks?: { track?: T[] | T } }>("user.getrecenttracks", { user: username, limit: 1 });
+  const raw = r.recenttracks?.track;
+  const t = (Array.isArray(raw) ? raw : raw ? [raw] : [])[0];
+  if (!t?.name) return null;
+  return {
+    artist: t.artist?.["#text"] ?? t.artist?.name ?? "",
+    track: t.name,
+    uts: t.date?.uts ? Number(t.date.uts) : null,
+    nowPlaying: t["@attr"]?.nowplaying === "true",
+  };
+}
