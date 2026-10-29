@@ -7,6 +7,7 @@ import { rng } from "@/lib/discover";
 import { snoozeRediscover } from "@/app/actions";
 import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, type Suggestion } from "@/components/LastfmSuggestions";
 import { LastfmSync } from "@/components/LastfmSync";
+import { COMPLETE_SHARE } from "@/lib/lastfm";
 import { DiaryChallenges } from "@/components/ChallengeCards";
 import { Suspense } from "react";
 import { artistPath, daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
@@ -52,9 +53,11 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   // Before migration 0010 these tables don't exist: then there's simply nothing from Last.fm.
   const lastfmLinked = !lfmLinkRes.error && !!lfmLinkRes.data;
   const lfmAll = (lfmRes.error ? [] : lfmRes.data ?? []) as Suggestion[];
-  const turntable = lfmAll.filter((s) => s.status === "listening").slice(0, 2);
+  // Started albums sit on the turntable (older rows may still say "pending").
+  const isStarted = (s: Suggestion) => s.status === "listening" || (s.status === "pending" && s.tracks_played / Math.max(1, s.total_tracks) < COMPLETE_SHARE);
+  const turntable = lfmAll.filter(isStarted).slice(0, 4);
   // Finished ones ("how was it?") first, then the newest; three at most.
-  const asks = lfmAll.filter((s) => s.status !== "listening").sort((a, b) => (a.status === "finished" ? -1 : 0) - (b.status === "finished" ? -1 : 0));
+  const asks = lfmAll.filter((s) => !isStarted(s)).sort((a, b) => (a.status === "finished" ? -1 : 0) - (b.status === "finished" ? -1 : 0));
   const suggestions = asks.slice(0, 3);
   const moreSuggestions = Math.max(0, asks.length - suggestions.length);
   const snoozed = new Set(((snoozeRes.data ?? []) as { album_id: string }[]).map((r) => r.album_id));

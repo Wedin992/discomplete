@@ -103,7 +103,9 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     const share = Math.min(tracks.length, row.total_tracks) / Math.max(1, row.total_tracks);
     const quietH = (now - last) / 3_600_000;
     let status = row.status;
-    if (row.status === "listening") {
+    // Started albums go straight on the turntable (no "I'm on it" needed).
+    if (status === "pending" && share < COMPLETE_SHARE) status = "listening";
+    if (status === "listening") {
       if (share >= DONE_SHARE || (quietH >= SETTLE_MIN / 60 && share >= COMPLETE_SHARE)) status = "finished"; // done (or most of it, then a pause): ask how it was
       else if (quietH >= 72) status = "parked"; // left alone for days: it goes to To listen
     }
@@ -145,7 +147,8 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     earlier.push({ id: "", deezer_id: l.deezerId, played_on: l.playedOn, status: "pending", lfm_key: l.key, tracks: l.tracks, total_tracks: l.totalTracks, last_played_at: new Date(l.lastUts * 1000).toISOString() });
 
     const complete = l.tracksPlayed / l.totalTracks >= COMPLETE_SHARE;
-    let status: "pending" | "logged" = "pending";
+    // Started: straight on the turntable. (Nearly) whole: ask — or log it right away with autolog on.
+    let status: "pending" | "logged" | "listening" = complete ? "pending" : "listening";
     if (complete && link.autolog && (await logAlbumListen(supabase, userId, l.deezerId, l.playedOn, null))) status = "logged";
     const base = {
       user_id: userId,
@@ -164,7 +167,7 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     let { error } = await supabase.from("lastfm_suggestions").insert(status === "logged" ? { ...full, review: "ask" } : full);
     if (error && status === "logged") ({ error } = await supabase.from("lastfm_suggestions").insert(full)); // before migration 0014
     if (error) ({ error } = await supabase.from("lastfm_suggestions").insert(base)); // before migration 0011
-    if (!error && status === "pending") added++;
+    if (!error && status !== "logged") added++;
   }
   // 3. Albums heard bit by bit over the last two weeks (half the album, in any order, over several sittings).
   try {
@@ -187,7 +190,7 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
         played_on: l.playedOn,
         tracks_played: l.tracksPlayed,
         total_tracks: l.totalTracks,
-        status: "pending",
+        status: l.tracksPlayed / l.totalTracks >= COMPLETE_SHARE ? "pending" : "listening",
         lfm_key: l.key,
         tracks: l.tracks,
         last_played_at: new Date(l.lastUts * 1000).toISOString(),

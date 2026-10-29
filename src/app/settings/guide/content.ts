@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 12,
+    date: "2026-10-29",
+    changes: [
+      "Påbörjade skivor hamnar direkt på “On the turntable” – inget “I’m on it” behövs längre. Där finns What’s left, Done? Rate it och Move to To listen.",
+      "“Heard enough? Log it anyway” är borttaget. Vill du logga en skiva du inte lyssnat klart på gör du det på skivsidan, eller med “Done? Rate it”.",
+      "Under ⋯ på varje skiva på turntable: Hide this, Never suggest this album och Never suggest artisten.",
+    ],
+  },
+  {
     version: 11,
     date: "2026-10-29",
     changes: [
@@ -162,7 +171,7 @@ export const SECTIONS: Section[] = [
       "Under Settings → Spotify finns tre steg med knappar: skapa ett gratiskonto på Last.fm, koppla Spotify där (Applications → Spotify Scrobbling → Connect) och skriv in ditt Last.fm-namn. Därefter visar appen “✓ It’s working” och vad du spelar.",
       "“Add albums you already know” under Settings listar skivor du har spelat ungefär hela genom åren. Sätt stjärnor så hamnar de under “Heard before”.",
       "När du har spelat minst 40 % av en skiva (och minst 5 låtar) – eller 3 låtar i rad i skivans ordning, eller hälften av skivan utspritt över två veckor – föreslår dagboken den, cirka 20 minuter efter sista låten – direkt om du spelat 90 %. Från 85 % står det “Looks like you listened to …” – sätt stjärnor så loggas den på rätt dag.",
-      "Har du bara börjat står det “You started …”. Välj “I’m on it” så hamnar den under “On the turntable” med en mätare, eller “I’ll get back to it” så flyttas den till To listen.",
+      "Har du bara börjat hamnar skivan direkt under “On the turntable” med en mätare. Därifrån: “What’s left” (låtlistan), “Done? Rate it”, “Move to To listen”, och under ⋯ Hide this / Never suggest.",
       "Från 90 % – eller 85 % följt av en paus på 20 minuter – räknas den som klar och appen frågar hur den var. Ligger den orörd i tre dagar flyttas den till To listen.",
       "Har du spelat minst 85 % av en skiva i To listen frågar dagboken hur den var. To listen visar påbörjade skivor överst under “Started”, och skivsidans låtlista har bockar för det du har spelat. Saknas en låt trycker du på ringen och bockar i den själv.",
       "Med “Log full albums automatically” påslaget loggas hela skivor direkt – dagboken frågar sedan “how was it?”. Välj stjärnor, “Journal this listen”, “Just listened” (behåll utan betyg) eller “I’ll do it later” (hamnar under “Waiting for your review” längst ned).",

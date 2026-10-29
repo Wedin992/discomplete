@@ -1,10 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { backToToListen, dismissSuggestion, onTheTurntable, keepAsListened, rateLogged, rateSuggestion, reviewLater, undoAutoLog } from "@/app/actions";
+import { backToToListen, dismissSuggestion, keepAsListened, rateLogged, rateSuggestion, reviewLater, undoAutoLog } from "@/app/actions";
 import { QuickRate } from "@/components/QuickRate";
 import { PendingButton } from "@/components/PendingButton";
 import { daysBetween, longDate, todayIso } from "@/lib/format";
-import { COMPLETE_SHARE } from "@/lib/lastfm";
 
 export type Suggestion = {
   id: string;
@@ -18,7 +17,6 @@ export type Suggestion = {
   status: "pending" | "listening" | "finished";
 };
 
-const COMPLETE = COMPLETE_SHARE;
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 function when(day: string) {
   const ago = daysBetween(day, todayIso());
@@ -58,7 +56,7 @@ function Cover({ s, size = 64 }: { s: Suggestion; size?: number }) {
 /**
  * From Spotify (via Last.fm), at most three:
  *  - finished / heard most of it → "Looks like you listened to …" with stars to log it
- *  - started (40–70%) → "You started …": I'm on it · I'll get back to it · log it anyway
+ *  (started albums go straight on the turntable — see Turntable below)
  */
 export function LastfmSuggestions({ items, more }: { items: Suggestion[]; more: number }) {
   if (!items.length) return null;
@@ -69,53 +67,21 @@ export function LastfmSuggestions({ items, more }: { items: Suggestion[]; more: 
         <Link href="/settings#lastfm" className="btn-text small" style={{ ...textLink, minHeight: 32 }}>Settings</Link>
       </div>
       {items.map((s) => {
-        const started = s.status === "pending" && share(s) < COMPLETE;
         return (
           <div key={s.id} className="lfm-item">
             <Link href={`/open/${s.deezer_id}`} prefetch={false} tabIndex={-1} aria-hidden="true"><Cover s={s} /></Link>
             <div className="stack gap-4" style={{ minWidth: 0, flex: "1 1 220px" }}>
               <p style={{ fontWeight: 700 }}>
-                {s.status === "finished" ? "You finished " : started ? "You started " : "Looks like you listened to "}
+                {s.status === "finished" ? "You finished " : "Looks like you listened to "}
                 <Link href={`/open/${s.deezer_id}`} prefetch={false} className="lfm-title">{s.title}</Link>
                 {s.status === "finished" ? " — how was it?" : ""}
               </p>
-              <p className="muted small">
-                {s.artist} · {s.tracks_played} of {s.total_tracks} tracks · {when(s.played_on)}
-                {started ? (
-                  <>
-                    {" · "}
-                    <Link href={`/open/${s.deezer_id}#tracklist`} prefetch={false} style={{ color: "var(--accent)" }}>See what’s left</Link>
-                  </>
-                ) : null}
-              </p>
-              {started ? (
-                <>
-                  <div className="row gap-8" style={{ marginTop: 4 }}>
-                    <form action={onTheTurntable}>
-                      <input type="hidden" name="id" value={s.id} />
-                      <PendingButton className="btn btn-sm btn-primary" pending="…">I’m on it</PendingButton>
-                    </form>
-                    <form action={backToToListen}>
-                      <input type="hidden" name="id" value={s.id} />
-                      <PendingButton className="btn btn-sm" pending="…">I’ll get back to it</PendingButton>
-                    </form>
-                  </div>
-                  <details className="lfm-more">
-                    <summary className="btn-text small">Heard enough? Log it anyway</summary>
-                    <div className="lfm-menu">
-                      <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateSuggestion.bind(null, s.id)} addedText="In your diary" idleText="Rate it to log it" />
-                    </div>
-                  </details>
-                </>
-              ) : (
-                <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateSuggestion.bind(null, s.id)} addedText="In your diary" idleText="Rate it to log it" />
-              )}
+              <p className="muted small">{s.artist} · {s.tracks_played} of {s.total_tracks} tracks · {when(s.played_on)}</p>
+              <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateSuggestion.bind(null, s.id)} addedText="In your diary" idleText="Rate it to log it" />
               <div className="row gap-16" style={{ marginTop: 2 }}>
-                {started ? null : (
-                  <Link href={`/open/${s.deezer_id}?then=log&date=${s.played_on}&suggestion=${s.id}`} prefetch={false} className="btn-text small" style={{ ...textLink, color: "var(--accent)" }}>
-                    Write about it →
-                  </Link>
-                )}
+                <Link href={`/open/${s.deezer_id}?then=log&date=${s.played_on}&suggestion=${s.id}`} prefetch={false} className="btn-text small" style={{ ...textLink, color: "var(--accent)" }}>
+                  Write about it →
+                </Link>
                 <form action={dismissSuggestion}>
                   <input type="hidden" name="id" value={s.id} />
                   <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Not now</PendingButton>
@@ -136,7 +102,10 @@ export function Turntable({ items }: { items: Suggestion[] }) {
   if (!items.length) return null;
   return (
     <section className="stack gap-8" aria-labelledby="turntable">
-      <h2 id="turntable" className="eyebrow">On the turntable</h2>
+      <div className="stack gap-4">
+        <h2 id="turntable" className="eyebrow">On the turntable</h2>
+        <p className="muted small">Albums you’ve started on Spotify. They fill up as you listen — when you’re done, we’ll ask how it was.</p>
+      </div>
       {items.map((s) => {
         const pct = Math.round(Math.min(1, share(s)) * 100);
         return (
@@ -146,6 +115,25 @@ export function Turntable({ items }: { items: Suggestion[] }) {
               <div className="row gap-8" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
                 <Link href={`/open/${s.deezer_id}`} prefetch={false} className="turntable-title">{s.title}</Link>
                 <span className="mono muted" style={{ fontSize: 11, flex: "0 0 auto" }}>{s.tracks_played} of {s.total_tracks}</span>
+                <details className="lfm-more tt-more">
+                  <summary className="btn-text small" aria-label={`More for ${s.title}`} style={{ minWidth: 36, justifyContent: "center", fontSize: 18, letterSpacing: 1 }}>⋯</summary>
+                  <div className="stack gap-4 lfm-menu">
+                    <form action={dismissSuggestion}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Hide this</PendingButton>
+                    </form>
+                    <form action={dismissSuggestion}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <input type="hidden" name="mute" value="album" />
+                      <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Never suggest this album</PendingButton>
+                    </form>
+                    <form action={dismissSuggestion}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <input type="hidden" name="mute" value="artist" />
+                      <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Never suggest {s.artist}</PendingButton>
+                    </form>
+                  </div>
+                </details>
               </div>
               <div className="bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${s.title}: ${pct}% played`}>
                 <span style={{ width: `${pct}%` }} />
