@@ -10,6 +10,7 @@ export const REVISIONS: Revision[] = [
     date: "2026-10-29",
     changes: [
       "“Add albums you already know” (tidigare “Add your most played albums”) visar bara skivor du har spelat ungefär hela – minst lika många spelningar som skivan har låtar, och minst 5. Två låtar från en skiva räcker inte längre.",
+      "Skivor du redan har i dagboken ligger nu under “Already in your diary” med ditt betyg, i stället för att visa “Tap to rate” igen.",
       "Antalet heter nu “track plays”, eftersom Last.fm räknar spelade låtar, inte hela skivor.",
       "Ordet “shelf” är borta. Skivor utan datum hamnar under “Heard before” i dagboken, och det står nu så överallt (“Added to Heard before”).",
     ],
