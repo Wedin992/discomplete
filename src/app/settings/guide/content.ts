@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 13,
+    date: "2026-10-29",
+    changes: [
+      "När en skiva hamnar i dagboken – loggad, betygsatt eller “Heard before” – försvinner den från On the turntable och förslagen. Inget dubbelt längre.",
+      "Sätter du stjärnor (t.ex. “Already heard it” i Discover) på en skiva som Spotify ser att du spelar just nu, loggas den som en riktig lyssning på dagen du spelade den – inte som “Heard before”.",
+      "Skivsidans ruta för skivor du redan har: knapparna är inte längre ifyllda (de såg förvalda ut). “Played it again” heter nu “Log a new listen”, och “Edit what you wrote” visas om du har skrivit något.",
+    ],
+  },
+  {
     version: 12,
     date: "2026-10-29",
     changes: [

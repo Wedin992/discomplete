@@ -75,7 +75,7 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
   const [mutedRes, sugRes, entriesRes] = await Promise.all([
     supabase.from("lastfm_muted").select("kind, key").eq("user_id", userId),
     supabase.from("lastfm_suggestions").select("id, deezer_id, played_on, status, lfm_key, tracks, total_tracks, last_played_at").eq("user_id", userId).gte("played_on", since),
-    supabase.from("entries").select("listened_on, album:albums!inner(deezer_id)").eq("user_id", userId).gte("listened_on", since),
+    supabase.from("entries").select("listened_on, created_at, album:albums!inner(deezer_id)").eq("user_id", userId).or(`listened_on.gte.${since},created_at.gte.${since}`),
   ]);
   type Row = { id: string; deezer_id: number; played_on: string; status: string; lfm_key: string | null; tracks: string[] | null; total_tracks: number; last_played_at: string | null };
   const muted = new Set(((mutedRes.data ?? []) as { kind: string; key: string }[]).map((m) => `${m.kind}:${m.key}`));
@@ -84,6 +84,13 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
   const within7 = (a: string, b: string) => Math.abs(Date.parse(a) - Date.parse(b)) < 7 * 86400_000;
 
   // 1. Albums already suggested or on the turntable: add whatever you've played of them since.
+  // Already in the diary since (logged, rated, "heard before"…): done following it.
+  const enteredAfter = (r: Row) =>
+    ((entriesRes.data ?? []) as unknown as { created_at: string; album: { deezer_id: number } }[]).some((e) => e.album.deezer_id === r.deezer_id && e.created_at.slice(0, 10) >= r.played_on);
+  for (const r of earlier.filter((r) => ["pending", "listening", "finished"].includes(r.status) && r.id && enteredAfter(r))) {
+    await supabase.from("lastfm_suggestions").update({ status: "logged" }).eq("id", r.id).eq("user_id", userId);
+    r.status = "logged";
+  }
   const active = earlier.filter((r) => (r.status === "pending" || r.status === "listening") && r.lfm_key);
   const byKey = new Map(active.map((r) => [r.lfm_key!, r]));
   const grown = new Map<string, { tracks: Set<string>; last: number }>();

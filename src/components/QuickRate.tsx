@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import { quickRate } from "@/app/actions";
 
-const MESSAGES = { added: "Added to Heard before", updated: "Rating updated", logged: "Already in your diary", error: "Couldn’t save — try again" } as const;
+const MESSAGES = { added: "Added to Heard before", updated: "Rating updated", logged: "Already in your diary", diary: "Logged — you played it on Spotify", error: "Couldn’t save — try again" } as const;
 
 /** Five tap-to-rate stars that save a record as "heard before" right away. */
 type Props = {
@@ -48,7 +48,7 @@ export function QuickRate({ deezerId, title, initial = 0, compact = false, onRat
         ))}
       </div>
       <span className="mono quick-status" aria-live="polite">
-        {pending ? "Saving…" : status ? (status === "added" || status === "updated" ? `✓ ${status === "added" && addedText ? addedText : MESSAGES[status]}` : MESSAGES[status]) : idleText ?? (compact ? "I know this" : "Tap to rate")}
+        {pending ? "Saving…" : status ? (status === "added" || status === "updated" || status === "diary" ? `✓ ${status === "added" && addedText ? addedText : MESSAGES[status]}` : MESSAGES[status]) : idleText ?? (compact ? "I know this" : "Tap to rate")}
       </span>
     </div>
   );

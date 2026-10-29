@@ -55,9 +55,13 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const lfmAll = (lfmRes.error ? [] : lfmRes.data ?? []) as Suggestion[];
   // Started albums sit on the turntable (older rows may still say "pending").
   const isStarted = (s: Suggestion) => s.status === "listening" || (s.status === "pending" && s.tracks_played / Math.max(1, s.total_tracks) < COMPLETE_SHARE);
-  const turntable = lfmAll.filter(isStarted).slice(0, 4);
+  // Already in the diary since it was spotted (logged, rated, "heard before"…)? Then it's done.
+  const inDiarySince = (s: Suggestion) =>
+    ((entriesRes.data ?? []) as unknown as EntryWithAlbum[]).some((e) => e.album?.deezer_id === s.deezer_id && (e.created_at ?? "").slice(0, 10) >= s.played_on);
+  const lfmOpen = lfmAll.filter((s) => !inDiarySince(s));
+  const turntable = lfmOpen.filter(isStarted).slice(0, 4);
   // Finished ones ("how was it?") first, then the newest; three at most.
-  const asks = lfmAll.filter((s) => !isStarted(s)).sort((a, b) => (a.status === "finished" ? -1 : 0) - (b.status === "finished" ? -1 : 0));
+  const asks = lfmOpen.filter((s) => !isStarted(s)).sort((a, b) => (a.status === "finished" ? -1 : 0) - (b.status === "finished" ? -1 : 0));
   const suggestions = asks.slice(0, 3);
   const moreSuggestions = Math.max(0, asks.length - suggestions.length);
   const snoozed = new Set(((snoozeRes.data ?? []) as { album_id: string }[]).map((r) => r.album_id));

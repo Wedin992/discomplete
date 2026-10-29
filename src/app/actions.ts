@@ -79,6 +79,34 @@ async function ensureAlbum(supabase: Supabase, deezerId: number): Promise<string
   }
 }
 
+/**
+ * Once a record is in the diary (logged, rated, written about), whatever Spotify was following for it
+ * is done: off the turntable, no more "you started …" or "how was it?".
+ */
+async function closeSuggestions(supabase: Supabase, userId: string, by: { albumId?: string; deezerId?: number }) {
+  let deezerId = by.deezerId ?? null;
+  if (!deezerId && by.albumId) {
+    const { data } = await supabase.from("albums").select("deezer_id").eq("id", by.albumId).maybeSingle();
+    deezerId = (data as { deezer_id: number | null } | null)?.deezer_id ?? null;
+  }
+  if (!deezerId) return;
+  await supabase.from("lastfm_suggestions").update({ status: "logged" }).eq("user_id", userId).eq("deezer_id", deezerId).in("status", ["pending", "listening", "finished"]);
+}
+
+/** The newest album listen Spotify is following for this record (on the turntable, or suggested), if any. */
+async function activeListenDay(supabase: Supabase, userId: string, deezerId: number): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("lastfm_suggestions")
+    .select("played_on")
+    .eq("user_id", userId)
+    .eq("deezer_id", deezerId)
+    .in("status", ["pending", "listening", "finished"])
+    .order("played_on", { ascending: false })
+    .limit(1);
+  if (error) return null;
+  return ((data ?? []) as { played_on: string }[])[0]?.played_on ?? null;
+}
+
 export async function saveEntry(formData: FormData) {
   const { supabase, user } = await requireUser();
   const albumId = String(formData.get("album_id") ?? "");
@@ -162,6 +190,7 @@ export async function saveEntry(formData: FormData) {
     let { error, saved } = await saveWith(update, fields);
     if (error && fields.kind === "before") ({ error } = await saveWith(update, { ...saved, kind: "first" })); // before migration 0008
     if (error) throw new Error("Could not save your changes.");
+    await closeSuggestions(supabase, user.id, { albumId });
     await syncExplore(supabase, user.id, albumId, formData);
     revalidatePath("/", "layout");
     redirect("/?saved=edited");
@@ -190,6 +219,7 @@ export async function saveEntry(formData: FormData) {
   await supabase.from("to_listen").delete().eq("user_id", user.id).eq("album_id", albumId);
   const suggestionId = String(formData.get("suggestion_id") ?? "");
   if (/^[0-9a-f-]{36}$/i.test(suggestionId)) await supabase.from("lastfm_suggestions").update({ status: "logged" }).eq("id", suggestionId).eq("user_id", user.id);
+  await closeSuggestions(supabase, user.id, { albumId });
   await syncExplore(supabase, user.id, albumId, formData);
   revalidatePath("/", "layout");
   redirect(kindChoice === "before" && !count ? "/?saved=before" : "/?saved=1");
@@ -363,11 +393,20 @@ export async function snoozeRediscover(formData: FormData) {
  * Saved as heard-before (no date, no note). If it's already on your shelf the rating is updated;
  * a record already logged with a date is left as it is.
  */
-export async function quickRate(deezerId: number, rating: number): Promise<{ status: "added" | "updated" | "logged" | "error" }> {
+export async function quickRate(deezerId: number, rating: number): Promise<{ status: "added" | "updated" | "logged" | "diary" | "error" }> {
   const { supabase, user } = await requireUser();
   if (!Number.isInteger(deezerId) || deezerId <= 0 || !Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
   const albumId = await ensureAlbum(supabase, deezerId);
   if (!albumId) return { status: "error" };
+  // Spotify says you're playing it right now (on the turntable, or suggested): that's a real listen,
+  // logged on the day you played it — not "heard before".
+  const playing = await activeListenDay(supabase, user.id, deezerId);
+  if (playing) {
+    if (!(await logAlbumListen(supabase, user.id, deezerId, playing, rating))) return { status: "error" };
+    await closeSuggestions(supabase, user.id, { deezerId });
+    revalidatePath("/", "layout");
+    return { status: "diary" };
+  }
   const { data: existing } = await supabase.from("entries").select("id, kind").eq("user_id", user.id).eq("album_id", albumId);
   const rows = (existing ?? []) as { id: string; kind: string }[];
   if (rows.some((r) => r.kind !== "before")) return { status: "logged" };

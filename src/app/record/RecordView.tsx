@@ -73,12 +73,12 @@ export async function RecordView({ album }: { album: Album }) {
               <div className="row gap-12">
                 {onlyBefore ? (
                   <>
-                    <Link href={`/entry/${mine[0].id}/edit`} className="btn btn-primary">{mine[0].note ? "Edit what you wrote" : "Write about it"}</Link>
-                    <Link href={logPath(album)} className="btn">Played it again</Link>
+                    <Link href={`/entry/${(mine.find((e) => e.note) ?? mine[0]).id}/edit`} className="btn">{mine.some((e) => e.note) ? "Edit what you wrote" : "Write about it"}</Link>
+                    <Link href={logPath(album)} className="btn">Log a new listen</Link>
                   </>
                 ) : (
                   <>
-                    <Link href={logPath(album)} className="btn btn-primary">Log another listen</Link>
+                    <Link href={logPath(album)} className="btn">Log another listen</Link>
                     <Link href={`/entry/${dated[0].id}/edit`} className="btn">Edit latest</Link>
                   </>
                 )}
