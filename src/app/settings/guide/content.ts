@@ -60,7 +60,7 @@ export const SECTIONS: Section[] = [
     id: "discover",
     title: "Discover – dagens tre",
     body: [
-      "Varje dag får du tre skivor: ett säkert kort, ett sidosteg och ett vilt kort. De bygger på dina betyg, omlyssningar, hyllan, artister du följer och quizen.",
+      "Varje dag får du tre skivor: ett säkert kort, ett sidosteg och ett vilt kort. De bygger på dina betyg, omlyssningar, skivor du äger, artister du följer och quizen.",
       "Shuffle ger tre nya (några gånger per dag). “Not for me” byter ut ett tips och kommer ihåg det.",
       "“Already heard it” låter dig sätta betyg direkt – tipset byts mot ett nytt.",
       "Tryck på omslaget eller titeln för skivan, och på artistnamnet för artistsidan. “+ To listen” sparar den i din lista.",
