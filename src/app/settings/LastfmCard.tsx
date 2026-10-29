@@ -30,7 +30,7 @@ export function LastfmCard({ link, status, configured }: { link: { username: str
           </form>
           <p className="muted small">{link.autolog ? "Album listens go straight into your diary — you can rate or delete them later." : "Off: you confirm each one in your diary first."}</p>
           <div className="row gap-12">
-            <Link href="/lastfm/top" className="btn btn-sm">Add your most played albums</Link>
+            <Link href="/lastfm/top" className="btn btn-sm">Add albums you already know</Link>
             <form action={syncLastfmNow}>
               <PendingButton className="btn-text small" style={{ minHeight: 40 }} pending="Checking…">Check now</PendingButton>
             </form>

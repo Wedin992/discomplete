@@ -63,7 +63,7 @@ export async function RecordView({ album }: { album: Album }) {
           {mine.length ? (
             <div className="card stack gap-12" style={{ marginTop: 4 }}>
               <p className="row gap-8" style={{ alignItems: "baseline" }}>
-                <strong>{onlyBefore ? "On your shelf · Heard before" : `In your diary · ${dated.length === 1 ? `logged ${whenLabel(dated[0])}` : `${dated.length} listens, last ${whenLabel(dated[0])}`}`}</strong>
+                <strong>{onlyBefore ? "Heard before · no date" : `In your diary · ${dated.length === 1 ? `logged ${whenLabel(dated[0])}` : `${dated.length} listens, last ${whenLabel(dated[0])}`}`}</strong>
                 {bestRating ? <span className="stars">{stars(bestRating)}</span> : null}
               </p>
               <div className="row gap-12">

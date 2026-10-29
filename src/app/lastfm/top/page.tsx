@@ -4,9 +4,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getUser } from "@/lib/supabase/server";
-import { findAlbum } from "@/lib/deezer";
+import { findAlbum, getAlbumTracks } from "@/lib/deezer";
 import { getTopAlbums } from "@/lib/lastfm";
 import { QuickRate } from "@/components/QuickRate";
+
+const MIN_PLAYS = 5;
 
 export const metadata: Metadata = { title: "Your most played albums" };
 
@@ -20,7 +22,7 @@ export default async function TopAlbumsPage() {
         <Link href="/settings#lastfm" className="btn-text small" style={{ display: "inline-flex", alignItems: "center", textDecoration: "none" }}>← Settings</Link>
         <p className="eyebrow" style={{ marginTop: 8 }}>From Last.fm · all time</p>
         <h1 className="title-xl">Your most played albums</h1>
-        <p className="muted" style={{ marginTop: 8 }}>Tap the stars on the ones you’d put on your shelf. They’re saved as “heard before” — no dates needed — and teach Discover your taste.</p>
+        <p className="muted" style={{ marginTop: 8 }}>Albums you’ve played about start to finish at least once. Rate the ones you know — they’re saved under “Heard before” in your diary, with no date, and teach Discover your taste.</p>
       </div>
       <Suspense fallback={<p className="muted">Fetching your Last.fm history…</p>}>
         <TopList username={(data as { username: string }).username} />
@@ -32,12 +34,21 @@ export default async function TopAlbumsPage() {
 async function TopList({ username }: { username: string }) {
   let top;
   try {
-    top = await getTopAlbums(username, 30);
+    top = await getTopAlbums(username, 60);
   } catch {
     return <p className="error">Last.fm didn’t answer. Try again in a moment.</p>;
   }
-  const rows = (await Promise.all(top.map(async (t) => ({ t, hit: await findAlbum(t.artist, t.album).catch(() => null) })))).filter((r) => r.hit);
-  if (!rows.length) return <p className="muted">No albums in your Last.fm history yet. Play a few on Spotify and come back.</p>;
+  // Only albums with at least as many plays as tracks (and 5+): a few songs from an album isn't having heard it.
+  const found = await Promise.all(
+    top.map(async (t) => {
+      const hit = await findAlbum(t.artist, t.album).catch(() => null);
+      if (!hit) return null;
+      const total = hit.tracks || (await getAlbumTracks(hit.deezerId).catch(() => [])).length;
+      return total && t.plays >= Math.max(MIN_PLAYS, total) ? { t, hit } : null;
+    })
+  );
+  const rows = found.filter((r): r is NonNullable<typeof r> => !!r).slice(0, 30);
+  if (!rows.length) return <p className="muted">No whole albums in your Last.fm history yet. Play a few start to finish on Spotify and come back.</p>;
   return (
     <div className="stack gap-12">
       {rows.map(({ t, hit }) => (
@@ -45,7 +56,7 @@ async function TopList({ username }: { username: string }) {
           <img src={hit!.cover} alt="" width={64} height={64} className="cover cover-64" />
           <span className="result-text">
             <span style={{ fontSize: 17, fontWeight: 700 }}>{hit!.title}</span>
-            <span className="muted" style={{ fontSize: 14 }}>{hit!.artist} · {t.plays.toLocaleString("en-US")} plays</span>
+            <span className="muted" style={{ fontSize: 14 }}>{hit!.artist} · {t.plays.toLocaleString("en-US")} track plays</span>
             <QuickRate deezerId={hit!.deezerId} title={hit!.title} />
           </span>
         </div>

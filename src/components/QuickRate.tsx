@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import { quickRate } from "@/app/actions";
 
-const MESSAGES = { added: "On your shelf", updated: "Rating updated", logged: "Already in your diary", error: "Couldn’t save — try again" } as const;
+const MESSAGES = { added: "Added to Heard before", updated: "Rating updated", logged: "Already in your diary", error: "Couldn’t save — try again" } as const;
 
 /** Five tap-to-rate stars that save a record as "heard before" right away. */
 type Props = {

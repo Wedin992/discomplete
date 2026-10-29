@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 2,
+    date: "2026-10-29",
+    changes: [
+      "“Add albums you already know” (tidigare “Add your most played albums”) visar bara skivor du har spelat ungefär hela – minst lika många spelningar som skivan har låtar, och minst 5. Två låtar från en skiva räcker inte längre.",
+      "Antalet heter nu “track plays”, eftersom Last.fm räknar spelade låtar, inte hela skivor.",
+      "Ordet “shelf” är borta. Skivor utan datum hamnar under “Heard before” i dagboken, och det står nu så överallt (“Added to Heard before”).",
+    ],
+  },
+  {
     version: 1,
     date: "2026-10-29",
     changes: [
@@ -33,7 +42,7 @@ export const SECTIONS: Section[] = [
     title: "Logga en skiva",
     body: [
       "Sök fram skivan, öppna den och tryck “Log this listen”. Välj datum, format (Stream, Vinyl eller CD), stjärnor och skriv gärna en anteckning.",
-      "Lyssnat för länge sedan och minns inte när? Välj “Heard it before” – då hamnar den på hyllan utan datum. Med en anteckning syns den också i dagboken.",
+      "Lyssnat för länge sedan och minns inte när? Välj “Heard it before” – då hamnar den under “Heard before” i dagboken, utan datum. Med en anteckning syns den också i dagboken.",
       "Snabbt läge: i sökningen och på artistsidan kan du sätta stjärnor direkt under en skiva utan att öppna den.",
       "Välj upp till tre favoritlåtar per lyssning om du vill. Skivsidan visar sedan “Fans’ favourite tracks”.",
       "Har du redan loggat skivan visar skivsidan ditt betyg i stället för “Log this listen”. Du kan alltid lägga till en ny lyssning.",
@@ -70,6 +79,7 @@ export const SECTIONS: Section[] = [
     title: "Spotify via Last.fm (valfritt)",
     body: [
       "Skapa ett gratiskonto på last.fm, koppla Spotify under Last.fm → Settings → Applications, och skriv sedan ditt Last.fm-namn under Settings här i appen.",
+      "“Add albums you already know” under Settings listar skivor du har spelat ungefär hela genom åren. Sätt stjärnor så hamnar de under “Heard before”.",
       "När du har spelat minst 40 % av en skiva (och minst 5 låtar) föreslår dagboken den. Från 70 % står det “Looks like you listened to …” – sätt stjärnor så loggas den på rätt dag.",
       "Har du bara börjat står det “You started …”. Välj “I’m on it” så hamnar den under “On the turntable” med en mätare, eller “I’ll get back to it” så flyttas den till To listen.",
       "Från 90 % räknas den som klar och appen frågar hur den var. Ligger den orörd i tre dagar flyttas den till To listen.",

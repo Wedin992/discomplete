@@ -103,7 +103,7 @@ export function Search({ initialQuery, children, autoFocus = true, initialMode =
           )}
         </div>
         {mode === "before" ? (
-          <p className="muted small">Records you’ve heard over the years: search, tap the stars, next. No dates, no notes — they go on your shelf and help Discover learn your taste.</p>
+          <p className="muted small">Records you’ve heard over the years: search, tap the stars, next. No dates, no notes — they go under “Heard before” in your diary and help Discover learn your taste.</p>
         ) : null}
       </div>
       <div className="field">

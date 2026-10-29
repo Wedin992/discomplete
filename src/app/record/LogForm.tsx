@@ -98,7 +98,7 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
           </div>
           <p className="mono small muted">
             {heardBefore
-              ? "An old favourite or one you know from way back — no date needed. It goes on your shelf, not today’s diary."
+              ? "An old favourite or one you know from way back — no date needed. It goes under “Heard before” in your diary, not today’s list."
               : "First time you’ve properly listened to it."}
           </p>
         </fieldset>
