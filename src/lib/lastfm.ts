@@ -1,6 +1,6 @@
 // Server-only: Last.fm (the bridge to Spotify and other players that scrobble).
 // Reads public listening history with the app's API key — no Last.fm login needed per user.
-import { baseTitle, findAlbum, getAlbum } from "@/lib/deezer";
+import { baseTitle, findAlbum, getAlbum, getAlbumTracks } from "@/lib/deezer";
 
 const BASE = process.env.LASTFM_API_BASE ?? "https://ws.audioscrobbler.com/2.0/";
 export const lastfmConfigured = () => !!process.env.LASTFM_API_KEY;
@@ -80,6 +80,7 @@ const loose = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/
 export const SESSION_GAP_H = 3; // a pause longer than this starts a new listening session
 export const MIN_SHARE = 0.4; // share of the album's tracks played in one session
 export const MIN_TRACKS = 5; // …and at least this many (or the whole album if it's shorter)
+export const IN_ORDER_TRACKS = 3; // or: this many tracks back to back, in the album's own order — that's someone playing the album
 export const COMPLETE_SHARE = 0.7; // from here it counts as having heard the album
 export const DONE_SHARE = 0.9; // an album you're "on" counts as finished from here
 export const SETTLE_MIN = 20; // wait this long after the last track before suggesting (you may just be on a break) — unless the album is basically done
@@ -127,7 +128,7 @@ export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> 
   // Only sessions with a handful of different tracks are worth a Deezer lookup — and only once
   // they've settled: a session that's still going (or on a short break) waits.
   const settled = Date.now() / 1000 - SETTLE_MIN * 60;
-  const candidates = done.filter((s) => s.tracks.size >= Math.min(4, MIN_TRACKS)).slice(-40);
+  const candidates = done.filter((s) => s.tracks.size >= IN_ORDER_TRACKS).slice(-40);
   const found = await Promise.all(
     candidates.map(async (s) => {
       const hit = await findAlbum(s.artist, s.album).catch(() => null);
@@ -136,7 +137,8 @@ export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> 
       const total = full?.track_count ?? 0;
       if (!total) return null;
       const played = Math.min(s.tracks.size, total);
-      if (played < Math.min(MIN_TRACKS, total) || played / total < MIN_SHARE) return null;
+      const enough = played >= Math.min(MIN_TRACKS, total) && played / total >= MIN_SHARE;
+      if (!enough && !(await inAlbumOrder(hit.deezerId, [...s.tracks]))) return null;
       if (s.last > settled && played / total < DONE_SHARE) return null; // still going (or a short break) — unless it's basically done
       return {
         deezerId: hit.deezerId,
@@ -155,6 +157,21 @@ export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> 
     })
   );
   return found.filter((x): x is AlbumListen => !!x);
+}
+
+/**
+ * Were these tracks (in the order played) played the way the album runs — 1, 2, 3…?
+ * A few tracks back to back in album order is an album listen; a shuffle or a playlist isn't.
+ */
+async function inAlbumOrder(deezerId: number, played: string[]): Promise<boolean> {
+  if (played.length < IN_ORDER_TRACKS) return false;
+  const list = await getAlbumTracks(deezerId).catch(() => []);
+  const pos = new Map(list.map((t, i) => [loose(t.title), i]));
+  const seq = played.map((t) => pos.get(t)).filter((x): x is number => x !== undefined);
+  if (seq.length < IN_ORDER_TRACKS) return false;
+  let next = 0;
+  for (let i = 1; i < seq.length; i++) if (seq[i] === seq[i - 1] + 1) next++;
+  return next >= Math.max(IN_ORDER_TRACKS - 1, Math.ceil((seq.length - 1) * 0.6));
 }
 
 export const looseName = loose;

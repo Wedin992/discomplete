@@ -6,6 +6,14 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 7,
+    date: "2026-10-29",
+    changes: [
+      "En påbörjad skiva upptäcks tidigare: spelar du minst 3 låtar i rad i skivans egen ordning (1, 2, 3 …) dyker “You started …” upp i dagboken, även om det är under 40 %.",
+      "Låtar från samma skiva i blandad ordning (shuffle, spellistor) räknas fortfarande först från 40 %.",
+    ],
+  },
+  {
     version: 6,
     date: "2026-10-29",
     changes: [
@@ -119,7 +127,7 @@ export const SECTIONS: Section[] = [
     body: [
       "Under Settings → Spotify finns tre steg med knappar: skapa ett gratiskonto på Last.fm, koppla Spotify där (Applications → Spotify Scrobbling → Connect) och skriv in ditt Last.fm-namn. Därefter visar appen “✓ It’s working” och vad du spelar.",
       "“Add albums you already know” under Settings listar skivor du har spelat ungefär hela genom åren. Sätt stjärnor så hamnar de under “Heard before”.",
-      "När du har spelat minst 40 % av en skiva (och minst 5 låtar) föreslår dagboken den, cirka 20 minuter efter sista låten – direkt om du spelat 90 %. Från 70 % står det “Looks like you listened to …” – sätt stjärnor så loggas den på rätt dag.",
+      "När du har spelat minst 40 % av en skiva (och minst 5 låtar) – eller 3 låtar i rad i skivans ordning – föreslår dagboken den, cirka 20 minuter efter sista låten – direkt om du spelat 90 %. Från 70 % står det “Looks like you listened to …” – sätt stjärnor så loggas den på rätt dag.",
       "Har du bara börjat står det “You started …”. Välj “I’m on it” så hamnar den under “On the turntable” med en mätare, eller “I’ll get back to it” så flyttas den till To listen.",
       "Från 90 % – eller 70 % följt av en paus på 20 minuter – räknas den som klar och appen frågar hur den var. Ligger den orörd i tre dagar flyttas den till To listen.",
       "Har du spelat minst 70 % av en skiva i To listen frågar dagboken hur den var. To listen visar påbörjade skivor överst under “Started”, och skivsidans låtlista har bockar för det du har spelat. Saknas en låt trycker du på ringen och bockar i den själv.",
