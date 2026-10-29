@@ -1,7 +1,7 @@
 // Server-only: turns new scrobbles into "Looks like you listened to …" suggestions.
 import type { getUser } from "@/lib/supabase/server";
 import { getAlbum } from "@/lib/deezer";
-import { albumKey, COMPLETE_SHARE, DONE_SHARE, SETTLE_MIN, getRecentScrobbles, lastfmConfigured, looseName, spotAlbumListens, trackKey, type AlbumListen, type Scrobble } from "@/lib/lastfm";
+import { albumKey, COMPLETE_SHARE, DONE_SHARE, SCATTERED_DAYS, SETTLE_MIN, spotScatteredListens, getRecentScrobbles, lastfmConfigured, looseName, spotAlbumListens, trackKey, type AlbumListen, type Scrobble } from "@/lib/lastfm";
 import { todayIso } from "@/lib/format";
 import { listeningProgress } from "@/lib/progress";
 
@@ -163,6 +163,38 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     if (error) ({ error } = await supabase.from("lastfm_suggestions").insert(base)); // before migration 0011
     if (!error && status === "pending") added++;
   }
+  // 3. Albums heard bit by bit over the last two weeks (half the album, in any order, over several sittings).
+  try {
+    const long = await getRecentScrobbles(link.username, Math.floor(now / 3_600_000) * 3600 - SCATTERED_DAYS * 86400, 3, 600);
+    const followedKeys = new Set(earlier.map((s) => s.lfm_key).filter((k): k is string => !!k));
+    const scattered = await spotScatteredListens(long, (k) => followedKeys.has(k));
+    const loggedAlbums = new Set(((entriesRes.data ?? []) as unknown as { album: { deezer_id: number } }[]).map((e) => e.album.deezer_id));
+    for (const l of scattered) {
+      if (muted.has(`album:${l.deezerId}`) || muted.has(`artist:${looseName(l.artist)}`)) continue;
+      if (loggedAlbums.has(l.deezerId)) continue; // in the diary lately
+      if (earlier.some((s) => s.deezer_id === l.deezerId)) continue; // already suggested lately, in some form
+      earlier.push({ id: "", deezer_id: l.deezerId, played_on: l.playedOn, status: "pending", lfm_key: l.key, tracks: l.tracks, total_tracks: l.totalTracks, last_played_at: new Date(l.lastUts * 1000).toISOString() });
+      const { error } = await supabase.from("lastfm_suggestions").insert({
+        user_id: userId,
+        deezer_id: l.deezerId,
+        deezer_artist_id: l.deezerArtistId,
+        title: l.title,
+        artist: l.artist,
+        cover: l.cover,
+        played_on: l.playedOn,
+        tracks_played: l.tracksPlayed,
+        total_tracks: l.totalTracks,
+        status: "pending",
+        lfm_key: l.key,
+        tracks: l.tracks,
+        last_played_at: new Date(l.lastUts * 1000).toISOString(),
+      });
+      if (!error) added++;
+    }
+  } catch {
+    // Last.fm busy: try again next time
+  }
+
   added += await finishedFromToListen(supabase, userId, muted);
   await supabase.from("lastfm_links").update({ synced_at: new Date(now).toISOString() }).eq("user_id", userId);
   return { added, changed };

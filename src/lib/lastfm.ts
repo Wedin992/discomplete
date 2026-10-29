@@ -174,6 +174,54 @@ async function inAlbumOrder(deezerId: number, played: string[]): Promise<boolean
   return next >= Math.max(IN_ORDER_TRACKS - 1, Math.ceil((seq.length - 1) * 0.6));
 }
 
+export const SCATTERED_SHARE = 0.5; // tracks heard on and off over two weeks: half the album counts
+export const SCATTERED_DAYS = 14;
+
+/**
+ * Albums you've heard bit by bit — a few tracks here, a few there — over the last two weeks.
+ * Counts distinct tracks across all sittings; half the album (and 4+ tracks) is enough.
+ */
+export async function spotScatteredListens(scrobbles: Scrobble[], skip: (key: string) => boolean): Promise<AlbumListen[]> {
+  type Agg = { key: string; artist: string; album: string; first: number; last: number; tracks: Set<string> };
+  const by = new Map<string, Agg>();
+  for (const s of scrobbles) {
+    const key = albumKey(s.artist, s.album);
+    if (skip(key)) continue;
+    const a = by.get(key) ?? { key, artist: s.artist, album: s.album, first: s.uts, last: s.uts, tracks: new Set<string>() };
+    a.tracks.add(loose(s.track));
+    a.first = Math.min(a.first, s.uts);
+    a.last = Math.max(a.last, s.uts);
+    by.set(key, a);
+  }
+  const settled = Date.now() / 1000 - SETTLE_MIN * 60;
+  const candidates = [...by.values()].filter((a) => a.tracks.size >= 4 && a.last <= settled).sort((x, y) => y.tracks.size - x.tracks.size).slice(0, 15);
+  const found = await Promise.all(
+    candidates.map(async (a) => {
+      const hit = await findAlbum(a.artist, a.album).catch(() => null);
+      if (!hit) return null;
+      const total = (await getAlbum(hit.deezerId).catch(() => null))?.track_count ?? 0;
+      if (!total) return null;
+      const played = Math.min(a.tracks.size, total);
+      if (played / total < SCATTERED_SHARE) return null;
+      return {
+        deezerId: hit.deezerId,
+        deezerArtistId: hit.artistId,
+        title: hit.title,
+        artist: hit.artist,
+        cover: hit.cover,
+        playedOn: stockholmDay(a.last),
+        tracksPlayed: played,
+        totalTracks: total,
+        key: a.key,
+        tracks: [...a.tracks],
+        lastUts: a.last,
+        startUts: a.first,
+      } satisfies AlbumListen;
+    })
+  );
+  return found.filter((x): x is AlbumListen => !!x);
+}
+
 export const looseName = loose;
 
 export type LatestPlay = { artist: string; track: string; uts: number | null; nowPlaying: boolean };
