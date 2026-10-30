@@ -82,9 +82,29 @@ export const TAGS = ["running", "gym", "work", "focus", "evening", "home", "car"
 
 export const RATING_LABELS = ["No rating", "Not for me", "Meh", "Good", "Great", "All-time"];
 
+/** A label for any rating, halves included (3½ → "Good+"). */
+export function ratingLabel(r: number) {
+  if (!r) return RATING_LABELS[0];
+  const whole = Math.floor(r);
+  return r === whole ? RATING_LABELS[whole] : `${RATING_LABELS[Math.max(1, whole)]}${whole ? "+" : ""}`;
+}
+
+/** 3.5 → "3½" */
+export function ratingText(r: number) {
+  const whole = Math.floor(r);
+  return r === whole ? String(whole) : `${whole || ""}½`;
+}
+
+/** ½ to 5 in steps of ½. */
+export function isRating(r: unknown): r is number {
+  return typeof r === "number" && Number.isFinite(r) && r >= 0.5 && r <= 5 && Number.isInteger(r * 2);
+}
+
 export function stars(n: number | null | undefined) {
-  const r = Math.max(0, Math.min(5, n ?? 0));
-  return "★".repeat(r) + "☆".repeat(5 - r);
+  const r = Math.max(0, Math.min(5, Number(n ?? 0)));
+  const full = Math.floor(r);
+  const half = r - full >= 0.5 ? 1 : 0;
+  return "★".repeat(full) + (half ? "½" : "") + "☆".repeat(5 - full - half);
 }
 
 export function formatLabel(f: string) {

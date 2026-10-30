@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { saveEntry } from "@/app/actions";
-import { FORMATS, RATING_LABELS, TAGS, type FavTrack } from "@/lib/format";
+import { FORMATS, TAGS, ratingLabel, ratingText, type FavTrack } from "@/lib/format";
+import { StarInput } from "@/components/StarInput";
 
 function SaveButton({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus();
@@ -106,21 +107,11 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
 
       <fieldset>
         <legend style={{ marginBottom: 6 }}>Rating <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></legend>
-        <div className="row" style={{ gap: 2 }}>
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              type="button"
-              className={`star-btn${n <= rating ? " on" : ""}`}
-              aria-label={`Rate ${n} of 5`}
-              aria-pressed={n === rating}
-              onClick={() => setRating(rating === n ? 0 : n)}
-            >
-              ★
-            </button>
-          ))}
-          <span className="mono small muted" style={{ marginLeft: 12 }}>{RATING_LABELS[rating]}</span>
+        <div className="row" style={{ gap: 2, alignItems: "center" }}>
+          <StarInput value={rating} onChange={setRating} size="lg" clearable label="Rating" />
+          <span className="mono small muted" style={{ marginLeft: 12 }}>{rating ? `${ratingText(rating)} · ` : ""}{ratingLabel(rating)}</span>
         </div>
+        <p className="mono muted" style={{ fontSize: 11, marginTop: 4 }}>Tap the left half of a star for a half.</p>
       </fieldset>
 
       <div className="field">

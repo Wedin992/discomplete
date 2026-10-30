@@ -6,6 +6,14 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 17,
+    date: "2026-10-30",
+    changes: [
+      "Halva stjärnor: betyg från ½ till 5. Tryck på vänstra halvan av en stjärna för en halv, högra för en hel. Fungerar överallt där du sätter betyg.",
+      "Betyg visas som ★★★½☆, och snittbetyget på skivsidan räknar med halvorna. Gamla betyg ligger kvar som de var.",
+    ],
+  },
+  {
     version: 16,
     date: "2026-10-30",
     changes: [
@@ -166,7 +174,7 @@ export const SECTIONS: Section[] = [
     id: "log",
     title: "Logga en skiva",
     body: [
-      "Sök fram skivan, öppna den och tryck “Log this listen”. Välj datum, format (Stream, Vinyl eller CD), stjärnor och skriv gärna en anteckning.",
+      "Sök fram skivan, öppna den och tryck “Log this listen”. Välj datum, format (Stream, Vinyl eller CD), stjärnor (halva går också – tryck på vänstra halvan) och skriv gärna en anteckning.",
       "Lyssnat för länge sedan och minns inte när? Välj “Heard it before” – då hamnar den under “Heard before” i dagboken, utan datum. Med en anteckning syns den också i dagboken.",
       "Snabbt läge: i sökningen och på artistsidan kan du sätta stjärnor direkt under en skiva utan att öppna den.",
       "Välj upp till tre favoritlåtar per lyssning om du vill. Skivsidan visar sedan “Fans’ favourite tracks”.",

@@ -352,3 +352,16 @@ body { -webkit-tap-highlight-color: transparent; }
 .tt-more > summary { min-height: 32px; }
 .tt-more .lfm-menu { position: absolute; right: 0; top: 100%; z-index: 5; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 8px 12px; min-width: 240px; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
 .tt-more .lfm-menu button { text-align: left; justify-content: flex-start; }
+/* Half-star input */
+.star-input { display: inline-flex; gap: 2px; }
+.si-star { position: relative; display: inline-flex; align-items: center; justify-content: center; line-height: 1; color: var(--star-off, #4a4a4f); }
+.si-star.on { color: var(--accent); }
+.si-star.half > span { background: linear-gradient(90deg, var(--accent) 50%, var(--star-off, #4a4a4f) 50%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.si-hit { position: absolute; top: 0; bottom: 0; width: 50%; border: 0; padding: 0; background: none; cursor: pointer; }
+.si-hit:disabled { cursor: progress; }
+.si-left { left: 0; }
+.si-right { right: 0; }
+.si-hit:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+.si-lg .si-star { width: 48px; height: 48px; font-size: 34px; }
+.si-md .si-star { width: 40px; height: 40px; font-size: 26px; }
+.si-sm .si-star { width: 28px; height: 32px; font-size: 19px; }

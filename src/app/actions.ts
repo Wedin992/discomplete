@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
-import { TAGS, logPath, recordPath, todayIso, type Album } from "@/lib/format";
+import { TAGS, isRating, logPath, recordPath, todayIso, type Album } from "@/lib/format";
 import { translateToEnglish } from "@/lib/translate";
 import { getAlbum, getArtist } from "@/lib/deezer";
 import { listBySlug } from "@/lib/challenge-lists";
@@ -113,7 +113,7 @@ export async function saveEntry(formData: FormData) {
   const entryId = String(formData.get("entry_id") ?? "");
   const format = String(formData.get("format") ?? "stream");
   const ratingRaw = Number(formData.get("rating") ?? 0);
-  const rating = Number.isInteger(ratingRaw) && ratingRaw >= 1 && ratingRaw <= 5 ? ratingRaw : null;
+  const rating = isRating(ratingRaw) ? ratingRaw : null;
   const note = String(formData.get("note") ?? "").trim().slice(0, 5000) || null;
   const tags = formData.getAll("tags").map(String).filter((t) => TAGS.includes(t));
   const isPrivate = formData.get("is_private") === "on";
@@ -395,7 +395,7 @@ export async function snoozeRediscover(formData: FormData) {
  */
 export async function quickRate(deezerId: number, rating: number): Promise<{ status: "added" | "updated" | "logged" | "diary" | "error" }> {
   const { supabase, user } = await requireUser();
-  if (!Number.isInteger(deezerId) || deezerId <= 0 || !Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  if (!Number.isInteger(deezerId) || deezerId <= 0 || !isRating(rating)) return { status: "error" };
   const albumId = await ensureAlbum(supabase, deezerId);
   if (!albumId) return { status: "error" };
   // Spotify says you're playing it right now (on the turntable, or suggested): that's a real listen,
@@ -468,7 +468,7 @@ export async function syncLastfmNow() {
 /** Stars on a "Looks like you listened to …" suggestion: logs it on the day it was played. */
 export async function rateSuggestion(id: string, rating: number): Promise<{ status: "added" | "updated" | "logged" | "error" }> {
   const { supabase, user } = await requireUser();
-  if (!/^[0-9a-f-]{36}$/i.test(id) || !Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  if (!/^[0-9a-f-]{36}$/i.test(id) || !isRating(rating)) return { status: "error" };
   const { data } = await supabase.from("lastfm_suggestions").select("deezer_id, played_on, status").eq("id", id).eq("user_id", user.id).maybeSingle();
   const s = data as { deezer_id: number; played_on: string; status: string } | null;
   if (!s) return { status: "error" };
@@ -594,7 +594,7 @@ async function autoLogged(supabase: Supabase, userId: string, id: string) {
 /** Stars on an album that was logged automatically. */
 export async function rateLogged(id: string, rating: number): Promise<{ status: "added" | "updated" | "logged" | "error" }> {
   const { supabase, user } = await requireUser();
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  if (!isRating(rating)) return { status: "error" };
   const found = await autoLogged(supabase, user.id, id);
   if (!found?.entryId) return { status: "error" };
   const { error } = await supabase.from("entries").update({ rating, updated_at: new Date().toISOString() }).eq("id", found.entryId).eq("user_id", user.id);
@@ -648,7 +648,7 @@ export async function unmuteLastfm(formData: FormData) {
 /** Discover: "I listened to it" — logs today's listen (on the day Spotify saw it, if it did) with your stars. */
 export async function logListenToday(deezerId: number, rating: number): Promise<{ status: "diary" | "updated" | "error" }> {
   const { supabase, user } = await requireUser();
-  if (!Number.isInteger(deezerId) || deezerId <= 0 || !Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  if (!Number.isInteger(deezerId) || deezerId <= 0 || !isRating(rating)) return { status: "error" };
   const day = (await activeListenDay(supabase, user.id, deezerId)) ?? todayIso();
   const { data: existing } = await supabase
     .from("entries")
@@ -673,7 +673,7 @@ export async function logListenToday(deezerId: number, rating: number): Promise<
 /** Stars on an entry that's already in the diary. */
 export async function rateEntry(entryId: string, rating: number): Promise<{ status: "updated" | "error" }> {
   const { supabase, user } = await requireUser();
-  if (!/^[0-9a-f-]{36}$/i.test(entryId) || !Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  if (!/^[0-9a-f-]{36}$/i.test(entryId) || !isRating(rating)) return { status: "error" };
   const { error } = await supabase.from("entries").update({ rating, updated_at: new Date().toISOString() }).eq("id", entryId).eq("user_id", user.id);
   if (error) return { status: "error" };
   revalidatePath("/", "layout");
