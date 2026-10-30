@@ -11,6 +11,7 @@ export const REVISIONS: Revision[] = [
     changes: [
       "En skiva du lyssnar på just nu hamnar direkt på On the turntable med en mätare – även om du nästan är klar. Den räknas som färdig först när du har spelat minst 85 % och sedan pausat i 20 minuter.",
       "Med “Log full albums automatically” loggas skivan först när den är färdig (efter pausen), och dagboken frågar då “how was it?”.",
+      "Har en skiva loggats automatiskt för tidigt och du lyssnar fortfarande (utan att ha satt betyg eller skrivit något), plockas loggen bort och skivan flyttas tillbaka till On the turntable.",
       "Knapparna på “how was it?” heter nu: Journal this listen, Review later (väntar längst ned under “Waiting for your review”), Skip review (behåll i dagboken utan betyg och text) och Remove — wasn’t an album listen.",
     ],
   },

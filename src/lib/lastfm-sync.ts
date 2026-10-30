@@ -93,6 +93,28 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     await supabase.from("lastfm_suggestions").update({ status: "logged" }).eq("id", r.id).eq("user_id", userId);
     r.status = "logged";
   }
+  // Logged automatically, but you're still playing it (and haven't rated or written anything):
+  // that was too early — take the log back out and put it on the turntable.
+  const playingNow = new Set(scrobbles.filter((sc) => now / 1000 - sc.uts < SETTLE_MIN * 60).map((sc) => albumKey(sc.artist, sc.album)));
+  if (playingNow.size) {
+    const { data: auto } = await supabase.from("lastfm_suggestions").select("id").eq("user_id", userId).eq("status", "logged").not("review", "is", null).gte("played_on", since);
+    const autoIds = new Set(((auto ?? []) as { id: string }[]).map((a) => a.id));
+    for (const r of earlier.filter((r) => autoIds.has(r.id) && r.lfm_key && playingNow.has(r.lfm_key))) {
+      const { data: e } = await supabase
+        .from("entries")
+        .select("id, rating, note, album:albums!inner(deezer_id)")
+        .eq("user_id", userId)
+        .eq("listened_on", r.played_on)
+        .eq("album.deezer_id", r.deezer_id)
+        .limit(1)
+        .maybeSingle();
+      const entry = e as { id: string; rating: number | null; note: string | null } | null;
+      if (entry && (entry.rating !== null || entry.note)) continue; // you've already said something about it: leave it
+      if (entry) await supabase.from("entries").delete().eq("id", entry.id).eq("user_id", userId);
+      await supabase.from("lastfm_suggestions").update({ status: "listening", review: null }).eq("id", r.id).eq("user_id", userId);
+      r.status = "listening";
+    }
+  }
   const active = earlier.filter((r) => (r.status === "pending" || r.status === "listening") && r.lfm_key);
   const byKey = new Map(active.map((r) => [r.lfm_key!, r]));
   const grown = new Map<string, { tracks: Set<string>; last: number }>();
