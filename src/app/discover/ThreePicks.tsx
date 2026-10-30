@@ -51,9 +51,10 @@ export async function ThreePicks({ scope, source }: { scope: string; source: str
     <div className="stack gap-16">
       <ol className="three" aria-label="Three records for you">
         {picks.map((p) => (
-          <li key={`${p.slot}-${p.deezerId}`} className="pick">
+          <li key={`${p.slot}-${p.deezerId}`} className={`pick${heard.has(p.deezerId) ? " pick-heard" : playing.has(p.deezerId) ? " pick-playing" : ""}`}>
             <Link href={`/open/${p.deezerId}`} prefetch={false} className="pick-cover-link" tabIndex={-1} aria-hidden="true">
               {p.cover ? <img src={p.cover} alt="" className="cover pick-cover" width={250} height={250} /> : <span className="cover pick-cover skeleton" />}
+              {heard.has(p.deezerId) ? <span className="pick-badge">✓ Heard</span> : playing.has(p.deezerId) ? <span className="pick-badge playing">▶ Playing</span> : null}
             </Link>
             <div className="pick-body">
               <p className="eyebrow pick-role">{SLOT_LABEL[p.slot]}</p>

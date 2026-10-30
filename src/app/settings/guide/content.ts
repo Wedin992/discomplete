@@ -6,6 +6,13 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 18,
+    date: "2026-10-30",
+    changes: [
+      "Discover: ett förslag du har lyssnat på får en orange ram runt hela kortet och en “✓ Heard”-etikett på omslaget. Spelar du det just nu har kortet en streckad ram och “▶ Playing”.",
+    ],
+  },
+  {
     version: 17,
     date: "2026-10-30",
     changes: [
