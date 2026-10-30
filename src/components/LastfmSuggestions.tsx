@@ -178,16 +178,17 @@ export function AutoLogged({ items }: { items: Review[] }) {
               In your diary: <Link href={`/open/${s.deezer_id}`} prefetch={false} className="lfm-title">{s.title}</Link> — how was it?
             </p>
             <p className="muted small">{s.artist} · {s.tracks_played} of {s.total_tracks} tracks · {when(s.played_on)}</p>
-            <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateLogged.bind(null, s.id)} addedText="Rated" idleText="Review it" />
+            <p className="muted small">It’s logged. Rate it, write about it — or skip.</p>
+            <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateLogged.bind(null, s.id)} addedText="Rated" idleText="Tap to rate" />
             <div className="row gap-16" style={{ marginTop: 2 }}>
               <Link href={`/entry/${entryId}/edit`} className="btn-text small" style={{ ...textLink, color: "var(--accent)" }}>Journal this listen →</Link>
-              <form action={keepAsListened}>
-                <input type="hidden" name="id" value={s.id} />
-                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Just listened</PendingButton>
-              </form>
               <form action={reviewLater}>
                 <input type="hidden" name="id" value={s.id} />
-                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">I’ll do it later</PendingButton>
+                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Review later</PendingButton>
+              </form>
+              <form action={keepAsListened}>
+                <input type="hidden" name="id" value={s.id} />
+                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Skip review</PendingButton>
               </form>
               <details className="lfm-more">
                 <summary className="btn-text small">Remove — wasn’t an album listen</summary>
@@ -230,7 +231,7 @@ export function WaitingReview({ items }: { items: Review[] }) {
               <Link href={`/entry/${entryId}/edit`} className="btn-text small" style={{ ...textLink, color: "var(--accent)" }}>Write</Link>
               <form action={keepAsListened}>
                 <input type="hidden" name="id" value={s.id} />
-                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Just listened</PendingButton>
+                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Skip review</PendingButton>
               </form>
             </div>
           </div>

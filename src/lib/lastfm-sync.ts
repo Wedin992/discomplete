@@ -1,7 +1,7 @@
 // Server-only: turns new scrobbles into "Looks like you listened to …" suggestions.
 import type { getUser } from "@/lib/supabase/server";
 import { getAlbum } from "@/lib/deezer";
-import { albumKey, COMPLETE_SHARE, DONE_SHARE, SCATTERED_DAYS, SETTLE_MIN, spotScatteredListens, getRecentScrobbles, lastfmConfigured, looseName, spotAlbumListens, trackKey, type AlbumListen, type Scrobble } from "@/lib/lastfm";
+import { albumKey, COMPLETE_SHARE, SCATTERED_DAYS, SETTLE_MIN, spotScatteredListens, getRecentScrobbles, lastfmConfigured, looseName, spotAlbumListens, trackKey, type AlbumListen, type Scrobble } from "@/lib/lastfm";
 import { todayIso } from "@/lib/format";
 import { listeningProgress } from "@/lib/progress";
 
@@ -115,19 +115,23 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     // Started albums go straight on the turntable (no "I'm on it" needed).
     if (status === "pending" && share < COMPLETE_SHARE) status = "listening";
     if (status === "listening") {
-      if (share >= DONE_SHARE || (quietH >= SETTLE_MIN / 60 && share >= COMPLETE_SHARE)) status = "finished"; // done (or most of it, then a pause): ask how it was
+      // Done = (nearly) all of it, and then a pause — not while the last track is still playing.
+      if (quietH >= SETTLE_MIN / 60 && share >= COMPLETE_SHARE) status = "finished";
       else if (quietH >= 72) status = "parked"; // left alone for days: it goes to To listen
+    }
+    let review: "ask" | undefined;
+    if (status === "finished" && row.status !== "finished" && link.autolog && (await logAlbumListen(supabase, userId, row.deezer_id, row.played_on, null))) {
+      status = "logged"; // autolog: it's in the diary; the diary asks how it was
+      review = "ask";
     }
     if (!g && status === row.status) continue;
     if (status === "parked") {
       await parkInToListen(supabase, userId, row.deezer_id);
       status = "dismissed";
     }
-    await supabase
-      .from("lastfm_suggestions")
-      .update({ tracks, tracks_played: Math.min(tracks.length, row.total_tracks), last_played_at: new Date(last).toISOString(), status })
-      .eq("id", row.id)
-      .eq("user_id", userId);
+    const upd = { tracks, tracks_played: Math.min(tracks.length, row.total_tracks), last_played_at: new Date(last).toISOString(), status };
+    const { error: updErr } = await supabase.from("lastfm_suggestions").update(review ? { ...upd, review } : upd).eq("id", row.id).eq("user_id", userId);
+    if (updErr && review) await supabase.from("lastfm_suggestions").update(upd).eq("id", row.id).eq("user_id", userId); // before migration 0014
     changed++;
   }
 
@@ -156,8 +160,9 @@ export async function syncLastfm(supabase: Supabase, userId: string, opts: { for
     earlier.push({ id: "", deezer_id: l.deezerId, played_on: l.playedOn, status: "pending", lfm_key: l.key, tracks: l.tracks, total_tracks: l.totalTracks, last_played_at: new Date(l.lastUts * 1000).toISOString() });
 
     const complete = l.tracksPlayed / l.totalTracks >= COMPLETE_SHARE;
-    // Started: straight on the turntable. (Nearly) whole: ask — or log it right away with autolog on.
-    let status: "pending" | "logged" | "listening" = complete ? "pending" : "listening";
+    const playing = now / 1000 - l.lastUts < SETTLE_MIN * 60;
+    // Still playing or only started: on the turntable, with a meter. Finished (and quiet): ask — or log it with autolog on.
+    let status: "pending" | "logged" | "listening" = complete && !playing ? "pending" : "listening";
     if (complete && link.autolog && (await logAlbumListen(supabase, userId, l.deezerId, l.playedOn, null))) status = "logged";
     const base = {
       user_id: userId,

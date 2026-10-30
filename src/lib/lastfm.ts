@@ -127,7 +127,7 @@ export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> 
 
   // Only sessions with a handful of different tracks are worth a Deezer lookup — and only once
   // they've settled: a session that's still going (or on a short break) waits.
-  const settled = Date.now() / 1000 - SETTLE_MIN * 60;
+  // Sessions still going count too: they go on the turntable and fill up as you listen.
   const candidates = done.filter((s) => s.tracks.size >= IN_ORDER_TRACKS).slice(-40);
   const found = await Promise.all(
     candidates.map(async (s) => {
@@ -139,7 +139,6 @@ export async function spotAlbumListens(scrobbles: Scrobble[], skip: Set<string> 
       const played = Math.min(s.tracks.size, total);
       const enough = played >= Math.min(MIN_TRACKS, total) && played / total >= MIN_SHARE;
       if (!enough && !(await inAlbumOrder(hit.deezerId, [...s.tracks]))) return null;
-      if (s.last > settled && played / total < DONE_SHARE) return null; // still going (or a short break) — unless it's basically done
       return {
         deezerId: hit.deezerId,
         deezerArtistId: hit.artistId,
