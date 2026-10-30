@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 16,
+    date: "2026-10-30",
+    changes: [
+      "Discover visar om du har lyssnat på dagens förslag: “✓ Listened today” (med stjärnor att sätta och “Write about it”) – oavsett om du loggat själv eller Spotify gjort det.",
+      "Spelar du ett förslag just nu står det “▶ On your turntable · x of y” med en mätare.",
+      "Ny knapp “✓ I’ve listened to it”: sätt stjärnor så loggas det som dagens lyssning. “Knew it already” sparar det som Heard before i stället (och kan byta ut förslaget).",
+    ],
+  },
+  {
     version: 15,
     date: "2026-10-30",
     changes: [
@@ -178,7 +187,7 @@ export const SECTIONS: Section[] = [
     body: [
       "Varje dag får du tre skivor: ett säkert kort, ett sidosteg och ett vilt kort. De bygger på dina betyg, omlyssningar, skivor du äger, artister du följer och quizen.",
       "Shuffle ger tre nya (några gånger per dag). “Not for me” byter ut ett tips och kommer ihåg det.",
-      "“Already heard it” låter dig sätta betyg direkt – tipset byts mot ett nytt.",
+      "“✓ I’ve listened to it” loggar förslaget som dagens lyssning med stjärnor; “Knew it already” sparar det som Heard before. Har du lyssnat (själv eller via Spotify) visar kortet “✓ Listened today”.",
       "Tryck på omslaget eller titeln för skivan, och på artistnamnet för artistsidan. “+ To listen” sparar den i din lista.",
     ],
   },

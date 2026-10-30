@@ -6,7 +6,9 @@ import { SLOT_LABEL } from "@/lib/discover";
 import { logFromDeezer, notForMe, queueFromDeezer, shuffleDiscover } from "@/app/actions";
 import { PendingButton } from "@/components/PendingButton";
 import { HeardIt } from "./HeardIt";
-import { artistPath } from "@/lib/format";
+import { artistPath, stars, todayIso } from "@/lib/format";
+import { QuickRate } from "@/components/QuickRate";
+import { rateEntry } from "@/app/actions";
 
 /** Three picks with roles, plus Shuffle. Used for "Today's three" and for a genre. */
 export async function ThreePicks({ scope, source }: { scope: string; source: string }) {
@@ -16,6 +18,22 @@ export async function ThreePicks({ scope, source }: { scope: string; source: str
     supabase.from("to_listen").select("album:albums(deezer_id)").eq("user_id", user!.id),
   ]);
   const queued = new Set(((queuedRes.data ?? []) as unknown as { album: { deezer_id: number | null } | null }[]).map((r) => r.album?.deezer_id).filter(Boolean));
+
+  // Have you listened to any of them since they were picked? (Logged by you, or from Spotify.) Or are you on it right now?
+  const ids = picks.map((p) => p.deezerId);
+  const since = new Date(Date.now() - 2 * 86400_000).toISOString().slice(0, 10);
+  const [heardRes, playingRes] = ids.length
+    ? await Promise.all([
+        supabase.from("entries").select("id, rating, note, kind, listened_on, created_at, album:albums!inner(deezer_id)").eq("user_id", user!.id).in("album.deezer_id", ids).order("created_at", { ascending: false }),
+        supabase.from("lastfm_suggestions").select("deezer_id, tracks_played, total_tracks").eq("user_id", user!.id).in("deezer_id", ids).in("status", ["pending", "listening", "finished"]).gte("played_on", since),
+      ])
+    : [{ data: [] }, { data: [] }];
+  type Heard = { id: string; rating: number | null; note: string | null; kind: string; listened_on: string; created_at: string; album: { deezer_id: number } };
+  const today = todayIso();
+  const heard = new Map<number, Heard>();
+  for (const e of (heardRes.data ?? []) as unknown as Heard[])
+    if (!heard.has(e.album.deezer_id) && ((e.listened_on ?? "") >= since || (e.created_at ?? "").slice(0, 10) >= since)) heard.set(e.album.deezer_id, e);
+  const playing = new Map(((playingRes.data ?? []) as { deezer_id: number; tracks_played: number; total_tracks: number }[]).map((r) => [r.deezer_id, r]));
 
   if (!picks.length)
     return (
@@ -45,6 +63,29 @@ export async function ThreePicks({ scope, source }: { scope: string; source: str
                 {p.year ? ` · ${p.year}` : ""}
               </p>
               <p className="mono muted pick-reason">{p.reason}</p>
+              {heard.has(p.deezerId) ? (
+                <div className="pick-done stack gap-8">
+                  <p className="small" style={{ fontWeight: 700, color: "var(--accent)" }}>
+                    ✓ {heard.get(p.deezerId)!.kind === "before" ? "Heard before" : heard.get(p.deezerId)!.listened_on === today ? "Listened today" : "Listened"}
+                    {heard.get(p.deezerId)!.rating ? <span className="stars" style={{ marginLeft: 8 }}>{stars(heard.get(p.deezerId)!.rating)}</span> : null}
+                  </p>
+                  {heard.get(p.deezerId)!.rating ? null : (
+                    <QuickRate deezerId={p.deezerId} title={p.title} compact onRate={rateEntry.bind(null, heard.get(p.deezerId)!.id)} idleText="How was it?" />
+                  )}
+                  <Link href={`/entry/${heard.get(p.deezerId)!.id}/edit`} className="btn-text small" style={{ minHeight: 36, display: "inline-flex", alignItems: "center", color: "var(--accent)", textDecoration: "none" }}>
+                    {heard.get(p.deezerId)!.note ? "Edit what you wrote" : "Write about it →"}
+                  </Link>
+                </div>
+              ) : (
+              <>
+              {playing.has(p.deezerId) ? (
+                <div className="stack gap-4" style={{ maxWidth: 320 }}>
+                  <span className="mono small" style={{ color: "var(--accent)" }}>▶ On your turntable · {playing.get(p.deezerId)!.tracks_played} of {playing.get(p.deezerId)!.total_tracks}</span>
+                  <div className="bar" style={{ height: 6 }} aria-hidden="true">
+                    <span style={{ width: `${Math.round((playing.get(p.deezerId)!.tracks_played / Math.max(1, playing.get(p.deezerId)!.total_tracks)) * 100)}%` }} />
+                  </div>
+                </div>
+              ) : null}
               <div className="row gap-8 pick-actions">
                 {queued.has(p.deezerId) ? (
                   <Link href="/to-listen" className="btn btn-sm pill" aria-pressed="true">✓ In To listen</Link>
@@ -69,6 +110,8 @@ export async function ThreePicks({ scope, source }: { scope: string; source: str
                 ) : null}
               </div>
               <HeardIt deezerId={p.deezerId} title={p.title} scope={scope} slot={p.slot} canSwap={persisted} />
+              </>
+              )}
             </div>
           </li>
         ))}

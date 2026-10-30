@@ -644,3 +644,38 @@ export async function unmuteLastfm(formData: FormData) {
   if ((kind === "album" || kind === "artist") && key) await supabase.from("lastfm_muted").delete().eq("user_id", user.id).eq("kind", kind).eq("key", key);
   revalidatePath("/settings");
 }
+
+/** Discover: "I listened to it" — logs today's listen (on the day Spotify saw it, if it did) with your stars. */
+export async function logListenToday(deezerId: number, rating: number): Promise<{ status: "diary" | "updated" | "error" }> {
+  const { supabase, user } = await requireUser();
+  if (!Number.isInteger(deezerId) || deezerId <= 0 || !Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  const day = (await activeListenDay(supabase, user.id, deezerId)) ?? todayIso();
+  const { data: existing } = await supabase
+    .from("entries")
+    .select("id, album:albums!inner(deezer_id)")
+    .eq("user_id", user.id)
+    .eq("listened_on", day)
+    .neq("kind", "before")
+    .eq("album.deezer_id", deezerId)
+    .limit(1)
+    .maybeSingle();
+  if (existing) {
+    await supabase.from("entries").update({ rating, updated_at: new Date().toISOString() }).eq("id", (existing as { id: string }).id).eq("user_id", user.id);
+    revalidatePath("/", "layout");
+    return { status: "updated" };
+  }
+  if (!(await logAlbumListen(supabase, user.id, deezerId, day, rating))) return { status: "error" };
+  await closeSuggestions(supabase, user.id, { deezerId });
+  revalidatePath("/", "layout");
+  return { status: "diary" };
+}
+
+/** Stars on an entry that's already in the diary. */
+export async function rateEntry(entryId: string, rating: number): Promise<{ status: "updated" | "error" }> {
+  const { supabase, user } = await requireUser();
+  if (!/^[0-9a-f-]{36}$/i.test(entryId) || !Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error" };
+  const { error } = await supabase.from("entries").update({ rating, updated_at: new Date().toISOString() }).eq("id", entryId).eq("user_id", user.id);
+  if (error) return { status: "error" };
+  revalidatePath("/", "layout");
+  return { status: "updated" };
+}
