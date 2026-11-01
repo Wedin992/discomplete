@@ -6,6 +6,14 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 19,
+    date: "2026-11-01",
+    changes: [
+      "Samma skiva loggad flera gånger från Spotify ger nu bara en fråga, inte en per dag.",
+      "Har du hört skivan förut blir det ingen “how was it?” som för en ny skiva, utan “Played again: … · 3rd listen · you gave it ★★★★” med “Adjust rating?”, “Same as before” och “Write about it”.",
+    ],
+  },
+  {
     version: 18,
     date: "2026-10-30",
     changes: [

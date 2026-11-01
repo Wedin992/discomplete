@@ -67,10 +67,18 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const snoozed = new Set(((snoozeRes.data ?? []) as { album_id: string }[]).map((r) => r.album_id));
   const entries = (entriesRes.data ?? []) as unknown as EntryWithAlbum[];
   // Logged automatically from Spotify and not rated or written about yet: ask now, or wait at the bottom.
+  // One per album (the newest) — played it two days running is one question, not two.
+  // Heard it before (an earlier entry)? Then it's a relisten: show your rating and offer to adjust it.
   const reviews: (Review & { later: boolean })[] = [];
+  const seenAlbum = new Set<number>();
   for (const r of (reviewRes.error ? [] : reviewRes.data ?? []) as (Suggestion & { review: string })[]) {
+    if (seenAlbum.has(r.deezer_id)) continue;
     const e = entries.find((x) => x.album?.deezer_id === r.deezer_id && x.listened_on === r.played_on);
-    if (e && e.rating === null && !e.note) reviews.push({ s: r, entryId: e.id, later: r.review === "later" });
+    if (!e || e.rating !== null || e.note) continue;
+    seenAlbum.add(r.deezer_id);
+    const earlier = entries.filter((x) => x.album?.deezer_id === r.deezer_id && x.id !== e.id);
+    const rated = earlier.find((x) => x.rating !== null); // newest first
+    reviews.push({ s: r, entryId: e.id, later: r.review === "later", plays: earlier.length + 1, prevRating: rated ? Number(rated.rating) : null });
   }
   const reviewNow = reviews.filter((r) => !r.later).slice(0, 3);
   const reviewLaterList = [...reviews.filter((r) => r.later), ...reviews.filter((r) => !r.later).slice(3)];

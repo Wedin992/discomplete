@@ -591,6 +591,14 @@ async function autoLogged(supabase: Supabase, userId: string, id: string) {
   return { s, entryId: (e as { id: string } | null)?.id ?? null };
 }
 
+/** Answering for one album answers for all its waiting automatic logs (e.g. played two days running). */
+async function clearReviews(supabase: Supabase, userId: string, id: string, review: "later" | null) {
+  const { data } = await supabase.from("lastfm_suggestions").select("deezer_id").eq("id", id).eq("user_id", userId).maybeSingle();
+  const d = (data as { deezer_id: number } | null)?.deezer_id;
+  if (d) await supabase.from("lastfm_suggestions").update({ review }).eq("user_id", userId).eq("deezer_id", d).eq("status", "logged").not("review", "is", null);
+  else await supabase.from("lastfm_suggestions").update({ review }).eq("id", id).eq("user_id", userId);
+}
+
 /** Stars on an album that was logged automatically. */
 export async function rateLogged(id: string, rating: number): Promise<{ status: "added" | "updated" | "logged" | "error" }> {
   const { supabase, user } = await requireUser();
@@ -599,7 +607,7 @@ export async function rateLogged(id: string, rating: number): Promise<{ status: 
   if (!found?.entryId) return { status: "error" };
   const { error } = await supabase.from("entries").update({ rating, updated_at: new Date().toISOString() }).eq("id", found.entryId).eq("user_id", user.id);
   if (error) return { status: "error" };
-  await supabase.from("lastfm_suggestions").update({ review: null }).eq("id", id).eq("user_id", user.id);
+  await clearReviews(supabase, user.id, id, null);
   revalidatePath("/", "layout");
   return { status: "added" };
 }
@@ -608,7 +616,7 @@ export async function rateLogged(id: string, rating: number): Promise<{ status: 
 export async function reviewLater(formData: FormData) {
   const { supabase, user } = await requireUser();
   const id = String(formData.get("id") ?? "");
-  if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("lastfm_suggestions").update({ review: "later" }).eq("id", id).eq("user_id", user.id);
+  if (/^[0-9a-f-]{36}$/i.test(id)) await clearReviews(supabase, user.id, id, "later");
   revalidatePath("/");
 }
 
@@ -632,7 +640,7 @@ export async function undoAutoLog(formData: FormData) {
 export async function keepAsListened(formData: FormData) {
   const { supabase, user } = await requireUser();
   const id = String(formData.get("id") ?? "");
-  if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("lastfm_suggestions").update({ review: null }).eq("id", id).eq("user_id", user.id);
+  if (/^[0-9a-f-]{36}$/i.test(id)) await clearReviews(supabase, user.id, id, null);
   revalidatePath("/");
 }
 

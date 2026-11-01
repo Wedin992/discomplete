@@ -3,7 +3,9 @@ import Link from "next/link";
 import { backToToListen, dismissSuggestion, keepAsListened, rateLogged, rateSuggestion, reviewLater, undoAutoLog } from "@/app/actions";
 import { QuickRate } from "@/components/QuickRate";
 import { PendingButton } from "@/components/PendingButton";
-import { daysBetween, longDate, todayIso } from "@/lib/format";
+import { daysBetween, longDate, stars, todayIso } from "@/lib/format";
+
+const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
 
 export type Suggestion = {
   id: string;
@@ -159,7 +161,7 @@ export function Turntable({ items }: { items: Suggestion[] }) {
   );
 }
 
-export type Review = { s: Suggestion; entryId: string };
+export type Review = { s: Suggestion; entryId: string; plays?: number; prevRating?: number | null };
 
 /** Logged automatically from Spotify: "how was it?" — rate, write, or do it later. */
 export function AutoLogged({ items }: { items: Review[] }) {
@@ -170,7 +172,30 @@ export function AutoLogged({ items }: { items: Review[] }) {
         <h2 id="auto-logged" className="eyebrow" style={{ color: "var(--accent)" }}>Logged from Spotify</h2>
         <Link href="/settings#lastfm" className="btn-text small" style={{ ...textLink, minHeight: 32 }}>Settings</Link>
       </div>
-      {items.map(({ s, entryId }) => (
+      {items.map(({ s, entryId, plays = 1, prevRating = null }) =>
+        plays > 1 ? (
+          // A relisten: not a new album. Your rating, and a chance to adjust it.
+          <div key={s.id} className="lfm-item lfm-relisten">
+            <Link href={`/open/${s.deezer_id}`} prefetch={false} tabIndex={-1} aria-hidden="true"><Cover s={s} size={44} /></Link>
+            <div className="stack gap-4" style={{ minWidth: 0, flex: "1 1 220px" }}>
+              <p style={{ fontWeight: 700 }}>
+                Played again: <Link href={`/open/${s.deezer_id}`} prefetch={false} className="lfm-title">{s.title}</Link>
+              </p>
+              <p className="muted small">
+                {s.artist} · {ordinal(plays)} listen · {when(s.played_on)}
+                {prevRating ? <> · you gave it <span className="stars">{stars(prevRating)}</span></> : null}
+              </p>
+              <QuickRate deezerId={s.deezer_id} title={s.title} compact onRate={rateLogged.bind(null, s.id)} addedText="Rated" idleText={prevRating ? "Adjust rating?" : "Rate it?"} />
+              <div className="row gap-16">
+                <form action={keepAsListened}>
+                  <input type="hidden" name="id" value={s.id} />
+                  <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">{prevRating ? "Same as before" : "Skip"}</PendingButton>
+                </form>
+                <Link href={`/entry/${entryId}/edit`} className="btn-text small" style={{ ...textLink, color: "var(--accent)" }}>Write about it →</Link>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div key={s.id} className="lfm-item">
           <Link href={`/open/${s.deezer_id}`} prefetch={false} tabIndex={-1} aria-hidden="true"><Cover s={s} /></Link>
           <div className="stack gap-4" style={{ minWidth: 0, flex: "1 1 220px" }}>
@@ -209,7 +234,8 @@ export function AutoLogged({ items }: { items: Review[] }) {
             </div>
           </div>
         </div>
-      ))}
+        )
+      )}
     </section>
   );
 }
