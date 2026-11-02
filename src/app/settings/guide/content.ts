@@ -6,6 +6,16 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 22,
+    date: "2026-11-02",
+    changes: [
+      "Ny dagbok: överst en hopfälld rad “Waiting for you” (turntable, att betygsätta, Challenges, Remember this?) – tryck för att fälla ut.",
+      "Varje lyssning är en kompakt rad med omslag, stjärnor och början av texten. Tryck för att se hela inlägget, med Edit/Delete.",
+      "Grupperat i This week, Last week och sedan en rubrik per månad. Äldre månader är hopfällda med en sammanfattning (antal lyssningar, skivor, mest spelade artist).",
+      "Ny vy “Covers”: varje månad som en kalender med omslag dag för dag. Växla med List / Covers under rubriken.",
+    ],
+  },
+  {
     version: 21,
     date: "2026-11-02",
     changes: [
@@ -235,7 +245,7 @@ export const SECTIONS: Section[] = [
     id: "diary",
     title: "Dagboken",
     body: [
-      "Startsidan är din dagbok med alla lyssningar i datumordning.",
+      "Startsidan är din dagbok: överst “Waiting for you” (hopfälld), sedan This week, Last week och en rubrik per månad. Varje lyssning är en rad – tryck för att se hela. “Covers” visar månaden som en kalender med omslag.",
       "“Remember this?” påminner då och då om skivor du gett 4★ eller mer, så att du kan lyssna igen eller skjuta upp påminnelsen.",
     ],
   },

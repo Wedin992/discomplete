@@ -6,6 +6,12 @@ import { DeleteEntryButton } from "@/components/DeleteEntryButton";
 import { NoteText } from "@/components/NoteText";
 import { RateBadge } from "@/components/RateBadge";
 
+const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const dayShort = (iso: string) => {
+  const d = new Date(iso + "T12:00:00Z");
+  return `${DAY[d.getUTCDay()]} ${d.getUTCDate()}`;
+};
+
 /** A plain relisten — no stars, no words: one quiet line, not a full card. */
 export function RelistenRow({ entry, nth, rating }: { entry: EntryWithAlbum; nth?: number; rating?: number | null }) {
   const a = entry.album;
@@ -18,7 +24,7 @@ export function RelistenRow({ entry, nth, rating }: { entry: EntryWithAlbum; nth
           <span className="muted"> · {a.artist}</span>
         </span>
         <span className="mono muted" style={{ fontSize: 11 }}>
-          ↻ Played again{nth && nth > 1 ? ` · ${nth}${nth % 100 >= 11 && nth % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][nth % 10] ?? "th"} listen` : ""}
+          {dayShort(entry.listened_on)} · ↻ Played again{nth && nth > 1 ? ` · ${nth}${nth % 100 >= 11 && nth % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][nth % 10] ?? "th"} listen` : ""}
           {rating ? <> · <span className="stars">{stars(rating)}</span></> : null}
         </span>
       </div>
@@ -29,18 +35,60 @@ export function RelistenRow({ entry, nth, rating }: { entry: EntryWithAlbum; nth
   );
 }
 
-export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
+
+/**
+ * One listen as a single line — cover, title, stars, the start of what you wrote.
+ * Tap it to open the whole entry (full note, favourite tracks, edit) in place.
+ */
+export function EntryRow({ entry, open = false }: { entry: EntryWithAlbum; open?: boolean }) {
+  const a = entry.album;
+  const snippet = entry.note ? (entry.note.length > 90 ? entry.note.slice(0, 90).trimEnd() + "…" : entry.note) : null;
+  return (
+    <details className="entry-row" open={open}>
+      <summary>
+        <Cover album={a} size="44" />
+        <span className="er-main">
+          <span className="er-line">
+            <span className="er-title">{a.title}</span>
+            <span className="muted"> · {a.artist}</span>
+          </span>
+          <span className="er-meta">
+            <span className="mono muted">{entry.kind === "before" ? "Heard before" : dayShort(entry.listened_on)}</span>
+            {entry.rating ? <span className="stars">{stars(entry.rating)}</span> : <span className="er-todo">☆ not rated</span>}
+            {entry.kind === "relisten" ? <span className="mono muted">↻</span> : null}
+          </span>
+          {snippet ? <span className="er-snippet">“{snippet}”</span> : null}
+        </span>
+        <span className="er-chevron" aria-hidden="true">›</span>
+      </summary>
+      <div className="er-body">
+        <EntryCard entry={entry} embedded />
+      </div>
+    </details>
+  );
+}
+
+export function EntryCard({ entry, embedded = false }: { entry: EntryWithAlbum; embedded?: boolean }) {
   const a = entry.album;
   return (
-    <article className="card entry" style={{ padding: 16 }}>
-      <Link href={recordPath(a)} tabIndex={-1} aria-hidden="true">
-        <Cover album={a} size="76" />
-      </Link>
+    <article className={embedded ? "entry entry-embedded" : "card entry"} style={{ padding: embedded ? 0 : 16 }}>
+      {embedded ? null : (
+        <Link href={recordPath(a)} tabIndex={-1} aria-hidden="true">
+          <Cover album={a} size="76" />
+        </Link>
+      )}
       <div className="entry-body">
-        <div className="row gap-4" style={{ alignItems: "baseline", columnGap: 10 }}>
-          <Link href={recordPath(a)} className="link-button entry-title">{a.title}</Link>
-          {artistPath(a.artist, a.deezer_artist_id) ? <Link href={artistPath(a.artist, a.deezer_artist_id)!} className="muted artist-link">{a.artist}</Link> : <span className="muted">{a.artist}</span>}
-        </div>
+        {embedded ? (
+          <div className="row gap-12" style={{ alignItems: "baseline" }}>
+            <Link href={recordPath(a)} className="btn-text small" style={{ color: "var(--accent)", textDecoration: "none" }}>Open record →</Link>
+            {artistPath(a.artist, a.deezer_artist_id) ? <Link href={artistPath(a.artist, a.deezer_artist_id)!} className="btn-text small" style={{ textDecoration: "none" }}>{a.artist} →</Link> : null}
+          </div>
+        ) : (
+          <div className="row gap-4" style={{ alignItems: "baseline", columnGap: 10 }}>
+            <Link href={recordPath(a)} className="link-button entry-title">{a.title}</Link>
+            {artistPath(a.artist, a.deezer_artist_id) ? <Link href={artistPath(a.artist, a.deezer_artist_id)!} className="muted artist-link">{a.artist}</Link> : <span className="muted">{a.artist}</span>}
+          </div>
+        )}
         <div className="meta">
           {entry.rating ? <span className="stars" aria-label={`${ratingText(Number(entry.rating))} of 5`}>{stars(entry.rating)}</span> : null}
           {entry.rating ? null : <RateBadge entryId={entry.id} title={a.title} />}

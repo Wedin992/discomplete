@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
-import { EntryCard, RelistenRow } from "@/components/EntryCard";
+import { EntryRow, RelistenRow } from "@/components/EntryCard";
 import { rng } from "@/lib/discover";
 import { snoozeRediscover } from "@/app/actions";
 import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, type Suggestion } from "@/components/LastfmSuggestions";
@@ -10,10 +10,22 @@ import { LastfmSync } from "@/components/LastfmSync";
 import { COMPLETE_SHARE } from "@/lib/lastfm";
 import { DiaryChallenges } from "@/components/ChallengeCards";
 import { Suspense } from "react";
-import { artistPath, daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
+import { artistPath, daysBetween, logPath, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
 
-export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string; todo?: string }> }) {
-  const { saved, todo } = await searchParams;
+const MONTHS_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const isoDay = (d: Date) => d.toISOString().slice(0, 10);
+/** Monday of the week the day is in (ISO weeks). */
+function weekStart(iso: string, weeksBack = 0) {
+  const d = new Date(iso + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) - 7 * weeksBack);
+  return isoDay(d);
+}
+
+type Section = { key: string; title: string; summary?: string; items: EntryWithAlbum[]; collapsible: boolean; open: boolean };
+
+export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string; todo?: string; view?: string }> }) {
+  const { saved, todo, view } = await searchParams;
+  const covers = view === "covers";
   const { supabase, user } = await getUser();
   // New accounts take the short sign-up quiz first (skippable). Before migration 0005 the
   // column doesn't exist, the query errors, and nobody is redirected.
@@ -106,14 +118,62 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
     }
   }
 
-  // Group by day
-  const groups: { label: string; items: EntryWithAlbum[] }[] = [];
+  // This week · Last week · then one section per month (older months folded, with a one-line summary).
+  const thisWeek = weekStart(today);
+  const lastWeek = weekStart(today, 1);
+  const sections: Section[] = [];
+  const sectionFor = (key: string, make: () => Section) => {
+    let sec = sections.find((x) => x.key === key);
+    if (!sec) sections.push((sec = make()));
+    return sec;
+  };
   for (const e of dated) {
-    const label = (e.listened_on === today ? "Today · " : "") + longDate(e.listened_on);
-    const last = groups[groups.length - 1];
-    if (last && last.label === label) last.items.push(e);
-    else groups.push({ label, items: [e] });
+    const d = e.listened_on;
+    if (e.kind !== "before" && d >= thisWeek) sectionFor("w0", () => ({ key: "w0", title: "This week", items: [], collapsible: false, open: true })).items.push(e);
+    else if (e.kind !== "before" && d >= lastWeek) sectionFor("w1", () => ({ key: "w1", title: "Last week", items: [], collapsible: false, open: true })).items.push(e);
+    else {
+      const m = d.slice(0, 7);
+      const name = `${MONTHS_FULL[Number(m.slice(5, 7)) - 1]}${m.slice(0, 4) === today.slice(0, 4) ? "" : " " + m.slice(0, 4)}`;
+      const current = m === today.slice(0, 7);
+      sectionFor(m, () => ({ key: m, title: current ? `Earlier in ${name}` : name, items: [], collapsible: !current, open: current || !!todo })).items.push(e);
+    }
   }
+  for (const sec of sections) {
+    if (!sec.collapsible) continue;
+    const listens = sec.items.filter((e) => e.kind !== "before");
+    const records = new Set(listens.map((e) => e.album_id)).size;
+    const byArtist = new Map<string, number>();
+    listens.forEach((e) => byArtist.set(e.album.artist, (byArtist.get(e.album.artist) ?? 0) + 1));
+    const top = [...byArtist.entries()].sort((a, b) => b[1] - a[1])[0];
+    sec.summary = `${listens.length} ${listens.length === 1 ? "listen" : "listens"} · ${records} ${records === 1 ? "record" : "records"}${top && top[1] > 1 ? ` · most: ${top[0]}` : ""}`;
+  }
+
+  // Covers view: each month as a calendar of covers (Monday first).
+  const calendarMonths = (() => {
+    const byDay = new Map<string, EntryWithAlbum[]>();
+    for (const e of entries) if (e.kind !== "before") byDay.set(e.listened_on, [...(byDay.get(e.listened_on) ?? []), e]);
+    const months = [...new Set([...byDay.keys()].map((d) => d.slice(0, 7)))].sort().reverse().slice(0, 12);
+    return months.map((m) => {
+      const [y, mo] = m.split("-").map(Number);
+      const days = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+      const offset = (new Date(Date.UTC(y, mo - 1, 1)).getUTCDay() + 6) % 7;
+      const cells = Array.from({ length: offset + days }, (_, i) => {
+        if (i < offset) return null;
+        const day = `${m}-${String(i - offset + 1).padStart(2, "0")}`;
+        return { day, n: i - offset + 1, items: byDay.get(day) ?? [] };
+      });
+      const count = cells.reduce((s, c) => s + (c?.items.length ?? 0), 0);
+      return { key: m, title: `${MONTHS_FULL[mo - 1]} ${y}`, cells, count };
+    });
+  })();
+
+  // What's waiting for you, folded into one line at the top.
+  const toRate = reviewNow.length + suggestions.length;
+  const inboxBits = [
+    turntable.length ? `▶ ${turntable.length} on the turntable` : null,
+    toRate ? `★ ${toRate} to rate` : null,
+    "__REVISIT__",
+  ].filter(Boolean) as string[];
 
   // This month
   const month = today.slice(0, 7);
@@ -156,13 +216,21 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
     (e) => e.kind === "first" && e.rating !== null && e.rating <= 3 && daysBetween(e.listened_on, today) >= 14 && !relistened.has(e.album_id)
   );
 
+  const inbox = inboxBits.map((b) => (b === "__REVISIT__" ? (rediscover || reminder ? "↺ a record to revisit" : null) : b)).filter(Boolean) as string[];
+
   return (
     <div className="row gap-40" style={{ alignItems: "flex-start" }}>
       <section className="grow stack gap-28">
         <div>
           <p className="eyebrow">Your music diary</p>
           <h1 className="title-xl">Diary</h1>
-          {todoCount ? (
+          <div className="row gap-8" style={{ marginTop: 10, alignItems: "center" }}>
+            <nav className="row gap-4" aria-label="Diary view">
+              <Link href={todo ? "/?todo=1" : "/"} className="btn btn-sm pill" aria-pressed={!covers} aria-current={!covers ? "page" : undefined}>List</Link>
+              <Link href="/?view=covers" className="btn btn-sm pill" aria-pressed={covers} aria-current={covers ? "page" : undefined}>Covers</Link>
+            </nav>
+          </div>
+          {todoCount && !covers ? (
             <Link href={todo ? "/" : "/?todo=1"} className={`badge-todo${todo ? " on" : ""}`} style={{ marginTop: 10, display: "inline-flex" }}>
               {todo ? "✓ Showing listens without stars or a review · Show all" : `${todoCount} ${todoCount === 1 ? "listen needs" : "listens need"} stars or a review →`}
             </Link>
@@ -170,6 +238,15 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </div>
 
         {lastfmLinked ? <LastfmSync /> : null}
+        <details className="inbox">
+          <summary>
+            <span className="inbox-title">{inbox.length ? "Waiting for you" : "Turntable, challenges & more"}</span>
+            <span className="inbox-bits">
+              {inbox.length ? inbox.map((b) => <span key={b} className={`inbox-chip${b.startsWith("★") ? " hot" : ""}`}>{b}</span>) : <span className="muted small">Nothing waiting</span>}
+            </span>
+            <span className="er-chevron" aria-hidden="true">›</span>
+          </summary>
+          <div className="stack gap-20 inbox-body">
         <Turntable items={turntable} />
         <AutoLogged items={reviewNow} />
         <LastfmSuggestions items={suggestions} more={moreSuggestions} />
@@ -219,20 +296,67 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
             <Link href={logPath(reminder.album)} className="btn btn-primary">Log a relisten</Link>
           </div>
         ) : null}
+          </div>
+        </details>
 
-        {groups.length ? (
-          groups.map((g) => (
-            <div key={g.label} className="stack gap-12">
-              <h2 className="eyebrow">{g.label}</h2>
-              {g.items.map((e) =>
-                e.kind === "relisten" && e.rating === null && !e.note ? (
-                  <RelistenRow key={e.id} entry={e} nth={nth.get(e.id)} rating={bestRatingOf.get(e.album_id) ?? null} />
-                ) : (
-                  <EntryCard key={e.id} entry={e} />
-                )
-              )}
-            </div>
-          ))
+        {covers ? (
+          calendarMonths.length ? (
+            calendarMonths.map((m) => (
+              <section key={m.key} className="stack gap-8" aria-label={m.title}>
+                <div className="row gap-8" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+                  <h2 className="title-m">{m.title}</h2>
+                  <span className="mono muted small">{m.count} {m.count === 1 ? "listen" : "listens"}</span>
+                </div>
+                <div className="cal">
+                  {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <span key={i} className="cal-head">{d}</span>)}
+                  {m.cells.map((c, i) =>
+                    !c ? (
+                      <span key={i} className="cal-cell empty" />
+                    ) : c.items.length ? (
+                      <Link key={i} href={recordPath(c.items[0].album)} className="cal-cell has" title={c.items.map((e) => e.album.title).join(", ")}>
+                        <Cover album={c.items[0].album} size="full" />
+                        <span className="cal-n">{c.n}</span>
+                        {c.items.length > 1 ? <span className="cal-more">+{c.items.length - 1}</span> : null}
+                      </Link>
+                    ) : (
+                      <span key={i} className={`cal-cell${c.day === today ? " today" : ""}`}><span className="cal-n">{c.n}</span></span>
+                    )
+                  )}
+                </div>
+              </section>
+            ))
+          ) : (
+            <p className="muted">No listens with a date yet.</p>
+          )
+        ) : sections.length ? (
+          sections.map((sec) => {
+            const rows = (
+              <div className="stack gap-8">
+                {sec.items.map((e) =>
+                  e.kind === "relisten" && e.rating === null && !e.note ? (
+                    <RelistenRow key={e.id} entry={e} nth={nth.get(e.id)} rating={bestRatingOf.get(e.album_id) ?? null} />
+                  ) : (
+                    <EntryRow key={e.id} entry={e} />
+                  )
+                )}
+              </div>
+            );
+            return sec.collapsible ? (
+              <details key={sec.key} className="month-fold" open={sec.open}>
+                <summary>
+                  <span className="month-title">{sec.title}</span>
+                  <span className="mono muted small">{sec.summary}</span>
+                  <span className="er-chevron" aria-hidden="true">›</span>
+                </summary>
+                {rows}
+              </details>
+            ) : (
+              <section key={sec.key} className="stack gap-12" aria-label={sec.title}>
+                <h2 className="eyebrow">{sec.title}</h2>
+                {rows}
+              </section>
+            );
+          })
         ) : (
           <div className="card-dashed stack gap-12" style={{ alignItems: "flex-start" }}>
             <p style={{ fontWeight: 700, fontSize: 18 }}>Your diary is empty</p>

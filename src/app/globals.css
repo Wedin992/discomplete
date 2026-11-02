@@ -379,3 +379,44 @@ body { -webkit-tap-highlight-color: transparent; }
 .badge-todo { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; letter-spacing: .03em; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); background: transparent; text-decoration: none; cursor: pointer; min-height: 28px; }
 .badge-todo.badge-soft { border-color: var(--line-strong); color: var(--text-soft); }
 .badge-todo.on { background: var(--accent); color: var(--on-accent); }
+/* Diary: "Waiting for you" fold */
+.inbox { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.inbox > summary { list-style: none; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 16px; cursor: pointer; min-height: 56px; }
+.inbox > summary::-webkit-details-marker { display: none; }
+.inbox-title { font-weight: 700; }
+.inbox-bits { display: flex; gap: 6px; flex-wrap: wrap; flex: 1 1 auto; }
+.inbox-chip { font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--text-soft); }
+.inbox-chip.hot { border-color: var(--accent); color: var(--accent); }
+.inbox-body { padding: 0 16px 16px; }
+.inbox[open] > summary .er-chevron, .month-fold[open] > summary .er-chevron, .entry-row[open] > summary .er-chevron { transform: rotate(90deg); }
+.er-chevron { margin-left: auto; color: var(--muted); font-size: 22px; line-height: 1; transition: transform .15s; }
+
+/* Diary: compact, expandable rows */
+.entry-row { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.entry-row > summary { list-style: none; display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; }
+.entry-row > summary::-webkit-details-marker { display: none; }
+.er-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.er-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.er-title { font-weight: 700; }
+.er-meta { display: flex; gap: 10px; align-items: center; font-size: 12px; flex-wrap: wrap; }
+.er-todo { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+.er-snippet { font-size: 13px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.er-body { padding: 4px 12px 14px 68px; }
+.entry-embedded { display: block; }
+@media (max-width: 560px) { .er-body { padding-left: 12px; } }
+
+/* Diary: folded months */
+.month-fold > summary { list-style: none; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; cursor: pointer; padding: 6px 0 12px; }
+.month-fold > summary::-webkit-details-marker { display: none; }
+
+/* Diary: covers calendar */
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-head { font-family: var(--mono); font-size: 10px; color: var(--muted); text-align: center; padding-bottom: 2px; }
+.cal-cell { position: relative; aspect-ratio: 1 / 1; border-radius: 4px; background: color-mix(in srgb, var(--surface) 70%, transparent); overflow: hidden; display: block; }
+.cal-cell.empty { background: none; }
+.cal-cell.today { outline: 1px solid var(--accent); }
+.cal-cell .cover { width: 100%; height: 100%; border-radius: 0; }
+.cal-n { position: absolute; left: 4px; top: 3px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.cal-cell.has .cal-n { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
+.cal-more { position: absolute; right: 3px; bottom: 3px; font-family: var(--mono); font-size: 10px; background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 1px 5px; }
+.month-title { font-weight: 800; font-size: 22px; letter-spacing: -0.01em; }
