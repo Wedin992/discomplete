@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 21,
+    date: "2026-11-02",
+    changes: [
+      "Lyssningar i dagboken utan betyg har en orange badge “☆ Not rated · Rate it” – tryck så kommer stjärnorna direkt på kortet.",
+      "Lyssningar utan text har en grå badge “✎ No review yet · Write one” som öppnar lyssningen.",
+      "Under rubriken Diary står hur många som saknar stjärnor eller text (“3 listens need stars or a review →”). Tryck för att bara visa dem, och igen för att visa allt.",
+    ],
+  },
+  {
     version: 20,
     date: "2026-11-02",
     changes: [

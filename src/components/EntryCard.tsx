@@ -4,6 +4,7 @@ import { VisibilityIcon } from "@/components/Icons";
 import { artistPath, formatLabel, kindLabel, ratingText, recordPath, stars, visibilityLabel, type EntryWithAlbum } from "@/lib/format";
 import { DeleteEntryButton } from "@/components/DeleteEntryButton";
 import { NoteText } from "@/components/NoteText";
+import { RateBadge } from "@/components/RateBadge";
 
 /** A plain relisten — no stars, no words: one quiet line, not a full card. */
 export function RelistenRow({ entry, nth, rating }: { entry: EntryWithAlbum; nth?: number; rating?: number | null }) {
@@ -42,6 +43,7 @@ export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
         </div>
         <div className="meta">
           {entry.rating ? <span className="stars" aria-label={`${ratingText(Number(entry.rating))} of 5`}>{stars(entry.rating)}</span> : null}
+          {entry.rating ? null : <RateBadge entryId={entry.id} title={a.title} />}
           <span>{entry.kind === "before" ? "Heard before" : `${kindLabel(entry.kind)} · ${formatLabel(entry.format)}`}</span>
           {entry.tags.length ? <span>{entry.tags.join(" · ")}</span> : null}
         </div>
@@ -50,7 +52,9 @@ export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
           <div style={{ marginTop: 2 }}>
             <NoteText note={entry.note} lang={entry.note_lang} english={entry.note_en} />
           </div>
-        ) : null}
+        ) : (
+          <Link href={`/entry/${entry.id}/edit`} className="badge-todo badge-soft" style={{ alignSelf: "flex-start" }}>✎ No review yet · Write one</Link>
+        )}
         <div className="row gap-12" style={{ justifyContent: "space-between", marginTop: 2 }}>
           <span className="vis">
             <VisibilityIcon isPrivate={entry.is_private} isAnonymous={entry.is_anonymous} />

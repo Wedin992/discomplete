@@ -375,3 +375,7 @@ body { -webkit-tap-highlight-color: transparent; }
 .relisten-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px dashed var(--line); border-radius: var(--radius); }
 .relisten-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .relisten-title { color: var(--text); font-weight: 700; text-decoration: none; }
+/* "Not rated" / "No review yet" badges */
+.badge-todo { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; letter-spacing: .03em; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); background: transparent; text-decoration: none; cursor: pointer; min-height: 28px; }
+.badge-todo.badge-soft { border-color: var(--line-strong); color: var(--text-soft); }
+.badge-todo.on { background: var(--accent); color: var(--on-accent); }

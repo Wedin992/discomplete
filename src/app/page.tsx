@@ -12,8 +12,8 @@ import { DiaryChallenges } from "@/components/ChallengeCards";
 import { Suspense } from "react";
 import { artistPath, daysBetween, logPath, longDate, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
 
-export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
-  const { saved } = await searchParams;
+export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string; todo?: string }> }) {
+  const { saved, todo } = await searchParams;
   const { supabase, user } = await getUser();
   // New accounts take the short sign-up quiz first (skippable). Before migration 0005 the
   // column doesn't exist, the query errors, and nobody is redirected.
@@ -89,7 +89,10 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   // Records you knew from before Discomplete go on the shelf, not on a day in the diary.
   // Once you write about one, it shows in the diary on the day you wrote it.
   const fromBefore = entries.filter((e) => e.kind === "before");
-  const dated = entries.filter((e) => e.kind !== "before" || !!e.note);
+  // Listens still waiting for stars or words (plain relistens don't count — they're just "played again").
+  const isTodo = (e: EntryWithAlbum) => e.kind !== "before" && !(e.kind === "relisten" && e.rating === null && !e.note) && (e.rating === null || !e.note);
+  const todoCount = entries.filter(isTodo).length;
+  const dated = entries.filter((e) => e.kind !== "before" || !!e.note).filter((e) => !todo || isTodo(e));
 
   // For plain relistens: which listen this was (2nd, 3rd…) and your best rating of the record.
   const nth = new Map<string, number>();
@@ -159,6 +162,11 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         <div>
           <p className="eyebrow">Your music diary</p>
           <h1 className="title-xl">Diary</h1>
+          {todoCount ? (
+            <Link href={todo ? "/" : "/?todo=1"} className={`badge-todo${todo ? " on" : ""}`} style={{ marginTop: 10, display: "inline-flex" }}>
+              {todo ? "✓ Showing listens without stars or a review · Show all" : `${todoCount} ${todoCount === 1 ? "listen needs" : "listens need"} stars or a review →`}
+            </Link>
+          ) : null}
         </div>
 
         {lastfmLinked ? <LastfmSync /> : null}
