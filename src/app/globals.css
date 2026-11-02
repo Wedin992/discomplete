@@ -433,3 +433,10 @@ body { -webkit-tap-highlight-color: transparent; }
 .shelf-rating { margin-top: 6px; font-family: var(--mono); color: var(--accent); font-size: 13px; letter-spacing: .08em; }
 .shelf-title { font-weight: 700; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shelf-artist { color: var(--text-soft); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* "To do" panel */
+.inbox-todo { color: var(--accent); font-weight: 600; }
+.inbox-open { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--text-soft); flex: 0 0 auto; }
+.inbox-open .er-chevron { margin-left: 0; }
+.todo-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.todo-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
+.inbox-sep { border: 0; border-top: 1px solid var(--line-strong); margin: 4px 0; }

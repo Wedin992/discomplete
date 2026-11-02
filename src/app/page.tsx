@@ -9,6 +9,7 @@ import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, t
 import { LastfmSync } from "@/components/LastfmSync";
 import { COMPLETE_SHARE } from "@/lib/lastfm";
 import { DiaryChallenges } from "@/components/ChallengeCards";
+import { TodoRate } from "@/components/TodoRate";
 import { CalendarViewIcon, ListViewIcon, ShelfViewIcon } from "@/components/Icons";
 import { Suspense } from "react";
 import { artistPath, daysBetween, logPath, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
@@ -202,10 +203,10 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const unratedCount = entries.filter((e) => isTodo(e) && e.rating === null).length;
   const noReviewCount = entries.filter((e) => isTodo(e) && e.rating !== null && !e.note).length;
   const toRate = unratedCount + suggestions.length;
+  // The "To do" panel: listens to give stars, listens to write a few words about — each with the action right there.
+  const needStars = entries.filter((e) => isTodo(e) && e.rating === null);
+  const needWords = entries.filter((e) => isTodo(e) && e.rating !== null && !e.note);
   const inboxBits = [
-    turntable.length ? `▶ ${turntable.length} on the turntable` : null,
-    toRate ? `★ ${toRate} to rate` : null,
-    noReviewCount ? `✎ ${noReviewCount} without a review` : null,
     "__REVISIT__",
   ].filter(Boolean) as string[];
 
@@ -251,6 +252,15 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   );
 
   const inbox = inboxBits.map((b) => (b === "__REVISIT__" ? (rediscover || reminder ? "↺ a record to revisit" : null) : b)).filter(Boolean) as string[];
+  const todoLine = [
+    needStars.length ? `${needStars.length} ${needStars.length === 1 ? "listen needs" : "listens need"} stars` : null,
+    needWords.length ? `${needWords.length} could use a few words` : null,
+  ].filter(Boolean).join(" · ");
+  const alsoLine = [
+    turntable.length ? `▶ ${turntable.length} on the turntable` : null,
+    suggestions.length ? `${suggestions.length} from Spotify` : null,
+    ...inbox,
+  ].filter(Boolean) as string[];
 
   return (
     <div className="row gap-40" style={{ alignItems: "flex-start" }}>
@@ -273,20 +283,54 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         {lastfmLinked ? <LastfmSync /> : null}
         <details className="inbox">
           <summary>
-            <span className="inbox-title">{inbox.length ? "Waiting for you" : "Turntable, challenges & more"}</span>
-            <span className="inbox-bits">
-              {inbox.length ? inbox.map((b) => <span key={b} className={`inbox-chip${b.startsWith("★") ? " hot" : ""}`}>{b}</span>) : <span className="muted small">Nothing waiting</span>}
+            <span className="stack" style={{ gap: 6, flex: "1 1 auto", minWidth: 0 }}>
+              <span className="inbox-title">{todoLine ? "To do" : "On the turntable & more"}</span>
+              {todoLine ? <span className="inbox-todo">{todoLine}</span> : null}
+              {alsoLine.length ? (
+                <span className="inbox-bits">{alsoLine.map((b) => <span key={b} className="inbox-chip">{b}</span>)}</span>
+              ) : !todoLine ? <span className="muted small">Nothing waiting</span> : null}
             </span>
-            <span className="er-chevron" aria-hidden="true">›</span>
+            <span className="inbox-open">{todoLine ? "Sort it" : "Open"} <span className="er-chevron" aria-hidden="true">›</span></span>
           </summary>
           <div className="stack gap-20 inbox-body">
-        {todoCount && !todo ? (
-          <Link href="/?todo=1" className="badge-todo" style={{ alignSelf: "flex-start" }}>
-            Show the {todoCount} {todoCount === 1 ? "listen" : "listens"} without stars or a review →
-          </Link>
+        {needStars.length ? (
+          <section className="stack gap-8" aria-labelledby="todo-stars">
+            <h3 id="todo-stars" className="eyebrow" style={{ color: "var(--accent)" }}>Give these stars · {needStars.length}</h3>
+            <p className="muted small">Tap a star — it’s saved right away. Tap the left half for a half star.</p>
+            {needStars.map((e) => (
+              <div key={e.id} className="todo-row">
+                <Link href={recordPath(e.album)} tabIndex={-1} aria-hidden="true"><Cover album={e.album} size="44" /></Link>
+                <span className="todo-text">
+                  <span className="er-line"><span className="er-title">{e.album.title}</span><span className="muted"> · {e.album.artist}</span></span>
+                  <TodoRate entryId={e.id} title={e.album.title} />
+                </span>
+              </div>
+            ))}
+          </section>
+        ) : null}
+        {needWords.length ? (
+          <section className="stack gap-8" aria-labelledby="todo-words">
+            <h3 id="todo-words" className="eyebrow">A few words? · {needWords.length}</h3>
+            <p className="muted small">Optional — rated, but nothing written yet.</p>
+            {needWords.map((e) => (
+              <div key={e.id} className="todo-row">
+                <Link href={recordPath(e.album)} tabIndex={-1} aria-hidden="true"><Cover album={e.album} size="44" /></Link>
+                <span className="todo-text">
+                  <span className="er-line"><span className="er-title">{e.album.title}</span><span className="muted"> · {e.album.artist}</span></span>
+                  <span className="stars small">{stars(e.rating)}</span>
+                </span>
+                <Link href={`/entry/${e.id}/edit`} className="btn btn-sm">Write</Link>
+              </div>
+            ))}
+          </section>
+        ) : null}
+        {(needStars.length || needWords.length) && alsoLine.length ? (
+          <>
+            <hr className="inbox-sep" />
+            <h3 className="eyebrow">Also waiting</h3>
+          </>
         ) : null}
         <Turntable items={turntable} />
-        <AutoLogged items={reviewNow} />
         <LastfmSuggestions items={suggestions} more={moreSuggestions} />
         <Suspense fallback={null}>
           <DiaryChallenges />

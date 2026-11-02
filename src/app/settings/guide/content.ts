@@ -6,6 +6,14 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 24,
+    date: "2026-11-02",
+    changes: [
+      "“Waiting for you” heter nu “To do” och säger rakt ut vad som väntar: “2 listens need stars · 2 could use a few words”. Tryck “Sort it”.",
+      "Utfällt: “Give these stars” – varje skiva med stjärnor direkt på raden, sparas när du trycker. “A few words?” – skivor med betyg men utan text, med en Write-knapp. Under “Also waiting”: turntable, förslag från Spotify, Challenges och skivor att återbesöka.",
+    ],
+  },
+  {
     version: 23,
     date: "2026-11-02",
     changes: [
