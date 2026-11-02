@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { HeaderLogButton, Nav, SettingsLink, TabBar } from "@/components/Nav";
+import { BackButton } from "@/components/BackButton";
 import { LogSheet } from "@/components/LogSheet";
 import { LogoMark, PlusIcon } from "@/components/Icons";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className={user ? "signed-in" : undefined}>
         <header className="site-header">
           <div className="container">
+            {user ? <BackButton /> : null}
             <Link href="/" className="brand" aria-label="Discomplete, go to your diary">
               <LogoMark />
               <span className="wordmark"><span>Disc</span>omplete</span>

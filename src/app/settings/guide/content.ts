@@ -6,6 +6,13 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 25,
+    date: "2026-11-02",
+    changes: [
+      "Tillbaka-pil (‹) uppe till vänster i sidhuvudet på alla sidor under huvudflikarna: skivsidor, artistsidor, lyssningar, Challenges, guiden m.m. Den tar dig till sidan du kom från – eller, om du öppnade sidan direkt, till sidan ovanför.",
+    ],
+  },
+  {
     version: 24,
     date: "2026-11-02",
     changes: [
