@@ -371,3 +371,7 @@ body { -webkit-tap-highlight-color: transparent; }
 .pick.pick-playing { border-color: color-mix(in srgb, var(--accent) 55%, transparent) !important; border-style: dashed !important; }
 .pick-badge { position: absolute; left: 8px; top: 8px; background: var(--accent); color: var(--on-accent); font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 999px; letter-spacing: .04em; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
 .pick-badge.playing { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
+/* Diary: a plain relisten is one quiet line */
+.relisten-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px dashed var(--line); border-radius: var(--radius); }
+.relisten-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.relisten-title { color: var(--text); font-weight: 700; text-decoration: none; }

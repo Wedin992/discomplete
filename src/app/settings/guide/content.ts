@@ -6,6 +6,14 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 20,
+    date: "2026-11-02",
+    changes: [
+      "Lyssnar du igen på en skiva som redan finns i dagboken loggas den bara på dagen – ingen fråga om betyg.",
+      "Sådana omlyssningar (utan eget betyg eller text) visas som en liten rad i dagboken: “↻ Played again · 3rd listen · ★★★★” med ditt betyg på skivan. Vill du ändra något trycker du Edit.",
+    ],
+  },
+  {
     version: 19,
     date: "2026-11-01",
     changes: [

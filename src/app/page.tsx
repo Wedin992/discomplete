@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
-import { EntryCard } from "@/components/EntryCard";
+import { EntryCard, RelistenRow } from "@/components/EntryCard";
 import { rng } from "@/lib/discover";
 import { snoozeRediscover } from "@/app/actions";
 import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, type Suggestion } from "@/components/LastfmSuggestions";
@@ -77,6 +77,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
     if (!e || e.rating !== null || e.note) continue;
     seenAlbum.add(r.deezer_id);
     const earlier = entries.filter((x) => x.album?.deezer_id === r.deezer_id && x.id !== e.id);
+    if (earlier.length) continue; // a relisten: just logged on its day (a small line in the diary), no questions
     const rated = earlier.find((x) => x.rating !== null); // newest first
     reviews.push({ s: r, entryId: e.id, later: r.review === "later", plays: earlier.length + 1, prevRating: rated ? Number(rated.rating) : null });
   }
@@ -89,6 +90,18 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   // Once you write about one, it shows in the diary on the day you wrote it.
   const fromBefore = entries.filter((e) => e.kind === "before");
   const dated = entries.filter((e) => e.kind !== "before" || !!e.note);
+
+  // For plain relistens: which listen this was (2nd, 3rd…) and your best rating of the record.
+  const nth = new Map<string, number>();
+  const bestRatingOf = new Map<string, number>();
+  {
+    const count = new Map<string, number>();
+    for (const e of [...entries].reverse()) {
+      if (e.kind !== "before") count.set(e.album_id, (count.get(e.album_id) ?? 0) + 1);
+      nth.set(e.id, count.get(e.album_id) ?? 1);
+      if (e.rating !== null && Number(e.rating) > (bestRatingOf.get(e.album_id) ?? 0)) bestRatingOf.set(e.album_id, Number(e.rating));
+    }
+  }
 
   // Group by day
   const groups: { label: string; items: EntryWithAlbum[] }[] = [];
@@ -203,7 +216,13 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           groups.map((g) => (
             <div key={g.label} className="stack gap-12">
               <h2 className="eyebrow">{g.label}</h2>
-              {g.items.map((e) => <EntryCard key={e.id} entry={e} />)}
+              {g.items.map((e) =>
+                e.kind === "relisten" && e.rating === null && !e.note ? (
+                  <RelistenRow key={e.id} entry={e} nth={nth.get(e.id)} rating={bestRatingOf.get(e.album_id) ?? null} />
+                ) : (
+                  <EntryCard key={e.id} entry={e} />
+                )
+              )}
             </div>
           ))
         ) : (

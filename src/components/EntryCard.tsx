@@ -5,6 +5,29 @@ import { artistPath, formatLabel, kindLabel, ratingText, recordPath, stars, visi
 import { DeleteEntryButton } from "@/components/DeleteEntryButton";
 import { NoteText } from "@/components/NoteText";
 
+/** A plain relisten — no stars, no words: one quiet line, not a full card. */
+export function RelistenRow({ entry, nth, rating }: { entry: EntryWithAlbum; nth?: number; rating?: number | null }) {
+  const a = entry.album;
+  return (
+    <article className="relisten-row">
+      <Link href={recordPath(a)} tabIndex={-1} aria-hidden="true"><Cover album={a} size="44" /></Link>
+      <div className="stack" style={{ gap: 2, minWidth: 0, flex: "1 1 auto" }}>
+        <span className="relisten-line">
+          <Link href={recordPath(a)} className="relisten-title">{a.title}</Link>
+          <span className="muted"> · {a.artist}</span>
+        </span>
+        <span className="mono muted" style={{ fontSize: 11 }}>
+          ↻ Played again{nth && nth > 1 ? ` · ${nth}${nth % 100 >= 11 && nth % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][nth % 10] ?? "th"} listen` : ""}
+          {rating ? <> · <span className="stars">{stars(rating)}</span></> : null}
+        </span>
+      </div>
+      <Link href={`/entry/${entry.id}/edit`} className="btn-text small" style={{ minHeight: 32, display: "inline-flex", alignItems: "center", textDecoration: "none" }} aria-label={`Edit this listen of ${a.title}`}>
+        Edit
+      </Link>
+    </article>
+  );
+}
+
 export function EntryCard({ entry }: { entry: EntryWithAlbum }) {
   const a = entry.album;
   return (
