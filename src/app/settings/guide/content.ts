@@ -6,6 +6,17 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 23,
+    date: "2026-11-02",
+    changes: [
+      "“Waiting for you” räknar nu alla lyssningar utan stjärnor (“★ 2 to rate”) och visar “✎ x without a review” separat. Länken för att visa dem ligger i den utfällda rutan.",
+      "Dina egna anteckningar visas utan engelsk översättning – den syns bara för andra på skivsidan.",
+      "Varje vecka och månad har en statistikrad: lyssningar · skivor · vanligaste genrer · mest spelade artist.",
+      "Tre vyer med egna ikoner: List, Shelf och Calendar (tidigare “Covers”).",
+      "Nytt: Shelf – alla skivor du spelat per månad som stora omslag med dina stjärnor, titel och artist (och “2×” om du spelat den flera gånger).",
+    ],
+  },
+  {
     version: 22,
     date: "2026-11-02",
     changes: [
@@ -245,7 +256,7 @@ export const SECTIONS: Section[] = [
     id: "diary",
     title: "Dagboken",
     body: [
-      "Startsidan är din dagbok: överst “Waiting for you” (hopfälld), sedan This week, Last week och en rubrik per månad. Varje lyssning är en rad – tryck för att se hela. “Covers” visar månaden som en kalender med omslag.",
+      "Startsidan är din dagbok: överst “Waiting for you” (hopfälld), sedan This week, Last week och en rubrik per månad. Varje lyssning är en rad – tryck för att se hela. “Calendar” visar månaden som en kalender med omslag, och “Shelf” alla skivor som stora omslag med dina stjärnor.",
       "“Remember this?” påminner då och då om skivor du gett 4★ eller mer, så att du kan lyssna igen eller skjuta upp påminnelsen.",
     ],
   },

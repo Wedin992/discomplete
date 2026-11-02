@@ -9,6 +9,7 @@ import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, t
 import { LastfmSync } from "@/components/LastfmSync";
 import { COMPLETE_SHARE } from "@/lib/lastfm";
 import { DiaryChallenges } from "@/components/ChallengeCards";
+import { CalendarViewIcon, ListViewIcon, ShelfViewIcon } from "@/components/Icons";
 import { Suspense } from "react";
 import { artistPath, daysBetween, logPath, monthName, recordPath, shortDate, stars, todayIso, type Album, type EntryWithAlbum } from "@/lib/format";
 
@@ -26,6 +27,7 @@ type Section = { key: string; title: string; summary?: string; items: EntryWithA
 export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ saved?: string; todo?: string; view?: string }> }) {
   const { saved, todo, view } = await searchParams;
   const covers = view === "covers";
+  const shelf = view === "shelf";
   const { supabase, user } = await getUser();
   // New accounts take the short sign-up quiz first (skippable). Before migration 0005 the
   // column doesn't exist, the query errors, and nobody is redirected.
@@ -138,14 +140,25 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
       sectionFor(m, () => ({ key: m, title: current ? `Earlier in ${name}` : name, items: [], collapsible: !current, open: current || !!todo })).items.push(e);
     }
   }
+  const rank = (k: string) => (k === "w0" ? "9999-99" : k === "w1" ? "9999-98" : k);
+  sections.sort((a, b) => (rank(a.key) < rank(b.key) ? 1 : -1));
   for (const sec of sections) {
-    if (!sec.collapsible) continue;
     const listens = sec.items.filter((e) => e.kind !== "before");
     const records = new Set(listens.map((e) => e.album_id)).size;
     const byArtist = new Map<string, number>();
     listens.forEach((e) => byArtist.set(e.album.artist, (byArtist.get(e.album.artist) ?? 0) + 1));
     const top = [...byArtist.entries()].sort((a, b) => b[1] - a[1])[0];
-    sec.summary = `${listens.length} ${listens.length === 1 ? "listen" : "listens"} · ${records} ${records === 1 ? "record" : "records"}${top && top[1] > 1 ? ` · most: ${top[0]}` : ""}`;
+    const byGenre = new Map<string, number>();
+    listens.forEach((e) => e.album.genre && byGenre.set(e.album.genre, (byGenre.get(e.album.genre) ?? 0) + 1));
+    const genres = [...byGenre.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([g]) => g);
+    sec.summary = [
+      `${listens.length} ${listens.length === 1 ? "listen" : "listens"}`,
+      `${records} ${records === 1 ? "record" : "records"}`,
+      genres.length ? genres.join(" & ") : null,
+      top && top[1] > 1 ? `most: ${top[0]}` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
   }
 
   // Covers view: each month as a calendar of covers (Monday first).
@@ -167,11 +180,32 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
     });
   })();
 
+  // Shelf view: every record you played, month by month — cover, your stars, title and artist.
+  const shelfMonths = (() => {
+    const out: { key: string; title: string; items: { e: EntryWithAlbum; plays: number }[] }[] = [];
+    for (const e of entries) {
+      if (e.kind === "before") continue;
+      const m = e.listened_on.slice(0, 7);
+      let sec = out.find((x) => x.key === m);
+      if (!sec) out.push((sec = { key: m, title: `${MONTHS_FULL[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`, items: [] }));
+      const same = sec.items.find((x) => x.e.album_id === e.album_id);
+      if (same) {
+        same.plays++;
+        if (!same.e.rating && e.rating) same.e = { ...same.e, rating: e.rating };
+      } else sec.items.push({ e, plays: 1 });
+    }
+    return out.sort((a, b) => (a.key < b.key ? 1 : -1));
+  })();
+
   // What's waiting for you, folded into one line at the top.
-  const toRate = reviewNow.length + suggestions.length;
+  // Everything without stars (listens in the diary, plus Spotify listens not logged yet) — and, separately, without a review.
+  const unratedCount = entries.filter((e) => isTodo(e) && e.rating === null).length;
+  const noReviewCount = entries.filter((e) => isTodo(e) && e.rating !== null && !e.note).length;
+  const toRate = unratedCount + suggestions.length;
   const inboxBits = [
     turntable.length ? `▶ ${turntable.length} on the turntable` : null,
     toRate ? `★ ${toRate} to rate` : null,
+    noReviewCount ? `✎ ${noReviewCount} without a review` : null,
     "__REVISIT__",
   ].filter(Boolean) as string[];
 
@@ -226,14 +260,13 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           <h1 className="title-xl">Diary</h1>
           <div className="row gap-8" style={{ marginTop: 10, alignItems: "center" }}>
             <nav className="row gap-4" aria-label="Diary view">
-              <Link href={todo ? "/?todo=1" : "/"} className="btn btn-sm pill" aria-pressed={!covers} aria-current={!covers ? "page" : undefined}>List</Link>
-              <Link href="/?view=covers" className="btn btn-sm pill" aria-pressed={covers} aria-current={covers ? "page" : undefined}>Covers</Link>
+              <Link href={todo ? "/?todo=1" : "/"} className="btn btn-sm pill view-pill" aria-pressed={!covers && !shelf} aria-current={!covers && !shelf ? "page" : undefined}><ListViewIcon /> List</Link>
+              <Link href="/?view=shelf" className="btn btn-sm pill view-pill" aria-pressed={shelf} aria-current={shelf ? "page" : undefined}><ShelfViewIcon /> Shelf</Link>
+              <Link href="/?view=covers" className="btn btn-sm pill view-pill" aria-pressed={covers} aria-current={covers ? "page" : undefined}><CalendarViewIcon /> Calendar</Link>
             </nav>
           </div>
-          {todoCount && !covers ? (
-            <Link href={todo ? "/" : "/?todo=1"} className={`badge-todo${todo ? " on" : ""}`} style={{ marginTop: 10, display: "inline-flex" }}>
-              {todo ? "✓ Showing listens without stars or a review · Show all" : `${todoCount} ${todoCount === 1 ? "listen needs" : "listens need"} stars or a review →`}
-            </Link>
+          {todo ? (
+            <Link href="/" className="badge-todo on" style={{ marginTop: 10, display: "inline-flex" }}>✓ Showing listens without stars or a review · Show all</Link>
           ) : null}
         </div>
 
@@ -247,6 +280,11 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
             <span className="er-chevron" aria-hidden="true">›</span>
           </summary>
           <div className="stack gap-20 inbox-body">
+        {todoCount && !todo ? (
+          <Link href="/?todo=1" className="badge-todo" style={{ alignSelf: "flex-start" }}>
+            Show the {todoCount} {todoCount === 1 ? "listen" : "listens"} without stars or a review →
+          </Link>
+        ) : null}
         <Turntable items={turntable} />
         <AutoLogged items={reviewNow} />
         <LastfmSuggestions items={suggestions} more={moreSuggestions} />
@@ -299,7 +337,33 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           </div>
         </details>
 
-        {covers ? (
+        {shelf ? (
+          shelfMonths.length ? (
+            shelfMonths.map((m) => (
+              <section key={m.key} className="stack gap-12" aria-label={m.title}>
+                <div className="row gap-8" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+                  <h2 className="month-title">{m.title}</h2>
+                  <span className="mono muted small">{m.items.length} {m.items.length === 1 ? "record" : "records"}</span>
+                </div>
+                <div className="shelf">
+                  {m.items.map(({ e, plays }) => (
+                    <Link key={e.id} href={recordPath(e.album)} className="shelf-item">
+                      <span className="shelf-cover">
+                        <Cover album={e.album} size="full" />
+                        {plays > 1 ? <span className="shelf-plays">{plays}×</span> : null}
+                      </span>
+                      <span className="shelf-rating">{e.rating ? stars(e.rating) : <span className="er-todo">☆ not rated</span>}</span>
+                      <span className="shelf-title">{e.album.title}</span>
+                      <span className="shelf-artist">{e.album.artist}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ))
+          ) : (
+            <p className="muted">No listens with a date yet.</p>
+          )
+        ) : covers ? (
           calendarMonths.length ? (
             calendarMonths.map((m) => (
               <section key={m.key} className="stack gap-8" aria-label={m.title}>
@@ -352,7 +416,10 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
               </details>
             ) : (
               <section key={sec.key} className="stack gap-12" aria-label={sec.title}>
-                <h2 className="eyebrow">{sec.title}</h2>
+                <div className="row gap-8" style={{ alignItems: "baseline", justifyContent: "space-between" }}>
+                  <h2 className="eyebrow">{sec.title}</h2>
+                  {sec.summary ? <span className="mono muted" style={{ fontSize: 11 }}>{sec.summary}</span> : null}
+                </div>
                 {rows}
               </section>
             );

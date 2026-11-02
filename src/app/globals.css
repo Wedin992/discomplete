@@ -420,3 +420,16 @@ body { -webkit-tap-highlight-color: transparent; }
 .cal-cell.has .cal-n { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); }
 .cal-more { position: absolute; right: 3px; bottom: 3px; font-family: var(--mono); font-size: 10px; background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 1px 5px; }
 .month-title { font-weight: 800; font-size: 22px; letter-spacing: -0.01em; }
+.view-pill { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Diary: shelf view — covers with your stars, title and artist */
+.shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 16px; }
+@media (max-width: 560px) { .shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; } }
+.shelf-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; color: var(--text); text-decoration: none; }
+.shelf-cover { position: relative; display: block; border-radius: 4px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,.35); transition: transform .15s; }
+.shelf-item:hover .shelf-cover { transform: translateY(-2px); }
+.shelf-cover .cover { width: 100%; height: auto; aspect-ratio: 1 / 1; display: block; border-radius: 0; }
+.shelf-plays { position: absolute; right: 6px; top: 6px; font-family: var(--mono); font-size: 11px; background: rgba(0,0,0,.7); color: #fff; border-radius: 999px; padding: 2px 7px; }
+.shelf-rating { margin-top: 6px; font-family: var(--mono); color: var(--accent); font-size: 13px; letter-spacing: .08em; }
+.shelf-title { font-weight: 700; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shelf-artist { color: var(--text-soft); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

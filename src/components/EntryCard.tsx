@@ -98,7 +98,7 @@ export function EntryCard({ entry, embedded = false }: { entry: EntryWithAlbum; 
         {entry.fav_tracks?.length ? <p className="fav-line">♥ {entry.fav_tracks.map((t) => t.title).join(" · ")}</p> : null}
         {entry.note ? (
           <div style={{ marginTop: 2 }}>
-            <NoteText note={entry.note} lang={entry.note_lang} english={entry.note_en} />
+            <NoteText note={entry.note} lang={entry.note_lang} />
           </div>
         ) : (
           <Link href={`/entry/${entry.id}/edit`} className="badge-todo badge-soft" style={{ alignSelf: "flex-start" }}>✎ No review yet · Write one</Link>

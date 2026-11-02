@@ -55,3 +55,39 @@ export function VisibilityIcon({ isPrivate, isAnonymous }: { isPrivate: boolean;
     </svg>
   );
 }
+
+export function ListViewIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+      <rect x="1.5" y="2" width="3" height="3" rx="0.6" />
+      <rect x="1.5" y="6.5" width="3" height="3" rx="0.6" />
+      <rect x="1.5" y="11" width="3" height="3" rx="0.6" />
+      <path d="M7 3.5h7.5M7 8h7.5M7 12.5h7.5" />
+    </svg>
+  );
+}
+
+/** A month calendar of covers. */
+export function CalendarViewIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="1.5" y="2.5" width="13" height="12" rx="1.5" />
+      <path d="M1.5 6h13M5 1v3M11 1v3" strokeLinecap="round" />
+      <rect x="4" y="8.5" width="2.5" height="2.5" fill="currentColor" stroke="none" />
+      <rect x="9.5" y="8.5" width="2.5" height="2.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/** A wall of record sleeves. */
+export function ShelfViewIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="0.8" />
+      <rect x="9" y="1.5" width="5.5" height="5.5" rx="0.8" />
+      <rect x="1.5" y="9" width="5.5" height="5.5" rx="0.8" />
+      <circle cx="11.75" cy="11.75" r="2.75" />
+      <circle cx="11.75" cy="11.75" r="0.6" fill="currentColor" />
+    </svg>
+  );
+}
