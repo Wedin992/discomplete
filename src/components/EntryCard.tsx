@@ -100,7 +100,7 @@ export function EntryCard({ entry, embedded = false }: { entry: EntryWithAlbum; 
           <div style={{ marginTop: 2 }}>
             <NoteText note={entry.note} lang={entry.note_lang} />
           </div>
-        ) : (
+        ) : entry.no_words ? null : (
           <Link href={`/entry/${entry.id}/edit`} className="badge-todo badge-soft" style={{ alignSelf: "flex-start" }}>✎ No review yet · Write one</Link>
         )}
         <div className="row gap-12" style={{ justifyContent: "space-between", marginTop: 2 }}>

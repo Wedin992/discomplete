@@ -6,6 +6,14 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 26,
+    date: "2026-11-02",
+    changes: [
+      "“A few words?” i To do: “No thanks” på varje skiva – stjärnorna räcker, och appen slutar fråga om den. “Stars are enough for all” gör samma sak för alla på en gång.",
+      "Appen ber bara om text för lyssningar från de senaste två veckorna – äldre betygsatta lyssningar utan text räknas inte längre som att göra.",
+    ],
+  },
+  {
     version: 25,
     date: "2026-11-02",
     changes: [

@@ -687,3 +687,11 @@ export async function rateEntry(entryId: string, rating: number): Promise<{ stat
   revalidatePath("/", "layout");
   return { status: "updated" };
 }
+
+/** "Stars are enough": stop asking for words on these listens (one id, or several). */
+export async function noWords(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const ids = formData.getAll("id").map(String).filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 200);
+  if (ids.length) await supabase.from("entries").update({ no_words: true }).eq("user_id", user.id).in("id", ids);
+  revalidatePath("/");
+}

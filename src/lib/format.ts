@@ -60,6 +60,7 @@ export type Entry = {
   format: "stream" | "vinyl" | "cd";
   kind: "first" | "relisten" | "before";
   fav_tracks?: FavTrack[] | null;
+  no_words?: boolean | null;
   note: string | null;
   /** Detected language of the note and its English translation (migration 0003). */
   note_lang?: string | null;

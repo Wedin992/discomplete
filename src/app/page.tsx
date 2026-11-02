@@ -4,7 +4,8 @@ import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { EntryRow, RelistenRow } from "@/components/EntryCard";
 import { rng } from "@/lib/discover";
-import { snoozeRediscover } from "@/app/actions";
+import { noWords, snoozeRediscover } from "@/app/actions";
+import { PendingButton } from "@/components/PendingButton";
 import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, type Suggestion } from "@/components/LastfmSuggestions";
 import { LastfmSync } from "@/components/LastfmSync";
 import { COMPLETE_SHARE } from "@/lib/lastfm";
@@ -105,7 +106,10 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   // Once you write about one, it shows in the diary on the day you wrote it.
   const fromBefore = entries.filter((e) => e.kind === "before");
   // Listens still waiting for stars or words (plain relistens don't count — they're just "played again").
-  const isTodo = (e: EntryWithAlbum) => e.kind !== "before" && !(e.kind === "relisten" && e.rating === null && !e.note) && (e.rating === null || !e.note);
+  // Words are only asked for on recent listens (last two weeks), and never once you've said "stars are enough".
+  const wordsCutoff = new Date(Date.now() - 14 * 86400_000).toISOString().slice(0, 10);
+  const wantsWords = (e: EntryWithAlbum) => !e.note && !e.no_words && e.listened_on >= wordsCutoff;
+  const isTodo = (e: EntryWithAlbum) => e.kind !== "before" && !(e.kind === "relisten" && e.rating === null && !e.note) && (e.rating === null || wantsWords(e));
   const todoCount = entries.filter(isTodo).length;
   const dated = entries.filter((e) => e.kind !== "before" || !!e.note).filter((e) => !todo || isTodo(e));
 
@@ -205,7 +209,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const toRate = unratedCount + suggestions.length;
   // The "To do" panel: listens to give stars, listens to write a few words about — each with the action right there.
   const needStars = entries.filter((e) => isTodo(e) && e.rating === null);
-  const needWords = entries.filter((e) => isTodo(e) && e.rating !== null && !e.note);
+  const needWords = entries.filter((e) => isTodo(e) && e.rating !== null && wantsWords(e));
   const inboxBits = [
     "__REVISIT__",
   ].filter(Boolean) as string[];
@@ -311,7 +315,13 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         {needWords.length ? (
           <section className="stack gap-8" aria-labelledby="todo-words">
             <h3 id="todo-words" className="eyebrow">A few words? · {needWords.length}</h3>
-            <p className="muted small">Optional — rated, but nothing written yet.</p>
+            <div className="row gap-12" style={{ justifyContent: "space-between", alignItems: "center" }}>
+              <p className="muted small">Optional — rated, but nothing written yet.</p>
+              <form action={noWords}>
+                {needWords.map((e) => <input key={e.id} type="hidden" name="id" value={e.id} />)}
+                <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…">Stars are enough for all</PendingButton>
+              </form>
+            </div>
             {needWords.map((e) => (
               <div key={e.id} className="todo-row">
                 <Link href={recordPath(e.album)} tabIndex={-1} aria-hidden="true"><Cover album={e.album} size="44" /></Link>
@@ -319,7 +329,13 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
                   <span className="er-line"><span className="er-title">{e.album.title}</span><span className="muted"> · {e.album.artist}</span></span>
                   <span className="stars small">{stars(e.rating)}</span>
                 </span>
-                <Link href={`/entry/${e.id}/edit`} className="btn btn-sm">Write</Link>
+                <span className="row gap-4" style={{ flexWrap: "nowrap" }}>
+                  <Link href={`/entry/${e.id}/edit`} className="btn btn-sm">Write</Link>
+                  <form action={noWords}>
+                    <input type="hidden" name="id" value={e.id} />
+                    <PendingButton className="btn-text small" style={{ minHeight: 36 }} pending="…" aria-label={`Stars are enough for ${e.album.title}`}>No thanks</PendingButton>
+                  </form>
+                </span>
               </div>
             ))}
           </section>
