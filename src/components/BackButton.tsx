@@ -11,6 +11,7 @@ const TOP = ["/", "/discover", "/to-listen", "/records", "/settings", "/log", "/
 function parentOf(path: string) {
   if (/^\/record\/.+\/log$/.test(path)) return path.replace(/\/log$/, "");
   if (path.startsWith("/challenges/")) return "/challenges";
+  if (path.startsWith("/clubs/")) return "/clubs";
   if (path.startsWith("/settings/") || path.startsWith("/lastfm")) return "/settings";
   return "/";
 }

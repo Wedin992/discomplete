@@ -15,7 +15,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.discomplete.com"),
   title: { default: "Discomplete", template: "%s · Discomplete" },
-  description: "A music diary. Log what you listen to, remember how it felt, find what to play next.",
+  description: "Listen to whole albums again. Find your next one, keep a diary of every listen, and share an album a week with friends.",
   applicationName: "Discomplete",
   appleWebApp: { capable: true, title: "Discomplete", statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },

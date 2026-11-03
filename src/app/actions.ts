@@ -695,3 +695,63 @@ export async function noWords(formData: FormData) {
   if (ids.length) await supabase.from("entries").update({ no_words: true }).eq("user_id", user.id).in("id", ids);
   revalidatePath("/");
 }
+
+// ─────────────────────────────────────────────────────────────
+// Album clubs: one album a week, listened to together
+// ─────────────────────────────────────────────────────────────
+export async function createClub(formData: FormData) {
+  const { supabase } = await requireUser();
+  const name = String(formData.get("name") ?? "").trim().slice(0, 60);
+  if (!name) redirect("/clubs?error=name");
+  const { data, error } = await supabase.rpc("create_club", { p_name: name });
+  if (error || !data) redirect("/clubs?error=setup");
+  revalidatePath("/", "layout");
+  redirect(`/clubs/${data as string}?new=1`);
+}
+
+export async function joinClub(formData: FormData) {
+  const { supabase } = await requireUser();
+  const code = String(formData.get("code") ?? "").trim().toLowerCase().replace(/^.*\/clubs\/join\//, "").slice(0, 40);
+  if (!/^[a-z0-9]{6,40}$/.test(code)) redirect("/clubs?error=code");
+  const { data, error } = await supabase.rpc("join_club", { p_code: code });
+  if (error || !data) redirect("/clubs?error=code");
+  revalidatePath("/", "layout");
+  redirect(`/clubs/${data as string}?joined=1`);
+}
+
+export async function leaveClub(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("club_id") ?? "");
+  if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("club_members").delete().eq("club_id", id).eq("user_id", user.id);
+  revalidatePath("/", "layout");
+  redirect("/clubs");
+}
+
+/** Pick an album for this week or next week in a club. */
+export async function pickForClub(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const { mondayOf, addDays } = await import("@/lib/clubs");
+  const clubId = String(formData.get("club_id") ?? "");
+  const deezerId = Number(formData.get("deezer_id"));
+  const when = String(formData.get("week") ?? "this");
+  const note = String(formData.get("note") ?? "").trim().slice(0, 280) || null;
+  const back = String(formData.get("back") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(clubId) || !Number.isInteger(deezerId) || deezerId <= 0) return;
+  const albumId = await ensureAlbum(supabase, deezerId);
+  if (!albumId) return;
+  const week = mondayOf(todayIso());
+  const weekStart = when === "next" ? addDays(week, 7) : week;
+  const { error } = await supabase.from("club_picks").insert({ club_id: clubId, week_start: weekStart, album_id: albumId, picked_by: user.id, note });
+  revalidatePath("/", "layout");
+  if (error) redirect(`/clubs/${clubId}?error=taken`);
+  redirect(back.startsWith("/") ? back : `/clubs/${clubId}?picked=1`);
+}
+
+export async function removeClubPick(formData: FormData) {
+  const { supabase } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  const clubId = String(formData.get("club_id") ?? "");
+  if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("club_picks").delete().eq("id", id);
+  revalidatePath("/", "layout");
+  redirect(`/clubs/${clubId}`);
+}

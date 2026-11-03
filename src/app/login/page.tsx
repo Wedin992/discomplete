@@ -12,10 +12,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <section className="stack gap-28 narrow" style={{ maxWidth: 520 }}>
       <div>
-        <p className="eyebrow">Your music diary</p>
-        <h1 className="title-xl">Remember what you listened to</h1>
+        <p className="eyebrow">Discomplete</p>
+        <h1 className="title-xl">Listen to whole albums again</h1>
         <p className="muted" style={{ marginTop: 12, fontSize: 18 }}>
-          Log a record in seconds, note how it felt, and come back to see how it changed for you.
+          Three albums to try every day. A diary of every one you finish. Challenges to work through, and an album a week with friends.
         </p>
       </div>
       {error ? <p className="error" role="alert">That sign-in link didn’t work. It may have expired — try again.</p> : null}

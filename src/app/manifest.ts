@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "Discomplete",
     short_name: "Discomplete",
-    description: "A music diary. Log what you listen to, remember how it felt, find what to play next.",
+    description: "Listen to whole albums again. Find your next one, keep a diary of every listen, and share an album a week with friends.",
     start_url: "/",
     scope: "/",
     display: "standalone",

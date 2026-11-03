@@ -41,6 +41,7 @@ Not yet: "More like this" recommendations, Last.fm import, following friends.
 15. **Review automatic logs:** run `supabase/migrations/0014_review_later.sql` (albums logged automatically from Spotify ask "how was it?").
 16. **Half stars:** run `supabase/migrations/0015_half_stars.sql` (ratings from ½ to 5).
 17. **"Stars are enough":** run `supabase/migrations/0016_no_words.sql` (stop asking for words on a rated listen).
+18. **Album clubs:** run `supabase/migrations/0017_clubs.sql` (one album a week with friends).
 6. **Sign-up quiz and artist suggestions:** run `0004_explore_artists.sql` and `0005_onboarding.sql`.
 7. **Authentication → Emails → Templates:** in both *Magic Link* and *Confirm signup*, add the code so people can sign in inside the installed app (where email links open the browser instead):
    ```html

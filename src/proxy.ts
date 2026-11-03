@@ -47,7 +47,20 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
-    return NextResponse.redirect(url);
+    const res = NextResponse.redirect(url);
+    // An invite link opened while signed out: come back to it after signing in.
+    if (/^\/clubs\/join\/[a-z0-9]{6,40}$/i.test(path)) res.cookies.set("dc_next", path, { maxAge: 86400, path: "/", sameSite: "lax" });
+    return res;
+  }
+  const next = request.cookies.get("dc_next")?.value;
+  if (signedIn && path === "/" && next && /^\/clubs\/join\/[a-z0-9]{6,40}$/i.test(next)) {
+    const url = request.nextUrl.clone();
+    url.pathname = next;
+    url.search = "";
+    const res = NextResponse.redirect(url);
+    for (const c of response.cookies.getAll()) res.cookies.set(c);
+    res.cookies.delete("dc_next");
+    return res;
   }
   return response;
 }

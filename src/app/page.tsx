@@ -10,6 +10,7 @@ import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, t
 import { LastfmSync } from "@/components/LastfmSync";
 import { COMPLETE_SHARE } from "@/lib/lastfm";
 import { DiaryChallenges } from "@/components/ChallengeCards";
+import { DiaryClubs } from "@/app/clubs/DiaryClubs";
 import { TodoRate } from "@/components/TodoRate";
 import { CalendarViewIcon, ListViewIcon, ShelfViewIcon } from "@/components/Icons";
 import { Suspense } from "react";
@@ -285,6 +286,11 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </div>
 
         {lastfmLinked ? <LastfmSync /> : null}
+        {!todo ? (
+          <Suspense fallback={null}>
+            <DiaryClubs />
+          </Suspense>
+        ) : null}
         <details className="inbox">
           <summary>
             <span className="stack" style={{ gap: 6, flex: "1 1 auto", minWidth: 0 }}>

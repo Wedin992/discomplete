@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/discover", label: "Discover" },
   { href: "/records", label: "Records" },
   { href: "/to-listen", label: "To listen" },
+  { href: "/clubs", label: "Clubs" },
   { href: "/settings", label: "Settings" },
 ];
 

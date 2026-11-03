@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 28,
+    date: "2026-11-03",
+    changes: [
+      "Ny riktning: Discomplete handlar om att lyssna på hela album igen. Inloggningssidan och appens beskrivning säger nu “Listen to whole albums again”.",
+      "Album clubs (kräver databasuppdatering 0017): starta en klubb under Clubs, bjud in vänner med en länk, och välj ett album i veckan. Alla lyssnar när de vill. Andras stjärnor och ord syns först när du själv har hört skivan.",
+      "Klubbens album för veckan syns överst i dagboken med “2/3” lyssnat. Har du ingen klubb visas en länk dit.",
+    ],
+  },
+  {
     version: 27,
     date: "2026-11-03",
     changes: [
@@ -312,6 +321,17 @@ export const SECTIONS: Section[] = [
       "Allt i dagboken räknas, även “Heard before”. En annan utgåva av samma skiva räknas också.",
       "Varje utmaning drar en skiva om dagen, “Today’s pick”. Den visas i dagboken, i Discover och i To listen och byts när du har loggat den. Kan du den redan sätter du stjärnor direkt.",
       "Skivsidan visar “Part of” med de utmaningar skivan ingår i. “Stop this challenge” längst ned på utmaningens sida tar bort den – dina loggar påverkas inte.",
+    ],
+  },
+  {
+    id: "clubs",
+    title: "Album clubs",
+    body: [
+      "Ett album i veckan som klubben lyssnar på tillsammans, var och en i sin egen takt. Starta en klubb under Clubs (toppmenyn på dator, kortet överst i dagboken på mobil) och dela inbjudningslänken. Den som öppnar länken utan att vara inloggad kommer tillbaka till inbjudan efter inloggningen.",
+      "Alla i klubben kan välja veckans album om inget är valt, och nästa veckas album. Sök eller välj från din To listen och skriv gärna en rad om varför. Den som valde, eller den som startade klubben, kan ta bort ett val.",
+      "Din vanliga loggning räknas: en lyssning (inte “Heard before”) från veckans måndag och framåt bockar av dig. “I’ve listened — log it” öppnar loggformuläret.",
+      "Andras stjärnor och anteckningar är låsta tills du själv har skivan i dagboken. Privata lyssningar visas bara som “listened”.",
+      "Fungerar helt utan Last.fm. Med Last.fm räknas automatiska loggar som vanligt.",
     ],
   },
   {
