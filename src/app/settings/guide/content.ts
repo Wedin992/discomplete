@@ -6,6 +6,13 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 27,
+    date: "2026-11-03",
+    changes: [
+      "Hela appen är nu dokumenterad i docs/DOCUMENTATION.md i repot och som “discomplete-dokumentation.md” i Claude-projektet Discomplete. Dokumentationen uppdateras vid varje ändring i appen.",
+    ],
+  },
+  {
     version: 26,
     date: "2026-11-02",
     changes: [
