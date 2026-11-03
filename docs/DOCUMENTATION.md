@@ -3,7 +3,7 @@
 > **Levande dokument.** Uppdateras varje gång något läggs till, ändras eller tas bort i appen (se *Så hålls dokumentationen uppdaterad* längst ned).
 > Källan finns i repot som `docs/DOCUMENTATION.md`. En kopia finns i Claude-projektet "Discomplete" som `claude/discomplete-dokumentation.md`.
 >
-> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 29 · **Senaste migrering:** 0018 (ska köras)
+> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 29 · **Senaste migrering:** 0018
 
 ---
 
@@ -301,7 +301,7 @@ Efter det visar rutan **"✓ It's working – Playing right now / Last heard …
 - Andras data når skivsidan bara via `security definer`-funktionerna ovan.
 - Koden faller tillbaka snällt om en migrering inte är körd: funktionen syns då inte eller sparas utan den nya kolumnen.
 
-**Migreringar 0001–0017 är körda av Kevin. 0018 (listor och publik profil) ska köras.**
+**Alla migreringar (0001–0018) är körda av Kevin.**
 
 ---
 
