@@ -102,6 +102,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   const reviewLaterList = [...reviews.filter((r) => r.later), ...reviews.filter((r) => !r.later).slice(3)];
   const toListen = ((listRes.data ?? []) as unknown as { album: Album }[]).map((r) => r.album).filter(Boolean);
   const today = todayIso();
+  const prevMonthKey = new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 2, 1)).toISOString().slice(0, 7);
 
   // Records you knew from before Discomplete go on the shelf, not on a day in the diary.
   // Once you write about one, it shows in the diary on the day you wrote it.
@@ -286,9 +287,23 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </div>
 
         {lastfmLinked ? <LastfmSync /> : null}
+        {!todo && Number(today.slice(8, 10)) <= 10 ? (
+          <Link href={`/recap/${prevMonthKey}`} className="recap-nudge">
+            <span>
+              <strong>Your {monthName(`${prevMonthKey}-01`)} in albums is ready.</strong>{" "}
+              <span className="muted">The numbers, your best records, and a picture to share.</span>
+            </span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        ) : null}
         {!todo ? (
           <Suspense fallback={null}>
             <DiaryClubs />
+          </Suspense>
+        ) : null}
+        {!todo ? (
+          <Suspense fallback={null}>
+            <DiaryChallenges />
           </Suspense>
         ) : null}
         <details className="inbox">
@@ -354,10 +369,6 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         ) : null}
         <Turntable items={turntable} />
         <LastfmSuggestions items={suggestions} more={moreSuggestions} />
-        <Suspense fallback={null}>
-          <DiaryChallenges />
-        </Suspense>
-
         {rediscover ? (
           <div className="card highlight stack gap-12">
             <div className="row gap-16" style={{ alignItems: "center" }}>
@@ -461,7 +472,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         ) : sections.length ? (
           sections.map((sec) => {
             const rows = (
-              <div className="stack gap-8">
+              <div className="diary-list">
                 {sec.items.map((e) =>
                   e.kind === "relisten" && e.rating === null && !e.note ? (
                     <RelistenRow key={e.id} entry={e} nth={nth.get(e.id)} rating={bestRatingOf.get(e.album_id) ?? null} />
@@ -516,6 +527,10 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
             </div>
           </div>
           {topTags ? <p className="muted" style={{ fontSize: 14 }}>Most tagged: <span style={{ color: "var(--text)" }}>{topTags}</span></p> : null}
+          <div className="row gap-12">
+            <Link href={`/recap/${today.slice(0, 7)}`} className="btn-text small" style={{ color: "var(--accent)", minHeight: 32 }}>{monthName(today)} in albums →</Link>
+            <Link href={`/recap/${prevMonthKey}`} className="btn-text small" style={{ minHeight: 32 }}>{monthName(`${prevMonthKey}-01`)} →</Link>
+          </div>
         </div>
 
         {onRepeat.length ? (

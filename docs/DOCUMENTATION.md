@@ -3,7 +3,7 @@
 > **Levande dokument.** Uppdateras varje gång något läggs till, ändras eller tas bort i appen (se *Så hålls dokumentationen uppdaterad* längst ned).
 > Källan finns i repot som `docs/DOCUMENTATION.md`. En kopia finns i Claude-projektet "Discomplete" som `claude/discomplete-dokumentation.md`.
 >
-> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 29 · **Senaste migrering:** 0018
+> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 30 · **Senaste migrering:** 0018
 
 ---
 
@@ -108,6 +108,8 @@
 ### 4.3 Dagboken (startsidan)
 Sidans ordning uppifrån:
 1. **Vyväxlare:** List · Shelf · Calendar, med egna ikoner.
+1. **Recap-knuff:** de första tio dagarna i en månad visas "Your <förra månaden> in albums is ready" (länk till recap).
+1. **Challenges:** kortet med dina utmaningar (eller "New: Challenges") visas här, inte längre inne i To do-panelen.
 1. **Listening parties:** ett kort per klubb med veckans album, om du har lyssnat (med stjärnor) och "2/3". Utan klubb visas länken "New: Listening parties". Döljs i filtret `?todo=1`.
 2. **To do-panelen** (hopfälld). Rubriken säger rakt ut vad som väntar, t.ex. *"2 listens need stars · 2 could use a few words"*, med knappen **Sort it**. Utfälld visar den:
    - **Give these stars:** lyssningar utan betyg, med stjärnor direkt på raden. Betyget sparas direkt.
@@ -122,7 +124,7 @@ Sidans ordning uppifrån:
    - **Badges** i utfällt läge: "☆ Not rated · Rate it" (stjärnorna öppnas på kortet) och "✎ No review yet · Write one". Den andra visas inte om man har valt `no_words`.
 4. **Shelf-vyn:** alla skivor man spelat, per månad, som stora omslag med ens stjärnor, titel och artist. Har man spelat en skiva flera gånger samma månad står "2×" på omslaget.
 5. **Calendar-vyn:** varje månad som en kalender med måndag först och ett omslag per dag. "+n" visas om flera skivor spelats samma dag. Upp till 12 månader.
-6. **Sidokolumnen** (nedanför på mobil): månadssiffror, On repeat this month, Heard before (12 senaste plus "+ Add"), Next up · To listen.
+6. **Sidokolumnen** (nedanför på mobil): månadssiffror med länkar till recap för denna och förra månaden, On repeat this month, Heard before (12 senaste plus "+ Add"), Next up · To listen.
 - **Remember this?** visar en skiva med 4★ eller mer som man inte spelat på 6 veckor eller mer. Den väljs slumpmässigt med vikt och visas en per dag. "Not now" snoozar skivan i 6 månader.
 - **Relisten-påminnelse:** en första lyssning med 3★ eller mindre som är minst 14 dagar gammal och aldrig lyssnats om.
 - Filtret `?todo=1` visar bara lyssningar som behöver stjärnor eller text.
@@ -329,7 +331,7 @@ Efter det visar rutan **"✓ It's working – Playing right now / Last heard …
 - **Tydlighet före antal val:** få knappar synliga, resten under ⋯.
 - **Identitet: albumlyssnande, inte en Record Club-kopia** (3 nov). Ingen Top 5/"My five", rotation, flikprofil eller följflöde nu. Det sociala byggs kring lyssnandet (klubbar, gemensamma utmaningar, delade framsteg).
 - **Grundkrav finns, men är inte identiteten** (4 nov): export/import, listor, recap och en enkel publik profil. Profilen är en dagbokssida (senaste 30 dagarna, utmaningar, lyssningar, listor), inte ett arkiv.
-- **Layout** (4 nov): renare och lugnare, inspirerat av Record Club men eget: rubriker i normal skrift (inte versaler), sektionsrubriker i fet sans i stället för mono-versaler, mindre knappar (42/36 px), enkolumnssidor centrerade. Ordmärket DISCOMPLETE och mörkt + orange behålls.
+- **Layout** (4 nov): renare och lugnare, platta listor med tunna linjer i stället för boxar, inspirerat av Record Club men eget: rubriker i normal skrift (inte versaler), sektionsrubriker i fet sans i stället för mono-versaler, mindre knappar (42/36 px), enkolumnssidor centrerade. Ordmärket DISCOMPLETE och mörkt + orange behålls.
 - **Allt ska fungera utan Last.fm.** Last.fm och kommande Spotify-synk är bekvämlighet, inte identitet.
 
 ## 8. Uppskjutet / väntar
@@ -353,6 +355,7 @@ Detaljerad versionshistorik finns i ägarguiden (`/settings/guide`).
 | 2–3 nov | "No thanks" och "Stars are enough for all" (0016). Text efterfrågas bara för de senaste 14 dagarna. Den här dokumentationen skapades. |
 | 3 nov | Ny identitet "Listen to whole albums again" (inloggning och appbeskrivning). Listening parties (0017): ett album i veckan med vänner, inbjudningslänk, låsta omdömen tills man hört skivan, kort överst i dagboken. |
 | 4 nov | Album clubs → Listening parties (`/parties`). Export (CSV/JSON) och import (RYM/CSV). Egna listor som andra kan ta sig an (0018). Recap per månad/år med delningsbild. Publik profil (0018). Renare layout. |
+| 4 nov | Challenges och recap-knuff överst i dagboken; recaplänkar i sidokolumnen. Plattare layout: dagboksrader med linjer i stället för boxar, sidokolumn utan boxar, lugnare sidhuvud. |
 
 ---
 

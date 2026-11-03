@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 30,
+    date: "2026-11-04",
+    changes: [
+      "Challenges syns nu överst i dagboken (under dina listening parties) i stället för inne i “On the turntable & more”.",
+      "Recap är lättare att hitta: de första tio dagarna i månaden visas “Your October in albums is ready” överst i dagboken, och i sidokolumnen finns länkar till denna och förra månaden.",
+      "Tydligare ny layout: dagbokens rader är platta med tunna linjer i stället för boxar, sidokolumnen har inga boxar, och sidhuvudet är lugnare.",
+    ],
+  },
+  {
     version: 29,
     date: "2026-11-04",
     changes: [
