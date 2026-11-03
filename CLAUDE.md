@@ -15,7 +15,7 @@ Varje gång något läggs till, ändras eller tas bort i appen, i samma arbetspa
    - datamodell, miljövariabler, beslut och uppskjutet vid behov
    - en rad i ändringsloggen
    - "Senast uppdaterad", "Guideversion" och "Senaste migrering" överst
-2. Ladda upp filen till Claude-projektet "Discomplete" som `claude/discomplete-dokumentation.md`, med Projects `project_write` och `local_path: docs/DOCUMENTATION.md`. Om Projects-verktyget saknas i sessionen: säg det till Kevin.
+2. Ladda upp filen till Claude-projektet "Discomplete" som `claude/discomplete-dokumentation.md`, med Projects `project_write` och `local_path` = absolut sökväg till `docs/DOCUMENTATION.md`. Om Projects-verktyget saknas i sessionen: säg det till Kevin.
 3. Lägg till en ny version överst i `REVISIONS` i `src/app/settings/guide/content.ts` (svenska) och uppdatera berörda sektioner i guiden.
 4. Ny migrering: numrera nästa fil i `supabase/migrations/` och lägg till den i README:s setup-lista och i tabellen i dokumentationens kapitel 5.
 5. Committa och pusha allt tillsammans.
