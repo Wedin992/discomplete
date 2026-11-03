@@ -28,11 +28,13 @@ export default async function ChallengePage({ params, searchParams }: { params: 
     <section className="stack gap-28">
       <div className="stack gap-8" style={{ maxWidth: 720 }}>
         <Link href="/challenges" className="btn-text small" style={{ alignSelf: "flex-start" }}>← Challenges</Link>
-        <p className="eyebrow">{c.kind === "artist" ? "Artist challenge" : "List challenge"}</p>
+        <p className="eyebrow">{c.kind === "artist" ? "Artist challenge" : c.kind === "user_list" ? "A list you took on" : "List challenge"}</p>
         <h1 className="title-xl">{challengeTitle(c)}</h1>
         {blurb ? <p className="muted">{blurb}</p> : null}
         {c.kind === "artist" ? (
           <Link href={artistPath(c.title, Number(c.ref)) ?? "#"} className="btn-text small" style={{ alignSelf: "flex-start", color: "var(--accent)" }}>Artist page →</Link>
+        ) : c.kind === "user_list" ? (
+          <Link href={`/lists/${c.ref}`} className="btn-text small" style={{ alignSelf: "flex-start", color: "var(--accent)" }}>See the list →</Link>
         ) : null}
         {started ? (
           <p className="small lfm-msg" role="status">
@@ -56,7 +58,7 @@ export default async function ChallengePage({ params, searchParams }: { params: 
                 {d ? <span className="disc-badge" aria-hidden="true">✓</span> : null}
               </span>
               <span style={{ fontWeight: 700, lineHeight: 1.25 }}>{a.title}</span>
-              <span className="muted" style={{ fontSize: 14 }}>{c.kind === "list" ? `${a.artist} · ` : ""}{a.year ?? ""}</span>
+              <span className="muted" style={{ fontSize: 14 }}>{c.kind !== "artist" ? `${a.artist} · ` : ""}{a.year ?? ""}</span>
               {d ? (
                 <span className="mono" style={{ fontSize: 11, color: "var(--accent)" }}>{d.rating ? `${stars(d.rating)} · ` : ""}Heard</span>
               ) : c.draw?.deezerId === a.deezerId ? (

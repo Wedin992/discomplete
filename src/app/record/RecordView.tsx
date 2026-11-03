@@ -4,8 +4,8 @@ import { ListenOn, ListenOnPlaceholder } from "@/components/ListenOn";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
 import { NoteText } from "@/components/NoteText";
-import { whenLabel, artistPath, duration, formatLabel, kindLabel, logPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
-import { toggleCollection, toggleToListen } from "@/app/actions";
+import { whenLabel, artistPath, duration, formatLabel, kindLabel, logPath, recordPath, shortDate, stars, visibilityLabel, type Album, type Entry } from "@/lib/format";
+import { addToList, toggleCollection, toggleToListen } from "@/app/actions";
 import { RecordTracks } from "./RecordTracks";
 import { PartOf } from "@/components/ChallengeCards";
 
@@ -20,14 +20,19 @@ export async function RecordView({ album }: { album: Album }) {
   const id = album.id;
   const { supabase, user } = await getUser();
 
-  const [statsRes, notesRes, mineRes, listRes, collRes, topRes] = await Promise.all([
+  const [statsRes, notesRes, mineRes, listRes, collRes, topRes, myListsRes] = await Promise.all([
     supabase.rpc("album_stats", { p_album: id }).maybeSingle(),
     supabase.rpc("album_public_notes", { p_album: id, p_limit: 20 }),
     supabase.from("entries").select("*").eq("album_id", id).eq("user_id", user!.id).order("listened_on", { ascending: false }).order("created_at", { ascending: false }),
     supabase.from("to_listen").select("album_id").eq("album_id", id).eq("user_id", user!.id).maybeSingle(),
     supabase.from("collection").select("vinyl, cd, wishlist").eq("album_id", id).eq("user_id", user!.id).maybeSingle(),
     supabase.rpc("album_top_tracks", { p_album: id, p_limit: 5 }),
+    supabase.from("lists").select("id, title, items:list_items(album_id)").eq("user_id", user!.id).order("updated_at", { ascending: false }).limit(20),
   ]);
+  // Before migration 0018 there are no lists: the "Add to a list" row just doesn't show.
+  const myLists = (myListsRes.error ? [] : myListsRes.data ?? []) as { id: string; title: string; items: { album_id: string }[] }[];
+  const onLists = myLists.filter((l) => l.items.some((i) => i.album_id === id));
+  const offLists = myLists.filter((l) => !l.items.some((i) => i.album_id === id));
   // Before migration 0009 the function doesn't exist: the section just doesn't show.
   const topTracks = (topRes.error ? [] : topRes.data ?? []) as { track_id: number; title: string; track_position: number; fans: number }[];
 
@@ -97,6 +102,26 @@ export async function RecordView({ album }: { album: Album }) {
           <Suspense fallback={<ListenOnPlaceholder />}>
             <ListenOn album={album} />
           </Suspense>
+          {!myListsRes.error ? (
+            <div className="stack gap-8">
+              <p className="eyebrow">Lists</p>
+              {onLists.length ? (
+                <p className="small">On {onLists.map((l, i) => <span key={l.id}>{i ? ", " : ""}<Link href={`/lists/${l.id}`} className="artist-link">{l.title}</Link></span>)}</p>
+              ) : null}
+              {offLists.length && album.deezer_id ? (
+                <form action={addToList} className="row gap-8" style={{ alignItems: "center", flexWrap: "nowrap" }}>
+                  <input type="hidden" name="deezer_id" value={album.deezer_id} />
+                  <input type="hidden" name="back" value={recordPath(album)} />
+                  <select name="list_id" className="input input-sm" aria-label="Choose a list" style={{ maxWidth: 260 }}>
+                    {offLists.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}
+                  </select>
+                  <button type="submit" className="btn btn-sm">Add</button>
+                </form>
+              ) : !myLists.length ? (
+                <Link href="/lists" className="btn-text small" style={{ alignSelf: "flex-start", color: "var(--accent)" }}>Start a list →</Link>
+              ) : null}
+            </div>
+          ) : null}
           <div className="stack gap-8">
             <p className="eyebrow">In your collection</p>
             <div className="row gap-8">

@@ -3,12 +3,12 @@
 import { useState } from "react";
 
 /** A link with a Copy button (and the phone's share sheet when there is one). */
-export function CopyLink({ url }: { url: string }) {
+export function CopyLink({ url, title = "Join my listening party on Discomplete" }: { url: string; title?: string }) {
   const [done, setDone] = useState(false);
   async function share() {
     try {
       if (typeof navigator.share === "function") {
-        await navigator.share({ url, title: "Join my album club on Discomplete" });
+        await navigator.share({ url, title });
         return;
       }
       await navigator.clipboard.writeText(url);

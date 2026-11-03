@@ -15,11 +15,11 @@ export function ClubProgress({ club }: { club: ClubView }) {
   );
 }
 
-/** A club at a glance: name, this week's album, progress. Used on /clubs and in the diary. */
+/** A club at a glance: name, this week's album, progress. Used on /parties and in the diary. */
 export function ClubSummary({ club }: { club: ClubView }) {
   const me = club.members.find((m) => m.is_me);
   return (
-    <Link href={`/clubs/${club.id}`} className="row gap-16" style={{ alignItems: "center", flexWrap: "nowrap", textDecoration: "none", color: "inherit" }}>
+    <Link href={`/parties/${club.id}`} className="row gap-16" style={{ alignItems: "center", flexWrap: "nowrap", textDecoration: "none", color: "inherit" }}>
       {club.current ? <Cover album={club.current.album} size="64" /> : <span className="cover cover-64 skeleton" aria-hidden="true" />}
       <span className="stack gap-4" style={{ minWidth: 0, flex: 1 }}>
         <span className="eyebrow">{club.name}</span>

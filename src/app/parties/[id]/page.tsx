@@ -12,7 +12,7 @@ import { CopyLink } from "@/components/CopyLink";
 import { ClubPicker } from "../ClubPicker";
 import { PickHeader } from "../ClubBits";
 
-export const metadata: Metadata = { title: "Album club" };
+export const metadata: Metadata = { title: "Listening party" };
 
 export default async function ClubPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; joined?: string; picked?: string; error?: string }> }) {
   const { id } = await params;
@@ -25,7 +25,7 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
   const thisWeekPicked = club.current?.week_start === week;
   const me = club.members.find((m) => m.is_me);
   const host = (await headers()).get("host") ?? "www.discomplete.com";
-  const invite = `https://${host}/clubs/join/${club.invite_code}`;
+  const invite = `https://${host}/parties/join/${club.invite_code}`;
 
   // Albums from your To listen, to pick from quickly.
   const { data: q } = await supabase.from("to_listen").select("album:albums(deezer_id, title, artist, cover_small, cover_medium, cover_xl)").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(5);
@@ -40,11 +40,11 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
   return (
     <section className="stack gap-28 narrow" style={{ maxWidth: 720 }}>
       <div className="stack gap-8">
-        <p className="eyebrow">Album club · {club.members.length} {club.members.length === 1 ? "member" : "members"}</p>
+        <p className="eyebrow">Listening party · {club.members.length} {club.members.length === 1 ? "member" : "members"}</p>
         <h1 className="title-xl">{club.name}</h1>
-        {flags.new ? <p className="small lfm-msg" role="status">Your club is ready. Pick the first album, then send the invite link below.</p> : null}
-        {flags.joined ? <p className="small lfm-msg" role="status">You’re in! Here’s what the club is listening to.</p> : null}
-        {flags.picked ? <p className="small lfm-msg" role="status">Picked. Everyone in the club sees it now.</p> : null}
+        {flags.new ? <p className="small lfm-msg" role="status">Your party is ready. Pick the first album, then send the invite link below.</p> : null}
+        {flags.joined ? <p className="small lfm-msg" role="status">You’re in! Here’s what the party is listening to.</p> : null}
+        {flags.picked ? <p className="small lfm-msg" role="status">Picked. Everyone in the party sees it now.</p> : null}
         {flags.error === "taken" ? <p className="error small" role="alert">Someone picked an album for that week just before you.</p> : null}
       </div>
 
@@ -64,7 +64,7 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
           )}
 
           <div className="stack gap-12">
-            <h3 className="eyebrow">The club</h3>
+            <h3 className="eyebrow">Who’s listening</h3>
             <ul className="stack gap-12" style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {club.members.map((m) => (
                 <li key={m.user_id} className="stack gap-4" style={{ borderTop: "1px solid var(--line)", paddingTop: 12 }}>
@@ -89,7 +89,7 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
       {!thisWeekPicked ? (
         <div className="card stack gap-12">
           <h2 className="eyebrow">{club.current ? "Pick this week’s album" : "Pick the first album"}</h2>
-          <p className="muted small">Anyone in the club can pick. Whole albums work best.</p>
+          <p className="muted small">Anyone in the party can pick. Whole albums work best.</p>
           <ClubPicker clubId={club.id} week="this" queued={queued} />
         </div>
       ) : club.next ? (
@@ -142,7 +142,7 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
 
       <form action={leaveClub}>
         <input type="hidden" name="club_id" value={club.id} />
-        <PendingButton className="btn-text small muted" pending="Leaving…">Leave this club</PendingButton>
+        <PendingButton className="btn-text small muted" pending="Leaving…">Leave this party</PendingButton>
       </form>
     </section>
   );

@@ -268,7 +268,11 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
   const username = String(formData.get("username") ?? "").trim().toLowerCase();
   const displayName = String(formData.get("display_name") ?? "").trim().slice(0, 60) || null;
   if (!/^[a-z0-9._]{3,24}$/.test(username)) return { error: "Username: 3–24 characters, lowercase letters, numbers, dots or underscores." };
-  const { error } = await supabase.from("profiles").update({ username, display_name: displayName }).eq("id", user.id);
+  const extra = formData.get("profile_shown") === "1"
+    ? { is_public: formData.get("is_public") === "on", bio: String(formData.get("bio") ?? "").trim().slice(0, 200) || null }
+    : {};
+  let { error } = await supabase.from("profiles").update({ username, display_name: displayName, ...extra }).eq("id", user.id);
+  if (error && error.code !== "23505" && Object.keys(extra).length) ({ error } = await supabase.from("profiles").update({ username, display_name: displayName }).eq("id", user.id)); // before 0018
   if (error) return { error: error.code === "23505" ? "That username is taken." : "Could not save your profile." };
   revalidatePath("/", "layout");
   return { ok: true };
@@ -551,6 +555,10 @@ export async function startChallenge(formData: FormData) {
   const ref = String(formData.get("ref") ?? "");
   let title: string | null = null;
   if (kind === "list") title = listBySlug(ref)?.title ?? null;
+  if (kind === "user_list" && /^[0-9a-f-]{36}$/i.test(ref)) {
+    const { data: l } = await supabase.from("lists").select("title").eq("id", ref).maybeSingle();
+    title = (l as { title: string } | null)?.title ?? null;
+  }
   if (kind === "artist" && /^\d{1,12}$/.test(ref)) title = await getArtist(Number(ref)).then((a) => a.name).catch(() => null);
   if (!title) redirect("/challenges");
   const { data: existing } = await supabase.from("challenges").select("id").eq("user_id", user.id).eq("kind", kind).eq("ref", ref).maybeSingle();
@@ -702,21 +710,21 @@ export async function noWords(formData: FormData) {
 export async function createClub(formData: FormData) {
   const { supabase } = await requireUser();
   const name = String(formData.get("name") ?? "").trim().slice(0, 60);
-  if (!name) redirect("/clubs?error=name");
+  if (!name) redirect("/parties?error=name");
   const { data, error } = await supabase.rpc("create_club", { p_name: name });
-  if (error || !data) redirect("/clubs?error=setup");
+  if (error || !data) redirect("/parties?error=setup");
   revalidatePath("/", "layout");
-  redirect(`/clubs/${data as string}?new=1`);
+  redirect(`/parties/${data as string}?new=1`);
 }
 
 export async function joinClub(formData: FormData) {
   const { supabase } = await requireUser();
-  const code = String(formData.get("code") ?? "").trim().toLowerCase().replace(/^.*\/clubs\/join\//, "").slice(0, 40);
-  if (!/^[a-z0-9]{6,40}$/.test(code)) redirect("/clubs?error=code");
+  const code = String(formData.get("code") ?? "").trim().toLowerCase().replace(/^.*\/(?:parties|clubs)\/join\//, "").slice(0, 40);
+  if (!/^[a-z0-9]{6,40}$/.test(code)) redirect("/parties?error=code");
   const { data, error } = await supabase.rpc("join_club", { p_code: code });
-  if (error || !data) redirect("/clubs?error=code");
+  if (error || !data) redirect("/parties?error=code");
   revalidatePath("/", "layout");
-  redirect(`/clubs/${data as string}?joined=1`);
+  redirect(`/parties/${data as string}?joined=1`);
 }
 
 export async function leaveClub(formData: FormData) {
@@ -724,7 +732,7 @@ export async function leaveClub(formData: FormData) {
   const id = String(formData.get("club_id") ?? "");
   if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("club_members").delete().eq("club_id", id).eq("user_id", user.id);
   revalidatePath("/", "layout");
-  redirect("/clubs");
+  redirect("/parties");
 }
 
 /** Pick an album for this week or next week in a club. */
@@ -743,8 +751,8 @@ export async function pickForClub(formData: FormData) {
   const weekStart = when === "next" ? addDays(week, 7) : week;
   const { error } = await supabase.from("club_picks").insert({ club_id: clubId, week_start: weekStart, album_id: albumId, picked_by: user.id, note });
   revalidatePath("/", "layout");
-  if (error) redirect(`/clubs/${clubId}?error=taken`);
-  redirect(back.startsWith("/") ? back : `/clubs/${clubId}?picked=1`);
+  if (error) redirect(`/parties/${clubId}?error=taken`);
+  redirect(back.startsWith("/") ? back : `/parties/${clubId}?picked=1`);
 }
 
 export async function removeClubPick(formData: FormData) {
@@ -753,5 +761,148 @@ export async function removeClubPick(formData: FormData) {
   const clubId = String(formData.get("club_id") ?? "");
   if (/^[0-9a-f-]{36}$/i.test(id)) await supabase.from("club_picks").delete().eq("id", id);
   revalidatePath("/", "layout");
-  redirect(`/clubs/${clubId}`);
+  redirect(`/parties/${clubId}`);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Import (Rate Your Music export, or any CSV with artist + album)
+// ─────────────────────────────────────────────────────────────
+export type ImportRow = { artist: string; title: string; rating?: number | null; date?: string | null; note?: string | null; own?: "vinyl" | "cd" | "wishlist" | null };
+export type ImportResult = "added" | "exists" | "notfound" | "error";
+
+/** Imports up to 15 rows at a time (the page sends batches). Records you already have are left alone. */
+export async function importRows(rows: ImportRow[], privateNotes: boolean): Promise<ImportResult[]> {
+  const { supabase, user } = await requireUser();
+  const { findAlbum } = await import("@/lib/deezer");
+  const one = async (r: ImportRow): Promise<ImportResult> => {
+    try {
+      const artist = String(r.artist ?? "").trim().slice(0, 200);
+      const title = String(r.title ?? "").trim().slice(0, 300);
+      if (!artist || !title) return "notfound";
+      const hit = await findAlbum(artist, title, { relaxed: true });
+      if (!hit) return "notfound";
+      const albumId = await ensureAlbum(supabase, hit.deezerId);
+      if (!albumId) return "error";
+      if (r.own) {
+        await supabase.from("collection").upsert({ user_id: user.id, album_id: albumId, [r.own]: true }, { onConflict: "user_id,album_id" });
+      }
+      const { count } = await supabase.from("entries").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("album_id", albumId);
+      if ((count ?? 0) > 0) return "exists";
+      const rating = typeof r.rating === "number" && r.rating > 0 ? Math.max(0.5, Math.min(5, Math.round(r.rating * 2) / 2)) : null;
+      const date = r.date && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.date <= todayIso() ? r.date : null;
+      const note = r.note ? String(r.note).trim().slice(0, 5000) || null : null;
+      const { error } = await supabase.from("entries").insert({
+        user_id: user.id, album_id: albumId, rating, note, kind: date ? "first" : "before",
+        ...(date ? { listened_on: date } : {}), is_private: note ? privateNotes : false, tags: [],
+      });
+      return error ? "error" : "added";
+    } catch {
+      return "error";
+    }
+  };
+  const list = rows.slice(0, 15);
+  const out: ImportResult[] = new Array(list.length);
+  for (let i = 0; i < list.length; i += 3) {
+    const part = await Promise.all(list.slice(i, i + 3).map(one));
+    part.forEach((r, j) => (out[i + j] = r));
+  }
+  revalidatePath("/", "layout");
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Lists: your own, with a line per album; others can take them on as a challenge
+// ─────────────────────────────────────────────────────────────
+const isUuid = (s: string) => /^[0-9a-f-]{36}$/i.test(s);
+
+export async function createList(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const title = String(formData.get("title") ?? "").trim().slice(0, 100);
+  if (!title) redirect("/lists?error=title");
+  const { data, error } = await supabase.from("lists").insert({ user_id: user.id, title }).select("id").single();
+  if (error || !data) redirect("/lists?error=setup");
+  revalidatePath("/", "layout");
+  redirect(`/lists/${(data as { id: string }).id}?new=1`);
+}
+
+export async function updateList(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (!isUuid(id)) return;
+  const title = String(formData.get("title") ?? "").trim().slice(0, 100);
+  const description = String(formData.get("description") ?? "").trim().slice(0, 1000) || null;
+  await supabase.from("lists").update({
+    ...(title ? { title } : {}), description,
+    is_public: formData.get("is_public") === "on", ranked: formData.get("ranked") === "on", updated_at: new Date().toISOString(),
+  }).eq("id", id).eq("user_id", user.id);
+  if (title) await supabase.from("challenges").update({ title }).eq("kind", "user_list").eq("ref", id).eq("user_id", user.id);
+  revalidatePath("/", "layout");
+  redirect(`/lists/${id}?saved=1`);
+}
+
+export async function deleteList(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (isUuid(id)) await supabase.from("lists").delete().eq("id", id).eq("user_id", user.id);
+  revalidatePath("/", "layout");
+  redirect("/lists");
+}
+
+async function touchList(supabase: Supabase, id: string) {
+  await supabase.from("lists").update({ updated_at: new Date().toISOString() }).eq("id", id);
+}
+
+export async function addToList(formData: FormData) {
+  const { supabase } = await requireUser();
+  const listId = String(formData.get("list_id") ?? "");
+  const deezerId = Number(formData.get("deezer_id"));
+  const note = String(formData.get("note") ?? "").trim().slice(0, 280) || null;
+  const back = String(formData.get("back") ?? "");
+  if (!isUuid(listId) || !Number.isInteger(deezerId) || deezerId <= 0) return;
+  const albumId = await ensureAlbum(supabase, deezerId);
+  if (!albumId) return;
+  const { data: last } = await supabase.from("list_items").select("position").eq("list_id", listId).order("position", { ascending: false }).limit(1);
+  const position = (((last ?? []) as { position: number }[])[0]?.position ?? 0) + 1;
+  await supabase.from("list_items").upsert({ list_id: listId, album_id: albumId, position, ...(note ? { note } : {}) }, { onConflict: "list_id,album_id", ignoreDuplicates: true });
+  await touchList(supabase, listId);
+  revalidatePath("/", "layout");
+  redirect(back.startsWith("/") ? back : `/lists/${listId}?added=1`);
+}
+
+export async function saveListNote(formData: FormData) {
+  const { supabase } = await requireUser();
+  const listId = String(formData.get("list_id") ?? "");
+  const albumId = String(formData.get("album_id") ?? "");
+  if (!isUuid(listId) || !isUuid(albumId)) return;
+  const note = String(formData.get("note") ?? "").trim().slice(0, 280) || null;
+  await supabase.from("list_items").update({ note }).eq("list_id", listId).eq("album_id", albumId);
+  await touchList(supabase, listId);
+  revalidatePath("/", "layout");
+}
+
+export async function removeFromList(formData: FormData) {
+  const { supabase } = await requireUser();
+  const listId = String(formData.get("list_id") ?? "");
+  const albumId = String(formData.get("album_id") ?? "");
+  if (!isUuid(listId) || !isUuid(albumId)) return;
+  await supabase.from("list_items").delete().eq("list_id", listId).eq("album_id", albumId);
+  await touchList(supabase, listId);
+  revalidatePath("/", "layout");
+}
+
+export async function moveInList(formData: FormData) {
+  const { supabase } = await requireUser();
+  const listId = String(formData.get("list_id") ?? "");
+  const albumId = String(formData.get("album_id") ?? "");
+  const dir = formData.get("dir") === "up" ? -1 : 1;
+  if (!isUuid(listId) || !isUuid(albumId)) return;
+  const { data } = await supabase.from("list_items").select("album_id, position").eq("list_id", listId).order("position");
+  const items = (data ?? []) as { album_id: string; position: number }[];
+  const i = items.findIndex((x) => x.album_id === albumId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= items.length) return;
+  [items[i], items[j]] = [items[j], items[i]];
+  // Renumber 1..n so positions stay tidy.
+  await Promise.all(items.map((x, k) => (x.position === k + 1 ? null : supabase.from("list_items").update({ position: k + 1 }).eq("list_id", listId).eq("album_id", x.album_id))));
+  revalidatePath("/", "layout");
 }

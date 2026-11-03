@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "e-cdns-images.dzcdn.net" },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/clubs", destination: "/parties", permanent: true },
+      { source: "/clubs/:path*", destination: "/parties/:path*", permanent: true },
+    ];
+  },
   experimental: {
     // Keep recently visited pages in the browser for a short while, so switching
     // tabs is instant. Saving, editing or deleting clears this cache (revalidatePath).

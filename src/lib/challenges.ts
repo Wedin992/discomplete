@@ -10,7 +10,7 @@ type Supabase = Awaited<ReturnType<typeof getUser>>["supabase"];
 
 export type Challenge = {
   id: string;
-  kind: "artist" | "list";
+  kind: "artist" | "list" | "user_list";
   ref: string;
   title: string;
   created_at: string;
@@ -43,8 +43,15 @@ export async function getChallenges(supabase: Supabase, userId: string): Promise
 /** Everything in your diary, keyed by Deezer id and by artist + title (so another edition counts too). */
 export async function diaryIndex(supabase: Supabase, userId: string): Promise<DiaryIndex> {
   const { data } = await supabase.from("entries").select("rating, listened_on, album:albums!inner(deezer_id, artist, title)").eq("user_id", userId).order("listened_on", { ascending: false });
+  return buildIndex((data ?? []) as unknown as IndexRow[]);
+}
+
+type IndexRow = { rating: number | null; listened_on: string; album: { deezer_id: number | null; artist: string; title: string } };
+
+/** The same index from rows you already have (newest first) — e.g. someone's public listens. */
+export function buildIndex(rows: IndexRow[]): DiaryIndex {
   const out: DiaryIndex = new Map();
-  for (const e of (data ?? []) as unknown as { rating: number | null; listened_on: string; album: { deezer_id: number | null; artist: string; title: string } }[]) {
+  for (const e of rows) {
     const keys = [titleKey(e.album.artist, e.album.title), ...(e.album.deezer_id ? [`d:${e.album.deezer_id}`] : [])];
     for (const k of keys) {
       const prev = out.get(k);
@@ -58,7 +65,14 @@ export async function diaryIndex(supabase: Supabase, userId: string): Promise<Di
 export const doneIn = (index: DiaryIndex, a: Pick<ChallengeAlbum, "deezerId" | "artist" | "title">) => index.get(`d:${a.deezerId}`) ?? index.get(titleKey(a.artist, a.title)) ?? null;
 
 /** The albums in a challenge, oldest first. */
-export async function challengeAlbums(c: Pick<Challenge, "kind" | "ref" | "title">): Promise<ChallengeAlbum[]> {
+export async function challengeAlbums(c: Pick<Challenge, "kind" | "ref" | "title">, supabase?: Supabase): Promise<ChallengeAlbum[]> {
+  if (c.kind === "user_list") {
+    if (!supabase || !/^[0-9a-f-]{36}$/i.test(c.ref)) return [];
+    const { data } = await supabase.from("list_items").select("position, album:albums(deezer_id, artist, title, release_year, cover_medium)").eq("list_id", c.ref).order("position");
+    return ((data ?? []) as unknown as { album: { deezer_id: number | null; artist: string; title: string; release_year: number | null; cover_medium: string | null } | null }[])
+      .filter((r) => r.album?.deezer_id)
+      .map((r) => ({ deezerId: r.album!.deezer_id!, artist: r.album!.artist, title: r.album!.title, year: r.album!.release_year, cover: r.album!.cover_medium ?? "" }));
+  }
   if (c.kind === "artist") {
     const albums = await getArtistAlbums(Number(c.ref)).catch(() => []);
     return albums.map((a) => ({ deezerId: a.deezerId, artist: c.title, title: a.title, year: a.year, cover: a.cover })).sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999));
@@ -81,7 +95,7 @@ export async function challengeAlbums(c: Pick<Challenge, "kind" | "ref" | "title
  * and moves on as soon as you've logged it.
  */
 export async function viewChallenge(supabase: Supabase, userId: string, c: Challenge, index: DiaryIndex): Promise<ChallengeView> {
-  const albums = await challengeAlbums(c);
+  const albums = await challengeAlbums(c, supabase);
   const left = albums.filter((a) => !doneIn(index, a));
   const today = todayIso();
 
@@ -110,4 +124,10 @@ export async function viewChallenges(supabase: Supabase, userId: string, limit =
   const index = await diaryIndex(supabase, userId);
   const views = await Promise.all(list.slice(0, limit).map((c) => viewChallenge(supabase, userId, c, index)));
   return { views, ready, index };
+}
+
+/** Progress only (no daily pick) — for someone else's profile. */
+export async function viewChallengeFor(supabase: Supabase, c: Challenge, index: DiaryIndex) {
+  const albums = await challengeAlbums(c, supabase);
+  return { ...c, albums, done: albums.filter((a) => doneIn(index, a)).length, total: albums.length };
 }

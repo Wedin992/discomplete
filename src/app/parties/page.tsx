@@ -5,12 +5,12 @@ import { myClubs } from "@/lib/clubs";
 import { PendingButton } from "@/components/PendingButton";
 import { ClubSummary } from "./ClubBits";
 
-export const metadata: Metadata = { title: "Album clubs" };
+export const metadata: Metadata = { title: "Listening parties" };
 
 const ERRORS: Record<string, string> = {
-  name: "Give the club a name.",
+  name: "Give the party a name.",
   code: "That invite code didn’t work. Check the link and try again.",
-  setup: "Album clubs aren’t switched on yet (database update 0017).",
+  setup: "Listening parties aren’t switched on yet (database update 0017).",
 };
 
 export default async function ClubsPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -22,7 +22,7 @@ export default async function ClubsPage({ searchParams }: { searchParams: Promis
     <section className="stack gap-28 narrow" style={{ maxWidth: 640 }}>
       <div>
         <p className="eyebrow">Listen together</p>
-        <h1 className="title-xl">Album clubs</h1>
+        <h1 className="title-xl">Listening parties</h1>
         <p className="muted" style={{ marginTop: 8 }}>
           One album a week, front to back. Everyone listens in their own time, and you see what the others thought once you’ve heard it yourself.
         </p>
@@ -31,7 +31,7 @@ export default async function ClubsPage({ searchParams }: { searchParams: Promis
 
       {clubs.length ? (
         <div className="stack gap-12">
-          <h2 className="eyebrow">Your clubs · {clubs.length}</h2>
+          <h2 className="eyebrow">Your parties · {clubs.length}</h2>
           {clubs.map((c) => (
             <div key={c.id} className="card"><ClubSummary club={c} /></div>
           ))}
@@ -39,10 +39,10 @@ export default async function ClubsPage({ searchParams }: { searchParams: Promis
       ) : null}
 
       <div className="card stack gap-12">
-        <h2 className="eyebrow">Start a club</h2>
+        <h2 className="eyebrow">Start a party</h2>
         <p className="muted small">Name it, then send the invite link to a few friends.</p>
         <form action={createClub} className="row gap-12" style={{ alignItems: "center" }}>
-          <input name="name" className="input" maxLength={60} required placeholder="Sunday spins" aria-label="Club name" style={{ flex: "1 1 220px" }} />
+          <input name="name" className="input" maxLength={60} required placeholder="Sunday spins" aria-label="Party name" style={{ flex: "1 1 220px" }} />
           <PendingButton className="btn btn-primary" pending="Starting…">Start it</PendingButton>
         </form>
       </div>

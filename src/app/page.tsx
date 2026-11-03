@@ -10,7 +10,7 @@ import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, t
 import { LastfmSync } from "@/components/LastfmSync";
 import { COMPLETE_SHARE } from "@/lib/lastfm";
 import { DiaryChallenges } from "@/components/ChallengeCards";
-import { DiaryClubs } from "@/app/clubs/DiaryClubs";
+import { DiaryClubs } from "@/app/parties/DiaryClubs";
 import { TodoRate } from "@/components/TodoRate";
 import { CalendarViewIcon, ListViewIcon, ShelfViewIcon } from "@/components/Icons";
 import { Suspense } from "react";
@@ -479,6 +479,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
                   <span className="er-chevron" aria-hidden="true">›</span>
                 </summary>
                 {rows}
+                <Link href={`/recap/${sec.key}`} className="btn-text small recap-link">See {sec.title} in albums · share →</Link>
               </details>
             ) : (
               <section key={sec.key} className="stack gap-12" aria-label={sec.title}>
@@ -487,6 +488,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
                   {sec.summary ? <span className="mono muted" style={{ fontSize: 11 }}>{sec.summary}</span> : null}
                 </div>
                 {rows}
+                {/^\d{4}-\d{2}$/.test(sec.key) ? <Link href={`/recap/${sec.key}`} className="btn-text small recap-link">This month so far · share →</Link> : null}
               </section>
             );
           })

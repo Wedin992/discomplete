@@ -2,14 +2,22 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { pickForClub } from "@/app/actions";
 import { PendingButton } from "@/components/PendingButton";
 import type { SearchAlbum } from "@/lib/deezer";
 
 type Option = { deezerId: number; title: string; artist: string; cover: string | null };
 
-/** Choose the club's album: search, or one from your To listen. Then an optional line on why. */
-export function ClubPicker({ clubId, week, queued }: { clubId: string; week: "this" | "next"; queued: Option[] }) {
+export type PickerOption = Option;
+
+/** Choose an album: search, or one from your To listen. Then an optional line on why, and submit to `action`. */
+export function AlbumPicker({ action, hidden, submitLabel, noteLabel = "Why this one? (optional)", notePlaceholder = "", queued }: {
+  action: (formData: FormData) => void | Promise<void>;
+  hidden: Record<string, string>;
+  submitLabel: string;
+  noteLabel?: string;
+  notePlaceholder?: string;
+  queued: Option[];
+}) {
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchAlbum[]>([]);
   const [chosen, setChosen] = useState<Option | null>(null);
@@ -36,10 +44,9 @@ export function ClubPicker({ clubId, week, queued }: { clubId: string; week: "th
 
   if (chosen)
     return (
-      <form action={pickForClub} className="stack gap-12">
-        <input type="hidden" name="club_id" value={clubId} />
+      <form action={action} className="stack gap-12">
+        {Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
         <input type="hidden" name="deezer_id" value={chosen.deezerId} />
-        <input type="hidden" name="week" value={week} />
         <div className="row gap-12" style={{ alignItems: "center", flexWrap: "nowrap" }}>
           {chosen.cover ? <img src={chosen.cover} alt="" width={56} height={56} className="cover" style={{ width: 56, height: 56 }} /> : null}
           <span style={{ minWidth: 0 }}>
@@ -48,11 +55,11 @@ export function ClubPicker({ clubId, week, queued }: { clubId: string; week: "th
           </span>
         </div>
         <label className="stack gap-4">
-          <span className="small muted">Why this one? (optional)</span>
-          <input name="note" className="input" maxLength={280} placeholder="The one I always come back to in November…" />
+          <span className="small muted">{noteLabel}</span>
+          <input name="note" className="input" maxLength={280} placeholder={notePlaceholder} />
         </label>
         <div className="row gap-12">
-          <PendingButton className="btn btn-primary" pending="Picking…">{week === "next" ? "Pick it for next week" : "Pick it for this week"}</PendingButton>
+          <PendingButton className="btn btn-primary" pending="Saving…">{submitLabel}</PendingButton>
           <button type="button" className="btn-text" onClick={() => setChosen(null)}>Choose another</button>
         </div>
       </form>

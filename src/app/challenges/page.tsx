@@ -63,6 +63,13 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
         ))}
       </div>
 
+      <Link href="/lists" className="card-dashed row gap-12" style={{ justifyContent: "space-between", textDecoration: "none", color: "inherit" }}>
+        <span>
+          <strong>Make your own list.</strong> <span className="muted">Gather albums with a line on why — share it, and friends can take it on.</span>
+        </span>
+        <span style={{ color: "var(--accent)" }}>→</span>
+      </Link>
+
       <div className="card-dashed stack gap-4">
         <strong>Complete an artist</strong>
         <p className="muted">Open any artist page and tap <strong>Complete it</strong> to collect every studio album they’ve made.</p>

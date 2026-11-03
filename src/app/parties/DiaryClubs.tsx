@@ -10,15 +10,15 @@ export async function DiaryClubs() {
   if (!ready) return null;
   if (!clubs.length)
     return (
-      <Link href="/clubs" className="card-dashed row gap-12" style={{ justifyContent: "space-between", textDecoration: "none", color: "inherit" }}>
+      <Link href="/parties" className="card-dashed row gap-12" style={{ justifyContent: "space-between", textDecoration: "none", color: "inherit" }}>
         <span>
-          <strong>New: Album clubs.</strong> <span className="muted">One album a week with friends — see what they thought once you’ve heard it.</span>
+          <strong>New: Listening parties.</strong> <span className="muted">Pick an album with friends, listen this week, then see what everyone thought.</span>
         </span>
         <span style={{ color: "var(--accent)" }}>→</span>
       </Link>
     );
   return (
-    <section className="stack gap-8" aria-label="Your album clubs">
+    <section className="stack gap-8" aria-label="Your listening parties">
       {clubs.map((c) => (
         <div key={c.id} className="card"><ClubSummary club={c} /></div>
       ))}

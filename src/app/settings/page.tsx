@@ -14,11 +14,13 @@ export const metadata: Metadata = { title: "Settings" };
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ lastfm?: string }> }) {
   const { lastfm } = await searchParams;
   const { supabase, user } = await getUser();
-  const [{ data }, linkRes, mutedRes] = await Promise.all([
+  const [{ data }, linkRes, mutedRes, extraRes] = await Promise.all([
     supabase.from("profiles").select("username, display_name").eq("id", user!.id).maybeSingle(),
     supabase.from("lastfm_links").select("username, autolog, synced_at").eq("user_id", user!.id).maybeSingle(),
     supabase.from("lastfm_muted").select("kind, key, label").eq("user_id", user!.id),
+    supabase.from("profiles").select("is_public, bio").eq("id", user!.id).maybeSingle(),
   ]);
+  const extra = extraRes.error ? null : (extraRes.data as { is_public: boolean; bio: string | null } | null);
   const muted = (mutedRes.error ? [] : mutedRes.data ?? []) as { kind: string; key: string; label: string | null }[];
   const link = linkRes.error ? null : (linkRes.data as { username: string; autolog: boolean; synced_at: string | null } | null);
   return (
@@ -28,15 +30,25 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <h1 className="title-xl">Settings</h1>
       </div>
       <div className="card stack gap-16">
-        <h2 className="eyebrow">Public profile</h2>
-        <p className="muted small">This is how your public notes are signed. Anonymous notes never show it.</p>
-        <ProfileForm username={data?.username ?? ""} displayName={data?.display_name ?? ""} />
+        <h2 className="eyebrow">Profile</h2>
+        <p className="muted small">Your name signs your public notes. Anonymous notes never show it.</p>
+        <ProfileForm username={data?.username ?? ""} displayName={data?.display_name ?? ""} isPublic={!!extra?.is_public} bio={extra?.bio ?? ""} profileReady={!!extra} />
+        {data?.username ? <Link href={`/u/${data.username}`} className="btn-text small" style={{ alignSelf: "flex-start", color: "var(--accent)" }}>{extra?.is_public ? "See your public profile →" : "Preview your profile →"}</Link> : null}
       </div>
       <LastfmCard link={link} status={linkRes.error ? (lastfm ? "setup" : undefined) : lastfm} configured={lastfmConfigured() && !linkRes.error} muted={muted} />
       <div className="card stack gap-8">
         <h2 className="eyebrow">Your taste</h2>
         <p className="muted">The artists you love shape your picks in Discover.</p>
         <Link href="/welcome" className="btn" style={{ alignSelf: "flex-start" }}>Change artists and goals</Link>
+      </div>
+      <div className="card stack gap-12">
+        <h2 className="eyebrow">Your data</h2>
+        <p className="muted small">Everything you put in is yours. Take it with you any time, or bring records from somewhere else.</p>
+        <div className="row gap-8">
+          <a href="/api/export?format=csv" className="btn btn-sm" download>Download diary (CSV)</a>
+          <a href="/api/export?format=json" className="btn btn-sm" download>Download everything (JSON)</a>
+        </div>
+        <Link href="/settings/import" className="btn-text small" style={{ alignSelf: "flex-start", color: "var(--accent)" }}>Import from Rate Your Music or a CSV →</Link>
       </div>
       <div className="card stack gap-8">
         <h2 className="eyebrow">Get the app</h2>
