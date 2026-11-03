@@ -6,6 +6,19 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 29,
+    date: "2026-11-04",
+    changes: [
+      "Album clubs heter nu Listening parties (Parties i menyn, adressen /parties). Gamla /clubs-länkar och inbjudningar fungerar fortfarande.",
+      "Export: Settings → Your data → ladda ner dagboken som CSV eller allt som JSON.",
+      "Import: Settings → Import from Rate Your Music or a CSV. Skivor med datum blir lyssningar, resten Heard before med dina stjärnor. Ägda vinyler/CD och wishlist följer med från RYM.",
+      "Egna listor (kräver 0018): Records → Lists. En rad per skiva om varför, ordning, rankad eller inte, publik eller privat. Lägg till från skivsidan. Andra kan ta sig an en publik lista som en utmaning.",
+      "Recap: “See October in albums · share” längst ned i varje månad i dagboken. Siffror, månadens bästa skivor och en bild att dela. Även hela året.",
+      "Publik profil (kräver 0018): slå på i Settings → Profile. /u/användarnamn visar de senaste 30 dagarna, vad du jobbar dig igenom, senaste lyssningar och publika listor. Privata och anonyma lyssningar visas aldrig.",
+      "Lugnare layout: rubriker i normal skrift i stället för stora versaler, mindre knappar, sidor centrerade.",
+    ],
+  },
+  {
     version: 28,
     date: "2026-11-03",
     changes: [
@@ -325,13 +338,38 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "clubs",
-    title: "Album clubs",
+    title: "Listening parties",
     body: [
-      "Ett album i veckan som klubben lyssnar på tillsammans, var och en i sin egen takt. Starta en klubb under Clubs (toppmenyn på dator, kortet överst i dagboken på mobil) och dela inbjudningslänken. Den som öppnar länken utan att vara inloggad kommer tillbaka till inbjudan efter inloggningen.",
-      "Alla i klubben kan välja veckans album om inget är valt, och nästa veckas album. Sök eller välj från din To listen och skriv gärna en rad om varför. Den som valde, eller den som startade klubben, kan ta bort ett val.",
+      "Ett album i veckan som en grupp lyssnar på, var och en i sin egen takt. Starta under Parties (toppmenyn på dator, kortet överst i dagboken eller Records på mobil) och dela inbjudningslänken. Den som öppnar länken utloggad kommer tillbaka till inbjudan efter inloggningen.",
+      "Alla i partyt kan välja veckans album om inget är valt, och nästa veckas album. Sök eller välj från din To listen och skriv gärna en rad om varför. Den som valde, eller den som startade partyt, kan ta bort ett val.",
       "Din vanliga loggning räknas: en lyssning (inte “Heard before”) från veckans måndag och framåt bockar av dig. “I’ve listened — log it” öppnar loggformuläret.",
       "Andras stjärnor och anteckningar är låsta tills du själv har skivan i dagboken. Privata lyssningar visas bara som “listened”.",
-      "Fungerar helt utan Last.fm. Med Last.fm räknas automatiska loggar som vanligt.",
+      "Fungerar helt utan Last.fm.",
+    ],
+  },
+  {
+    id: "lists",
+    title: "Listor",
+    body: [
+      "Records → Lists, eller “Lists” på skivsidan. Skapa en lista, lägg till skivor via sökning, din To listen eller från skivsidan, och skriv en rad om varför varje skiva är med.",
+      "↑ ↓ flyttar, × tar bort. Under List settings: namn, beskrivning, Public (andra kan se och ta sig an den) och Ranked (visar 1, 2, 3).",
+      "“Take it on as a challenge” gör listan till en utmaning – din egen eller någon annans publika. Framstegen räknas från dagboken som vanligt.",
+    ],
+  },
+  {
+    id: "recap",
+    title: "Recap och delning",
+    body: [
+      "Längst ned i varje månad i dagboken: “See … in albums · share”. Recap-sidan visar album, lyssningar, timmar, dagar med musik, mest spelat, genrer, andel vinyl och månadens bästa skivor.",
+      "“Share” öppnar telefonens delningsmeny med en bild (1080×1350) för t.ex. Instagram, “Download” sparar den. “All of 2026” visar hela året.",
+    ],
+  },
+  {
+    id: "profile",
+    title: "Publik profil, export och import",
+    body: [
+      "Settings → Profile: en rad om dig och “Public profile”. Profilen ligger på /u/användarnamn och visar de senaste 30 dagarna som omslag, vad du jobbar dig igenom, senaste lyssningar och publika listor. Privata och anonyma lyssningar visas aldrig. Avstängd som standard.",
+      "Settings → Your data: ladda ner dagboken (CSV) eller allt (JSON). “Import” tar emot en Rate Your Music-export eller en CSV med kolumnerna Artist och Album (valfritt Rating, Date, Review). Skivor som redan finns hoppas över.",
     ],
   },
   {

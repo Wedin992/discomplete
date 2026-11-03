@@ -507,11 +507,11 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           <h2 className="eyebrow">{monthName(today)} so far</h2>
           <div className="row gap-28">
             <div>
-              <div style={{ fontSize: 44, fontWeight: 800, fontStretch: "75%", lineHeight: 1 }}>{monthEntries.length}</div>
+              <div style={{ fontSize: 32, fontWeight: 750, lineHeight: 1 }}>{monthEntries.length}</div>
               <div className="muted small">listens logged</div>
             </div>
             <div>
-              <div style={{ fontSize: 44, fontWeight: 800, fontStretch: "75%", lineHeight: 1 }}>{albumCount.size}</div>
+              <div style={{ fontSize: 32, fontWeight: 750, lineHeight: 1 }}>{albumCount.size}</div>
               <div className="muted small">records</div>
             </div>
           </div>

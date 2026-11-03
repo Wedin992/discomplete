@@ -2,7 +2,29 @@
 import { ImageResponse } from "next/og";
 import { getUser } from "@/lib/supabase/server";
 import { getRecap } from "@/lib/recap";
-import { cover, stars } from "@/lib/format";
+import { cover } from "@/lib/format";
+
+/** Stars drawn as shapes (the share-picture font has no ★). */
+function Stars({ rating, size = 26 }: { rating: number; size?: number }) {
+  const path = "M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 20.9l1.6-7L2 9.2l7.1-.6z";
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      {[1, 2, 3, 4, 5].map((n) => {
+        const fill = rating >= n ? 1 : rating >= n - 0.5 ? 0.5 : 0;
+        return (
+          <div key={n} style={{ display: "flex", position: "relative", width: size, height: size }}>
+            <svg width={size} height={size} viewBox="0 0 24 24" style={{ position: "absolute" }}><path d={path} fill="#3a3a3e" /></svg>
+            {fill ? (
+              <div style={{ display: "flex", position: "absolute", width: size * fill, height: size, overflow: "hidden" }}>
+                <svg width={size} height={size} viewBox="0 0 24 24"><path d={path} fill="#ff6a3d" /></svg>
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 /** The recap as a 1080×1350 picture, made for sharing (Instagram, messages). */
 export async function GET(_req: Request, { params }: { params: Promise<{ period: string }> }) {
@@ -35,7 +57,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ period:
               ) : (
                 <div style={{ width: size, height: size, borderRadius: 12, background: "#2a2a2a" }} />
               )}
-              <div style={{ display: "flex", fontSize: 26, marginTop: 10, color: "#ff6a3d" }}>{b.rating ? stars(b.rating).replace(/☆/g, "") : " "}</div>
+              <div style={{ display: "flex", marginTop: 12, height: 26 }}>{b.rating ? <Stars rating={b.rating} /> : null}</div>
             </div>
           ))}
         </div>

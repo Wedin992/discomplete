@@ -23,7 +23,7 @@ export function ProfileForm({ username, displayName, isPublic, bio, profileReady
             <label htmlFor="bio" className="label">A line about you</label>
             <input id="bio" name="bio" className="input" defaultValue={bio} maxLength={200} placeholder="Mostly metal, slowly working through jazz" />
           </div>
-          <label className="row gap-8" style={{ alignItems: "flex-start" }}>
+          <label className="row gap-8" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
             <input type="checkbox" name="is_public" defaultChecked={isPublic} style={{ marginTop: 4 }} />
             <span>
               <strong>Public profile</strong>

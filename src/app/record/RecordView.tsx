@@ -63,8 +63,8 @@ export async function RecordView({ album }: { album: Album }) {
         </div>
         <div className="stack gap-16" style={{ flex: "999 1 420px", minWidth: 0 }}>
           <p className="eyebrow">{metaLine}</p>
-          <h1 className="title-xl" style={{ fontSize: "clamp(40px, 7vw, 68px)", lineHeight: 0.92 }}>{album.title}</h1>
-          <p style={{ fontSize: 24 }}>{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}</p>
+          <h1 className="title-xl" style={{ fontSize: "clamp(30px, 5vw, 44px)" }}>{album.title}</h1>
+          <p style={{ fontSize: 20, color: "var(--text-soft)" }}>{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}</p>
           {facts ? <div className="row gap-8"><span className="chip" style={{ fontSize: 12, padding: "5px 12px" }}>{facts}</span></div> : null}
           <Suspense fallback={null}>
             <PartOf deezerId={album.deezer_id} artist={album.artist} title={album.title} />
@@ -148,7 +148,7 @@ export async function RecordView({ album }: { album: Album }) {
         <div className="row gap-28" style={{ alignItems: "flex-start" }}>
           <div className="card stack gap-8" style={{ flex: "1 1 260px", minWidth: 0 }}>
             <div className="row gap-8" style={{ alignItems: "baseline" }}>
-              <span style={{ fontSize: 60, lineHeight: 1, fontWeight: 800, fontStretch: "75%" }}>{stats?.avg_rating ?? "–"}</span>
+              <span style={{ fontSize: 44, lineHeight: 1, fontWeight: 750 }}>{stats?.avg_rating ?? "–"}</span>
               <span className="muted">{total === 1 ? "1 rating" : `${total.toLocaleString("en-US")} ratings`}</span>
             </div>
             {dist.map((d) => (
