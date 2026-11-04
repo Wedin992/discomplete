@@ -19,7 +19,7 @@ export default async function GuidePage() {
         <Link href="/settings" className="btn-text small" style={{ alignSelf: "flex-start" }}>← Settings</Link>
         <p className="eyebrow">Only you can see this</p>
         <h1 className="title-xl">Guide</h1>
-        <p className="mono muted" style={{ fontSize: 12 }}>Version {latest.version} · uppdaterad {svDate(latest.date)}</p>
+        <p className="small muted">Version {latest.version} · uppdaterad {svDate(latest.date)}</p>
       </div>
 
       <div className="card stack gap-12" aria-labelledby="news">
@@ -46,7 +46,7 @@ export default async function GuidePage() {
           <div className="stack gap-16" style={{ marginTop: 12 }}>
             {REVISIONS.slice(1).map((r) => (
               <div key={r.version} className="stack gap-4">
-                <p className="mono muted" style={{ fontSize: 12 }}>Version {r.version} · {svDate(r.date)}</p>
+                <p className="small muted">Version {r.version} · {svDate(r.date)}</p>
                 <ul style={{ paddingLeft: 18, margin: 0 }}>{r.changes.map((c) => <li key={c}>{c}</li>)}</ul>
               </div>
             ))}

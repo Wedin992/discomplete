@@ -57,7 +57,7 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
             <div className="row gap-12">
               <form action={logFromDeezer}>
                 <input type="hidden" name="deezer_id" value={club.current.album.deezer_id ?? ""} />
-                <PendingButton className="btn btn-primary" pending="Opening…">I’ve listened — log it</PendingButton>
+                <PendingButton className="btn btn-primary" pending="Opening…">Log it</PendingButton>
               </form>
               <Link href={recordPath(club.current.album)} className="btn">Open the record</Link>
             </div>

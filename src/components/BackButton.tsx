@@ -5,14 +5,17 @@ import { usePathname, useRouter } from "next/navigation";
 // Pages seen in this visit to the app (the header stays mounted between pages, so this survives navigation).
 let seen = 0;
 
-const TOP = ["/", "/discover", "/to-listen", "/records", "/settings", "/log", "/welcome", "/login"];
+const TOP = ["/", "/discover", "/listening", "/you", "/log", "/welcome", "/welcome/rate", "/login"];
 
 /** Where "back" goes when there's no history to go back to (opened from a link, or a fresh app start). */
 function parentOf(path: string) {
   if (/^\/record\/.+\/log$/.test(path)) return path.replace(/\/log$/, "");
   if (path.startsWith("/challenges/")) return "/challenges";
   if (path.startsWith("/parties/")) return "/parties";
+  if (path.startsWith("/lists/")) return "/lists";
   if (path.startsWith("/settings/") || path.startsWith("/lastfm")) return "/settings";
+  if (["/to-listen", "/challenges", "/lists", "/parties"].includes(path)) return "/listening";
+  if (["/records", "/settings"].includes(path) || path.startsWith("/recap") || path.startsWith("/u/")) return "/you";
   return "/";
 }
 

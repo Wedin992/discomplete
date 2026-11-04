@@ -180,9 +180,9 @@ export default async function ArtistPage({ params, searchParams }: { params: Par
                     {s.rating ? `${stars(s.rating)} · ` : ""}Logged{s.logged > 1 ? ` ${s.logged}×` : ""}
                   </span>
                 ) : s.queued ? (
-                  <span className="mono muted" style={{ fontSize: 11 }}>In To listen</span>
+                  <span className="small muted">In To listen</span>
                 ) : (
-                  <span className="mono muted" style={{ fontSize: 11 }}>Not logged yet</span>
+                  <span className="small muted">Not logged yet</span>
                 )}
               </>
             );

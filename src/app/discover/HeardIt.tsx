@@ -14,10 +14,10 @@ export function HeardIt({ deezerId, title, scope, slot, canSwap }: { deezerId: n
     return (
       <div className="row gap-16">
         <button type="button" className="btn-text small" style={{ minHeight: 40, color: "var(--accent)" }} onClick={() => setOpen("today")}>
-          ✓ I’ve listened to it
+          ✓ Just listened
         </button>
         <button type="button" className="btn-text small" style={{ minHeight: 40 }} onClick={() => setOpen("before")}>
-          Knew it already
+          Heard it before
         </button>
       </div>
     );

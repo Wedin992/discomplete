@@ -44,7 +44,7 @@ export default async function ListPage({ params, searchParams }: { params: Promi
         {flags.added ? <div className="toast" role="status">Added to the list ✓</div> : null}
         {items.length ? (
           <div className="stack gap-4" style={{ maxWidth: 320, marginTop: 4 }}>
-            <span className="mono small muted">You’ve heard {heard} of {items.length}</span>
+            <span className="small muted">You’ve heard {heard} of {items.length}</span>
             <div className="bar" style={{ height: 6 }} aria-hidden="true"><span style={{ width: `${Math.round((heard / items.length) * 100)}%` }} /></div>
           </div>
         ) : null}

@@ -6,11 +6,10 @@ import { EntryRow, RelistenRow } from "@/components/EntryCard";
 import { rng } from "@/lib/discover";
 import { noWords, snoozeRediscover } from "@/app/actions";
 import { PendingButton } from "@/components/PendingButton";
-import { AutoLogged, LastfmSuggestions, Turntable, WaitingReview, type Review, type Suggestion } from "@/components/LastfmSuggestions";
+import { AutoLogged, LastfmSuggestions, WaitingReview, type Review, type Suggestion } from "@/components/LastfmSuggestions";
 import { LastfmSync } from "@/components/LastfmSync";
 import { COMPLETE_SHARE } from "@/lib/lastfm";
-import { DiaryChallenges } from "@/components/ChallengeCards";
-import { DiaryClubs } from "@/app/parties/DiaryClubs";
+import { myClubs } from "@/lib/clubs";
 import { TodoRate } from "@/components/TodoRate";
 import { CalendarViewIcon, ListViewIcon, ShelfViewIcon } from "@/components/Icons";
 import { Suspense } from "react";
@@ -45,7 +44,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
       .order("listened_on", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(200),
-    supabase.from("to_listen").select("album:albums(*)").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(3),
+    myClubs(supabase, user!.id),
     supabase.from("rediscover_snoozed").select("album_id").eq("user_id", user!.id).gte("until", todayIso()),
     supabase.from("lastfm_links").select("username").eq("user_id", user!.id).maybeSingle(),
     supabase
@@ -100,7 +99,8 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
   }
   const reviewNow = reviews.filter((r) => !r.later).slice(0, 3);
   const reviewLaterList = [...reviews.filter((r) => r.later), ...reviews.filter((r) => !r.later).slice(3)];
-  const toListen = ((listRes.data ?? []) as unknown as { album: Album }[]).map((r) => r.album).filter(Boolean);
+  // Listening parties where it's your turn: this week's album, not heard yet.
+  const partyTurns = (listRes as Awaited<ReturnType<typeof myClubs>>).clubs.filter((c) => c.current && !c.members.find((m) => m.is_me)?.listened);
   const today = todayIso();
   const prevMonthKey = new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 2, 1)).toISOString().slice(0, 7);
 
@@ -262,10 +262,13 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
     needStars.length ? `${needStars.length} ${needStars.length === 1 ? "listen needs" : "listens need"} stars` : null,
     needWords.length ? `${needWords.length} could use a few words` : null,
   ].filter(Boolean).join(" · ");
+  const recapReady = Number(today.slice(8, 10)) <= 10;
   const alsoLine = [
+    partyTurns.length ? `Your turn: ${partyTurns[0].current!.album.title}` : null,
     turntable.length ? `▶ ${turntable.length} on the turntable` : null,
     suggestions.length ? `${suggestions.length} from Spotify` : null,
     ...inbox,
+    recapReady ? `${monthName(`${prevMonthKey}-01`)} in albums` : null,
   ].filter(Boolean) as string[];
 
   return (
@@ -287,29 +290,10 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </div>
 
         {lastfmLinked ? <LastfmSync /> : null}
-        {!todo && Number(today.slice(8, 10)) <= 10 ? (
-          <Link href={`/recap/${prevMonthKey}`} className="recap-nudge">
-            <span>
-              <strong>Your {monthName(`${prevMonthKey}-01`)} in albums is ready.</strong>{" "}
-              <span className="muted">The numbers, your best records, and a picture to share.</span>
-            </span>
-            <span aria-hidden="true">→</span>
-          </Link>
-        ) : null}
-        {!todo ? (
-          <Suspense fallback={null}>
-            <DiaryClubs />
-          </Suspense>
-        ) : null}
-        {!todo ? (
-          <Suspense fallback={null}>
-            <DiaryChallenges />
-          </Suspense>
-        ) : null}
         <details className="inbox">
           <summary>
             <span className="stack" style={{ gap: 6, flex: "1 1 auto", minWidth: 0 }}>
-              <span className="inbox-title">{todoLine ? "To do" : "On the turntable & more"}</span>
+              <span className="inbox-title">{todoLine ? "To do" : "Waiting for you"}</span>
               {todoLine ? <span className="inbox-todo">{todoLine}</span> : null}
               {alsoLine.length ? (
                 <span className="inbox-bits">{alsoLine.map((b) => <span key={b} className="inbox-chip">{b}</span>)}</span>
@@ -367,8 +351,37 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
             <h3 className="eyebrow">Also waiting</h3>
           </>
         ) : null}
-        <Turntable items={turntable} />
+        {partyTurns.map((c) => (
+          <Link key={c.id} href={`/parties/${c.id}`} className="inbox-item">
+            <Cover album={c.current!.album} size="44" />
+            <span className="stack" style={{ minWidth: 0, flex: 1 }}>
+              <strong>Your turn in {c.name}</strong>
+              <span className="small muted">{c.current!.album.title} · {c.current!.album.artist} · {c.members.filter((m) => m.listened).length}/{c.members.length} have listened</span>
+            </span>
+            <span className="er-chevron" aria-hidden="true">›</span>
+          </Link>
+        ))}
+        {turntable.length ? (
+          <Link href="/listening" className="inbox-item">
+            <Cover album={{ cover_small: turntable[0].cover, cover_medium: turntable[0].cover, cover_xl: turntable[0].cover } as unknown as Album} size="44" />
+            <span className="stack" style={{ minWidth: 0, flex: 1 }}>
+              <strong>▶ On the turntable</strong>
+              <span className="small muted">{turntable[0].title} · {turntable[0].artist}{turntable.length > 1 ? ` · +${turntable.length - 1} more` : ""}</span>
+            </span>
+            <span className="er-chevron" aria-hidden="true">›</span>
+          </Link>
+        ) : null}
         <LastfmSuggestions items={suggestions} more={moreSuggestions} />
+        {recapReady && !todo ? (
+          <Link href={`/recap/${prevMonthKey}`} className="inbox-item">
+            <span className="inbox-item-icon" aria-hidden="true">★</span>
+            <span className="stack" style={{ minWidth: 0, flex: 1 }}>
+              <strong>Your {monthName(`${prevMonthKey}-01`)} in albums is ready</strong>
+              <span className="small muted">The numbers, your best records and a picture to share</span>
+            </span>
+            <span className="er-chevron" aria-hidden="true">›</span>
+          </Link>
+        ) : null}
         {rediscover ? (
           <div className="card highlight stack gap-12">
             <div className="row gap-16" style={{ alignItems: "center" }}>
@@ -565,23 +578,6 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
           )}
         </div>
 
-        <div className="card stack gap-12">
-          <h2 className="eyebrow">Next up · To listen</h2>
-          {toListen.length ? (
-            toListen.map((a) => (
-              <Link key={a.id} href={recordPath(a)} className="row gap-12" style={{ color: "var(--text)", textDecoration: "none", flexWrap: "nowrap" }}>
-                <Cover album={a} size="44" />
-                <span className="stack" style={{ minWidth: 0 }}>
-                  <span style={{ fontWeight: 700, fontSize: 15 }}>{a.title}</span>
-                  <span className="muted small">{a.artist}</span>
-                </span>
-              </Link>
-            ))
-          ) : (
-            <p className="muted" style={{ fontSize: 14 }}>Nothing queued yet.</p>
-          )}
-          <Link href="/to-listen" className="btn-text" style={{ color: "var(--accent)", alignSelf: "flex-start", display: "inline-flex", alignItems: "center", textDecoration: "none" }}>See all →</Link>
-        </div>
       </aside>
 
       {saved ? (

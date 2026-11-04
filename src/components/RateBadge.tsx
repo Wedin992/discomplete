@@ -9,7 +9,7 @@ export function RateBadge({ entryId, title }: { entryId: string; title: string }
   const [value, setValue] = useState(0);
   const [state, setState] = useState<"idle" | "saved" | "error">("idle");
   const [pending, start] = useTransition();
-  if (state === "saved") return <span className="mono small" style={{ color: "var(--accent)" }}>✓ Rated</span>;
+  if (state === "saved") return <span className="small" style={{ color: "var(--accent)" }}>✓ Rated</span>;
   if (!open)
     return (
       <button type="button" className="badge-todo" onClick={() => setOpen(true)} aria-label={`Rate ${title}`}>

@@ -3,7 +3,7 @@
 > **Levande dokument.** Uppdateras varje gång något läggs till, ändras eller tas bort i appen (se *Så hålls dokumentationen uppdaterad* längst ned).
 > Källan finns i repot som `docs/DOCUMENTATION.md`. En kopia finns i Claude-projektet "Discomplete" som `claude/discomplete-dokumentation.md`.
 >
-> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 34 · **Senaste migrering:** 0018
+> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 35 · **Senaste migrering:** 0018
 
 ---
 
@@ -69,11 +69,13 @@
 
 ## 3. Navigering och layout
 
-- **Flikar på mobil (bottenmeny):** en svävande, rundad "pill" med ikoner och små etiketter: Diary · Discover · **+** (Log a listen, orange) · To listen · Records. Göms på loggsidan och när man redigerar en lyssning. På dator: toppmeny med Diary, Discover, Records, To listen, Parties, Settings och knappen "Log a listen".
-- **Profilikonen** uppe till höger öppnar Settings.
+- **Flikar på mobil (bottenmeny):** en svävande, rundad "pill" med ikoner och små etiketter: **Diary · Discover · + · Listening · You**. Göms på loggsidan, när man redigerar en lyssning och under /welcome. På dator: toppmeny Diary, Discover, Listening, You och knappen "Log a listen".
+- **Principen (4 nov): en plats per sak.** Diary = det du har lyssnat på. Discover = nytt att hitta. Listening = det du jobbar dig igenom. You = du själv (recap, profil, samling, inställningar).
+- **Listening** (`/listening`) samlar: On the turntable (Last.fm), Listening parties, To listen (5 senaste + "All"), Challenges (kort med framsteg och dagens pick) och Your lists. Under fliken ligger även `/to-listen`, `/challenges`, `/lists`, `/parties`.
+- **You** (`/you`) samlar: namn, bio och antal lyssningar; "In albums" (recap för denna månad, förra, hela året); "Yours" (profilen, Records, Settings). Under fliken ligger även `/records`, `/settings`, `/recap`, `/u/…`. Det finns ingen profilikon i sidhuvudet längre.
 - **Tillbaka-pil (‹)** i sidhuvudet finns på alla sidor under huvudflikarna:
   - Har man kommit från en annan sida i appen går den dit, som `router.back()`.
-  - Har man öppnat sidan direkt går den till sidan ovanför: logg till skiva, utmaning till Challenges, party till Parties, guide och Last.fm till Settings, annars Diary.
+  - Har man öppnat sidan direkt går den till sidan ovanför: logg till skiva, utmaning till Challenges, party till Parties, lista till Lists, guide och Last.fm till Settings, To listen/Challenges/Lists/Parties till Listening, Records/Settings/Recap/profil till You, annars Diary.
 - **Log-arket** ("+") öppnar sökningen ovanpå den sida man står på och visar "Recently logged".
 - **URL:er är läsbara:**
   - `/record/<artist>/<titel>` och `/record/<artist>/<titel>/log`
@@ -91,6 +93,7 @@
 - Inloggningssidan säger "Listen to whole albums again" med tre albumförslag om dagen, dagbok, utmaningar och ett album i veckan med vänner.
 - Inloggning sker med e-postlänk eller 6-siffrig kod. Koden behövs i den installerade appen, där länkar öppnas i webbläsaren.
 - **Sign-up-quiz** (`/welcome`, går att hoppa över): man väljer artister man gillar och mål. Det styr Discover direkt.
+- **Första minuten** (`/welcome/rate`): efter quizen, och även om man hoppar över den, visas "Rate five albums you already know": upp till 18 skivor från de valda artisterna (deras mest kända), annars från Deezers topplista. Stjärnor sparar som Heard before. En fast rad räknar "x of 5 rated"; efter fem: "See my three →" till Discover. "Skip for now" går till dagboken.
 
 ### 4.2 Logga en skiva
 - **Sökning** via Deezer. Utgåvor som remaster och deluxe slås ihop till en träff.
@@ -112,13 +115,10 @@
 ### 4.3 Dagboken (startsidan)
 Sidans ordning uppifrån:
 1. **Vyväxlare:** List · Shelf · Calendar, med egna ikoner.
-1. **Recap-knuff:** de första tio dagarna i en månad visas "Your <förra månaden> in albums is ready" (länk till recap).
-1. **Challenges:** kortet med dina utmaningar (eller "New: Challenges") visas här, inte längre inne i To do-panelen.
-1. **Listening parties:** ett kort per klubb med veckans album, om du har lyssnat (med stjärnor) och "2/3". Utan klubb visas länken "New: Listening parties". Döljs i filtret `?todo=1`.
-2. **To do-panelen** (hopfälld). Rubriken säger rakt ut vad som väntar, t.ex. *"2 listens need stars · 2 could use a few words"*, med knappen **Sort it**. Utfälld visar den:
+2. **To do-panelen** (hopfälld) är det enda ovanför listan. Utan något att betygsätta heter den "Waiting for you". Rubriken säger rakt ut vad som väntar, t.ex. *"2 listens need stars · 2 could use a few words"*, med knappen **Sort it**. Utfälld visar den:
    - **Give these stars:** lyssningar utan betyg, med stjärnor direkt på raden. Betyget sparas direkt.
    - **A few words?:** lyssningar med betyg men utan text, bara från de senaste 14 dagarna. Varje rad har **Write** och **No thanks**, och det finns **Stars are enough for all** för alla på en gång (sätter `entries.no_words`).
-   - **Also waiting:** On the turntable, förslag från Spotify, Challenges, och Remember this? eller relisten-påminnelse.
+   - **Also waiting:** "Your turn in <party>" (veckans album som du inte hört), "▶ On the turntable" (en rad som länkar till Listening), förslag från Spotify ("how was it?"), "Your <månad> in albums is ready" (de första tio dagarna i månaden), och Remember this? eller relisten-påminnelse.
 3. **Listan:**
    - Grupperad i *This week*, *Last week*, *Earlier in <månad>* och sedan en rubrik per månad.
    - Äldre månader är hopfällda.
@@ -128,7 +128,7 @@ Sidans ordning uppifrån:
    - **Badges** i utfällt läge: "☆ Not rated · Rate it" (stjärnorna öppnas på kortet) och "✎ No review yet · Write one". Den andra visas inte om man har valt `no_words`.
 4. **Shelf-vyn:** alla skivor man spelat, per månad, som stora omslag med ens stjärnor, titel och artist. Har man spelat en skiva flera gånger samma månad står "2×" på omslaget.
 5. **Calendar-vyn:** varje månad som en kalender med måndag först och ett omslag per dag. "+n" visas om flera skivor spelats samma dag. Upp till 12 månader.
-6. **Sidokolumnen** (nedanför på mobil): månadssiffror med länkar till recap för denna och förra månaden, On repeat this month, Heard before (12 senaste plus "+ Add"), Next up · To listen.
+6. **Sidokolumnen** (nedanför på mobil): månadssiffror med länkar till recap för denna och förra månaden, On repeat this month och Heard before (12 senaste plus "+ Add"). To listen visas inte här längre (finns under Listening).
 - **Remember this?** visar en skiva med 4★ eller mer som man inte spelat på 6 veckor eller mer. Den väljs slumpmässigt med vikt och visas en per dag. "Not now" snoozar skivan i 6 månader.
 - **Relisten-påminnelse:** en första lyssning med 3★ eller mindre som är minst 14 dagar gammal och aldrig lyssnats om.
 - Filtret `?todo=1` visar bara lyssningar som behöver stjärnor eller text.
@@ -161,30 +161,27 @@ Sidans ordning uppifrån:
   - Smakprofilen bygger på betyg (5★ väger mest), omlyssningar, ägda skivor, följda artister och quizen. Nyare lyssningar väger mer.
   - 1–2★ och "Not for me" trycker ner liknande artister.
   - Källor: Deezers relaterade artister (1–2 steg) och SQL-funktionen `taste_neighbour_picks`.
-- **Svepbara rader** under dagens tre: Your listening parties, Today's picks from your challenges, Not heard yet from your lists, Next up · To listen. Tomma rader visas inte.
+- **Under dagens tre** (bara sådant som är nytt): "If you like <artisten du senast gav 4★ eller mer>, you may like…" (samma tre förslag som på artistsidan) och "More from artists you're exploring" (flyttat hit från To listen).
 - Förslagen sparas per dag i `discover_picks`. **Shuffle** finns 3 gånger per dag. **Not for me** byter förslaget och kommer ihåg valet.
-- **"✓ I've listened to it":** stjärnor som loggas som dagens lyssning, eller på den dag Spotify såg skivan. **"Knew it already":** sparas som Heard before och förslaget kan bytas ut.
+- **"✓ Just listened":** stjärnor som loggas som dagens lyssning, eller på den dag Spotify såg skivan. **"Heard it before":** sparas som Heard before och förslaget kan bytas ut.
 - **Status på korten:**
   - Lyssnad: orange ram runt hela kortet, "✓ Heard" på omslaget, "✓ Listened today" med stjärnor och "Write about it".
-  - Spelas nu: streckad ram, "▶ Playing" och "On your turntable · x of y" med en mätare.
-- **From your challenges:** dagens förslag från ens utmaningar visas under de tre.
+  - Spelas nu: grå streckad ram, "▶ Playing" och "On your turntable · x of y" med en mätare.
 - **Genreläget** är byggt (Wikidata) men avstängt. Slås på med `DISCOVER_GENRES=1`.
 
 ### 4.7 To listen
-- **Next in your challenges** överst.
 - **Started · from Spotify, last 30 days:** påbörjade skivor med "x of y tracks played" och en mätare.
 - **Queued:** resten, med källa (t.ex. "Discover · …", "Started on Spotify").
-- **More from artists you're exploring.**
 
 ### 4.8 Records
-- Allt man loggat eller äger, med filter för Vinyl, CD och Wishlist. Knapp till Challenges.
+- Allt man loggat eller äger, med filter för Vinyl, CD och Wishlist. Nås via You.
 
 ### 4.9 Challenges (`/challenges`)
 - **Två sorter:**
   - *Complete <artist>:* hela studiodiskografin, startas från artistsidan.
   - *Kurerade listor* (Kevins egna val, i koden i `challenge-lists.ts`): **Swedish classics** (30), **Debuts that changed everything** (30) och **One album a year: 2000–2024** (25). Varje lista kan förhandsvisas ("See the albums") innan man startar den.
 - **Framsteg** räknas från dagboken: alla lyssningar och Heard before. En annan utgåva räknas också. Inget bockas av separat.
-- **Today's pick:** en slumpad ohörd skiva per utmaning och dag. Den syns i dagboken (Also waiting), Discover och To listen.
+- **Today's pick:** en slumpad ohörd skiva per utmaning och dag. Den syns under Listening (Challenges-kortet) och på utmaningens sida.
 - **"+1"** i dagboken när man nyss bockat av en skiva. "Stop this challenge" tar bort utmaningen men rör inte loggarna.
 - Listskivor matchas mot Deezer med `findAlbum(..., { relaxed: true })`. Skivor som inte hittas hoppas över.
 - Inga streaks och inget straff, avsiktligt.
@@ -280,6 +277,19 @@ Efter det visar rutan **"✓ It's working – Playing right now / Last heard …
 
 ---
 
+## 4.11 Ordlista (gäller all text i appen)
+| Ord | Betyder | Används |
+|---|---|---|
+| **Heard it? Rate it** | snabbstjärnor på en skiva du känner sedan tidigare, sparas som *Heard before* (utan datum) | sökningen, artistsidan, "You may like", första minuten, utmaningar |
+| **Heard before** | samlingen av skivor du kände till innan, utan datum | sidokolumnen, statusrutan på skivsidan |
+| **Heard it before** | samma val i Discover och i loggarket | Discover-korten, "Is it new to you?" |
+| **Log it** / **Log it again** | öppna loggarket för en lyssning | skivsidan, To listen, Listening, partyn |
+| **Just listened** | stjärnor direkt på ett Discover-kort, loggas som dagens lyssning | Discover |
+| **Done? Rate it** | turntable-skiva du lyssnat klart på | On the turntable |
+| **To do** / **Waiting for you** | panelen överst i dagboken | dagboken |
+
+Nya texter ska följa ordlistan. Mono-typsnittet används bara för siffror och datum. Orange ram betyder alltid "klart".
+
 ## 5. Datamodell (Supabase)
 
 | Tabell / funktion | Innehåll | Migrering |
@@ -368,6 +378,7 @@ Detaljerad versionshistorik finns i ägarguiden (`/settings/guide`).
 | 4 nov | Svävande bottenmeny, loggning som ett lugnt ark, svepbara rader i Discover, glidande bekräftelser, mindre rubriker på mobil (inspirerat av Record Clubs mobilflöde men med vårt innehåll). |
 | 4 nov | Artistsidan: "If you like <artist>, you may like…" med tre skivor från liknande artister. |
 | 4 nov | Lugnare skivsida: metarad, mindre omslag och knappar, "▶ Listen"-meny i stället för fyra knappar, tomma lägen som en rad. |
+| 4 nov | Ny navigering Diary · Discover · + · Listening · You. Listening-hub och You-sida. En plats per sak (dubbletter borttagna). Ordlista: Heard it / Log it. Mono bara för siffror. Första minuten: "Rate five albums you already know". Flödeskarta: https://claude.ai/artifact/VjwBrSYwfiFxBRSR64Kriv |
 
 ---
 

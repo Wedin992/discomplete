@@ -310,14 +310,14 @@ export async function completeOnboarding(formData: FormData) {
     );
   await supabase.from("profiles").update({ goals, onboarded_at: new Date().toISOString() }).eq("id", user.id);
   revalidatePath("/", "layout");
-  redirect(goals.includes("discover") && artists.length ? "/discover?welcome=1" : "/?welcome=1");
+  redirect("/welcome/rate");
 }
 
 export async function skipOnboarding() {
   const { supabase, user } = await requireUser();
   await supabase.from("profiles").update({ onboarded_at: new Date().toISOString() }).eq("id", user.id);
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/welcome/rate");
 }
 
 /** Tapping a record on an artist page: save it to the catalogue if needed, then open its page. */

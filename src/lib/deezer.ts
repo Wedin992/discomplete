@@ -241,3 +241,11 @@ export async function getAlbumTracks(deezerId: number): Promise<AlbumTrack[]> {
   const res = await get<{ data: Row[] }>(`/album/${deezerId}/tracks?limit=200`, 86400);
   return (res.data ?? []).map((t, i) => ({ id: t.id, title: t.title_short || t.title, position: t.track_position ?? i + 1, duration: t.duration ?? 0 }));
 }
+
+export type ChartAlbum = { deezerId: number; title: string; artist: string; cover: string };
+
+/** Deezer's current album chart — a fallback for "rate albums you already know" when no artists were picked. */
+export async function getChartAlbums(limit = 24): Promise<ChartAlbum[]> {
+  const res = await get<{ data: { id: number; title: string; cover_medium: string; artist: { name: string } }[] }>(`/chart/0/albums?limit=${limit}`, 86400);
+  return (res.data ?? []).map((a) => ({ deezerId: a.id, title: a.title, artist: a.artist?.name ?? "", cover: a.cover_medium }));
+}

@@ -40,11 +40,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         <p className="eyebrow">Your collection</p>
         <h1 className="title-xl">Records</h1>
         <p className="muted" style={{ marginTop: 8 }}>Everything you’ve logged or own. Mark vinyl, CD or wishlist on any record page.</p>
-        <div className="row gap-8" style={{ marginTop: 12 }}>
-          <Link href="/challenges" className="btn btn-sm">Challenges →</Link>
-          <Link href="/lists" className="btn btn-sm">Lists →</Link>
-          <Link href="/parties" className="btn btn-sm">Listening parties →</Link>
-        </div>
+
       </div>
       <nav aria-label="Filter records" className="row gap-8">
         {FILTERS.map((f) => (

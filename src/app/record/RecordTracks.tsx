@@ -67,7 +67,7 @@ export async function RecordTracks({ album }: { album: Album }) {
     <section className="stack gap-12" aria-labelledby="tracklist">
       <div className="row gap-12" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
         <h2 id="tracklist" className="title-l">Tracklist</h2>
-        <span className="mono small" style={{ color: "var(--accent)" }}>✓ {played.length} of {tracks.length} played · last {DAYS} days</span>
+        <span className="small" style={{ color: "var(--accent)" }}>✓ {played.length} of {tracks.length} played · last {DAYS} days</span>
       </div>
       <div className="bar" aria-hidden="true" style={{ maxWidth: 420 }}><span style={{ width: `${Math.round((played.length / tracks.length) * 100)}%` }} /></div>
       {list}

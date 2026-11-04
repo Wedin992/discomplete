@@ -35,7 +35,7 @@ export function QuickRate({ deezerId, title, initial = 0, compact = false, onRat
     <div className={`quick-rate${compact ? " compact" : ""}`} role="group" aria-label={`Rate ${title}`}>
       <StarInput value={rating} onChange={rate} size={compact ? "sm" : "md"} disabled={pending} label={`Rate ${title}`} />
       <span className="mono quick-status" aria-live="polite">
-        {pending ? "Saving…" : status ? (status === "added" || status === "updated" || status === "diary" ? `✓ ${status === "added" && addedText ? addedText : MESSAGES[status]}` : MESSAGES[status]) : idleText ?? (compact ? "I know this" : "Tap to rate")}
+        {pending ? "Saving…" : status ? (status === "added" || status === "updated" || status === "diary" ? `✓ ${status === "added" && addedText ? addedText : MESSAGES[status]}` : MESSAGES[status]) : idleText ?? (compact ? "Heard it? Rate it" : "Tap to rate")}
       </span>
     </div>
   );

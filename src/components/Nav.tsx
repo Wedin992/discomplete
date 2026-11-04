@@ -8,14 +8,19 @@ import { openLogSheet } from "@/components/LogSheet";
 const LINKS = [
   { href: "/", label: "Diary" },
   { href: "/discover", label: "Discover" },
-  { href: "/records", label: "Records" },
-  { href: "/to-listen", label: "To listen" },
-  { href: "/parties", label: "Parties" },
-  { href: "/settings", label: "Settings" },
+  { href: "/listening", label: "Listening" },
+  { href: "/you", label: "You" },
 ];
 
+// Pages that live under each tab, so the right tab stays lit.
+const UNDER: Record<string, string[]> = {
+  "/listening": ["/listening", "/to-listen", "/challenges", "/lists", "/parties"],
+  "/you": ["/you", "/records", "/settings", "/recap", "/u/"],
+};
+
 function isActive(path: string, href: string) {
-  return href === "/" ? path === "/" : path.startsWith(href);
+  if (href === "/") return path === "/";
+  return (UNDER[href] ?? [href]).some((p) => path.startsWith(p));
 }
 
 /** The path being navigated to (highlighted the moment it is tapped), else the current one. */
@@ -46,11 +51,11 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
   "/": (
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3.5" width="14" height="17" rx="2" {...stroke} /><path d="M9 8h6M9 12h6M9 16h3" {...stroke} /></svg>
   ),
-  "/records": (
+  "/listening": (
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" {...stroke} /><circle cx="12" cy="12" r="2.5" {...stroke} /></svg>
   ),
-  "/to-listen": (
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16l-5-3.5L7 20z" {...stroke} /></svg>
+  "/you": (
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5" {...stroke} /><path d="M5 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5" {...stroke} /></svg>
   ),
   "/discover": (
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" {...stroke} /><path d="M15.5 8.5l-2 5-5 2 2-5z" {...stroke} /></svg>
@@ -63,7 +68,7 @@ export function TabBar() {
   const current = usePathname();
   if (current.startsWith("/welcome")) return null; // keep the sign-up quiz focused
   if (/\/log$|^\/entry\/[^/]+\/edit$/.test(current)) return null; // the log sheet has its own Cancel / Save
-  const tabs = [LINKS[0], LINKS[1], { href: "/log", label: "Log" }, LINKS[3], LINKS[2]];
+  const tabs = [LINKS[0], LINKS[1], { href: "/log", label: "Log" }, LINKS[2], LINKS[3]];
   return (
     <nav className="tabbar" aria-label="Main">
       {tabs.map((t) => {
@@ -88,11 +93,11 @@ export function TabBar() {
   );
 }
 
-/** Settings shortcut in the header on phones (the tab bar has no room for it). */
+/** "You" shortcut in the header (profile, recap, records, settings). */
 export function SettingsLink() {
   const path = usePathname();
   return (
-    <Link href="/settings" className="header-settings" aria-label="Settings" aria-current={path.startsWith("/settings") ? "page" : undefined}>
+    <Link href="/you" className="header-settings" aria-label="You" aria-current={isActive(path, "/you") ? "page" : undefined}>
       <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5" {...stroke} /><path d="M5 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5" {...stroke} /></svg>
     </Link>
   );

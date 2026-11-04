@@ -78,11 +78,11 @@ export async function RecordView({ album }: { album: Album }) {
                 {onlyBefore ? (
                   <>
                     <Link href={`/entry/${(mine.find((e) => e.note) ?? mine[0]).id}/edit`} className="btn">{mine.some((e) => e.note) ? "Edit what you wrote" : "Write about it"}</Link>
-                    <Link href={logPath(album)} className="btn">Log a new listen</Link>
+                    <Link href={logPath(album)} className="btn">Log it</Link>
                   </>
                 ) : (
                   <>
-                    <Link href={logPath(album)} className="btn">Log another listen</Link>
+                    <Link href={logPath(album)} className="btn">Log it again</Link>
                     <Link href={`/entry/${dated[0].id}/edit`} className="btn">Edit latest</Link>
                   </>
                 )}
@@ -90,7 +90,7 @@ export async function RecordView({ album }: { album: Album }) {
             </div>
           ) : (
             <div className="row gap-8" style={{ marginTop: 4 }}>
-              <Link href={logPath(album)} className="btn btn-primary">Log this listen</Link>
+              <Link href={logPath(album)} className="btn btn-primary">Log it</Link>
               <form action={toggleToListen}>
                 <input type="hidden" name="album_id" value={album.id} />
                 <input type="hidden" name="source" value="Saved from the record page" />

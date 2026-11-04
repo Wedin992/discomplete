@@ -6,6 +6,20 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 35,
+    date: "2026-11-04",
+    changes: [
+      "Ny bottenmeny: Diary · Discover · + · Listening · You. På dator: Diary, Discover, Listening, You.",
+      "Listening samlar allt du jobbar dig igenom: On the turntable (Last.fm), dina listening parties, To listen, utmaningar med dagens pick, och dina listor. Länkar vidare till respektive helsida.",
+      "You samlar dig: namn och bio, recap (denna månad, förra, hela året), din profil, Records (samlingen) och Settings. Profilikonen i sidhuvudet är borttagen.",
+      "En plats per sak: dagboken visar bara det du har lyssnat på. Överst finns bara To do-panelen (nu “Waiting for you” när inget behöver stjärnor). Där ligger också “Your turn in <party>”, en länk till turntable och “Your October in albums is ready”. Utmaningskortet och partykortet överst är borta, liksom To listen i sidokolumnen.",
+      "Discover är bara för att hitta nytt: under dagens tre visas “If you like <artisten du senast gav 4★+>…” och nytt från artister du utforskar. Partyn, challenge-picks och To listen ligger under Listening.",
+      "Samma ord överallt: “Heard it? Rate it” för snabbstjärnor (Heard before), “Log it” för att logga en lyssning. Discover-korten: “✓ Just listened” och “Heard it before”.",
+      "Lugnare formspråk: mono-typsnittet bara för siffror och datum, orange ram bara för klart (“spelas nu” har en grå streckad ram).",
+      "Ny första minut: efter quizen (eller om man hoppar över) kommer “Rate five albums you already know” med skivor från artisterna man valt, annars från Deezers topplista. Efter fem öppnas Discover.",
+    ],
+  },
+  {
     version: 34,
     date: "2026-11-04",
     changes: [

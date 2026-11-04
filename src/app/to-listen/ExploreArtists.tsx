@@ -58,7 +58,7 @@ export async function ExploreArtists() {
           <div className="row gap-12" style={{ justifyContent: "space-between" }}>
             <div className="stack" style={{ minWidth: 0 }}>
               <Link href={artistPath(s.artist, s.deezer_artist_id)!} className="artist-link" style={{ fontWeight: 700, fontSize: 18, alignSelf: "flex-start" }}>{s.artist}</Link>
-              {s.from ? <span className="mono muted" style={{ fontSize: 11 }}>Because you logged {s.from.title}</span> : null}
+              {s.from ? <span className="small muted">Because you logged {s.from.title}</span> : null}
             </div>
             <form action={stopExploring}>
               <input type="hidden" name="deezer_artist_id" value={s.deezer_artist_id} />

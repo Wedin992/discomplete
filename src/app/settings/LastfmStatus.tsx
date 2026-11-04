@@ -52,7 +52,7 @@ export async function LastfmStatus({ username }: { username: string }) {
         <a href="https://www.last.fm/settings/applications" {...ext}>Last.fm → Applications</a>.
         {latest?.uts ? ` (Last song we can see was ${ago(latest.uts)}.)` : ""}
       </span>
-      <span className="mono muted" style={{ fontSize: 11 }}>Checking automatically</span>
+      <span className="small muted">Checking automatically</span>
       <AutoRefresh />
     </div>
   );

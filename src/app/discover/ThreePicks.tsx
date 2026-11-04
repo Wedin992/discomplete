@@ -81,7 +81,7 @@ export async function ThreePicks({ scope, source }: { scope: string; source: str
               <>
               {playing.has(p.deezerId) ? (
                 <div className="stack gap-4" style={{ maxWidth: 320 }}>
-                  <span className="mono small" style={{ color: "var(--accent)" }}>▶ On your turntable · {playing.get(p.deezerId)!.tracks_played} of {playing.get(p.deezerId)!.total_tracks}</span>
+                  <span className="small" style={{ color: "var(--accent)" }}>▶ On your turntable · {playing.get(p.deezerId)!.tracks_played} of {playing.get(p.deezerId)!.total_tracks}</span>
                   <div className="bar" style={{ height: 6 }} aria-hidden="true">
                     <span style={{ width: `${Math.round((playing.get(p.deezerId)!.tracks_played / Math.max(1, playing.get(p.deezerId)!.total_tracks)) * 100)}%` }} />
                   </div>

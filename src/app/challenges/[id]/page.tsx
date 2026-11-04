@@ -62,9 +62,9 @@ export default async function ChallengePage({ params, searchParams }: { params: 
               {d ? (
                 <span className="mono" style={{ fontSize: 11, color: "var(--accent)" }}>{d.rating ? `${stars(d.rating)} · ` : ""}Heard</span>
               ) : c.draw?.deezerId === a.deezerId ? (
-                <span className="mono" style={{ fontSize: 11, color: "var(--accent)" }}>Today’s pick</span>
+                <span className="small" style={{ color: "var(--accent)" }}>Today’s pick</span>
               ) : (
-                <span className="mono muted" style={{ fontSize: 11 }}>Not yet</span>
+                <span className="small muted">Not yet</span>
               )}
             </Link>
           );
