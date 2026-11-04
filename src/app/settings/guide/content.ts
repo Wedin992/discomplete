@@ -6,6 +6,13 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 34,
+    date: "2026-11-04",
+    changes: [
+      "“If you like … you may like”: varje förslag har nu stjärnor (“Heard it? Rate it”). Ett tryck sparar skivan som Heard before med betyget, och nästa gång visas en annan skiva i dess ställe. På mobilen visas förslagen som rader med omslaget till vänster.",
+    ],
+  },
+  {
     version: 33,
     date: "2026-11-04",
     changes: [

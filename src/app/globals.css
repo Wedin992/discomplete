@@ -551,3 +551,9 @@ body { -webkit-tap-highlight-color: transparent; }
 .listen-apple { background: #fa2d48; }
 .listen-youtube { background: #ff0033; }
 .listen-deezer { background: #a238ff; }
+.may-like-item { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+@media (max-width: 560px) {
+  .may-like { grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); }
+  .may-like-item { flex-direction: row; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .may-like-cover { flex: 0 0 96px; }
+}

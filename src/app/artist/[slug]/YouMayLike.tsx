@@ -6,6 +6,7 @@ import { diaryIndex, doneIn } from "@/lib/challenges";
 import { queueFromDeezer } from "@/app/actions";
 import { artistPath } from "@/lib/format";
 import { PendingButton } from "@/components/PendingButton";
+import { QuickRate } from "@/components/QuickRate";
 
 /** "If you like X, you may like…": the best-known album from three similar artists that you haven't heard. */
 export async function YouMayLike({ artistId, artistName }: { artistId: number; artistName: string }) {
@@ -31,28 +32,31 @@ export async function YouMayLike({ artistId, artistName }: { artistId: number; a
     <section className="stack gap-16" aria-labelledby="may-like">
       <div>
         <h2 id="may-like" className="title-l">If you like {artistName}, you may like…</h2>
-        <p className="muted small" style={{ marginTop: 4 }}>The best-known album from three similar artists — ones you haven’t logged yet.</p>
+        <p className="muted small" style={{ marginTop: 4 }}>The best-known album from three similar artists. Heard one already? Give it stars — it’s saved as Heard before.</p>
       </div>
       <div className="may-like">
         {picks.map((p) => (
-          <div key={p.deezerId} className="stack gap-8" style={{ minWidth: 0 }}>
-            <Link href={`/open/${p.deezerId}`} prefetch={false} className="tile">
+          <div key={p.deezerId} className="may-like-item">
+            <Link href={`/open/${p.deezerId}`} prefetch={false} className="may-like-cover" aria-hidden="true" tabIndex={-1}>
               <img src={p.cover} alt="" className="cover cover-full" width={250} height={250} />
-              <span style={{ fontWeight: 700, lineHeight: 1.25 }}>{p.title}</span>
             </Link>
-            <span className="muted small">
-              <Link href={artistPath(p.artist, p.artistId)!} className="artist-link">{p.artist}</Link>
-              {p.year ? ` · ${p.year}` : ""}
-            </span>
-            {queued.has(p.deezerId) ? (
-              <Link href="/to-listen" className="btn btn-sm pill" aria-pressed="true" style={{ alignSelf: "flex-start" }}>✓ In To listen</Link>
-            ) : (
-              <form action={queueFromDeezer}>
-                <input type="hidden" name="deezer_id" value={p.deezerId} />
-                <input type="hidden" name="source" value={`Similar to ${artistName}`.slice(0, 200)} />
-                <PendingButton className="btn btn-sm" pending="Adding…">+ To listen</PendingButton>
-              </form>
-            )}
+            <div className="stack gap-4" style={{ minWidth: 0 }}>
+              <Link href={`/open/${p.deezerId}`} prefetch={false} className="link-button" style={{ lineHeight: 1.25 }}>{p.title}</Link>
+              <span className="muted small">
+                <Link href={artistPath(p.artist, p.artistId)!} className="artist-link">{p.artist}</Link>
+                {p.year ? ` · ${p.year}` : ""}
+              </span>
+              <QuickRate deezerId={p.deezerId} title={p.title} compact idleText="Heard it? Rate it" addedText="Heard before" />
+              {queued.has(p.deezerId) ? (
+                <Link href="/to-listen" className="btn btn-sm pill" aria-pressed="true" style={{ alignSelf: "flex-start" }}>✓ In To listen</Link>
+              ) : (
+                <form action={queueFromDeezer}>
+                  <input type="hidden" name="deezer_id" value={p.deezerId} />
+                  <input type="hidden" name="source" value={`Similar to ${artistName}`.slice(0, 200)} />
+                  <PendingButton className="btn btn-sm" pending="Adding…">+ To listen</PendingButton>
+                </form>
+              )}
+            </div>
           </div>
         ))}
       </div>
