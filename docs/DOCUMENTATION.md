@@ -3,7 +3,7 @@
 > **Levande dokument.** Uppdateras varje gång något läggs till, ändras eller tas bort i appen (se *Så hålls dokumentationen uppdaterad* längst ned).
 > Källan finns i repot som `docs/DOCUMENTATION.md`. En kopia finns i Claude-projektet "Discomplete" som `claude/discomplete-dokumentation.md`.
 >
-> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 31 · **Senaste migrering:** 0018
+> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 32 · **Senaste migrering:** 0018
 
 ---
 
@@ -149,6 +149,7 @@ Sidans ordning uppifrån:
 - Studioalbum från Deezer, där utgåvor slås ihop. Filter: All / Logged / Not yet.
 - Snabbstjärnor ("Heard before") under ologgade album.
 - **Complete it** startar en artistutmaning.
+- **If you like <artist>, you may like…** längst ned: tre skivor, en från vardera tre liknande artister (Deezers relaterade artister, de tio första provas i tur och ordning). För varje artist väljs den mest kända studioskivan som inte finns i din dagbok (Heard before räknas). Klick öppnar skivsidan, "+ To listen" sparar med källan "Similar to <artist>".
 - **I want to hear more** följer artisten. Det påverkar Discover och To listen ("More from artists you're exploring").
 
 ### 4.6 Discover – Today's three
@@ -362,6 +363,7 @@ Detaljerad versionshistorik finns i ägarguiden (`/settings/guide`).
 | 4 nov | Album clubs → Listening parties (`/parties`). Export (CSV/JSON) och import (RYM/CSV). Egna listor som andra kan ta sig an (0018). Recap per månad/år med delningsbild. Publik profil (0018). Renare layout. |
 | 4 nov | Challenges och recap-knuff överst i dagboken; recaplänkar i sidokolumnen. Plattare layout: dagboksrader med linjer i stället för boxar, sidokolumn utan boxar, lugnare sidhuvud. |
 | 4 nov | Svävande bottenmeny, loggning som ett lugnt ark, svepbara rader i Discover, glidande bekräftelser, mindre rubriker på mobil (inspirerat av Record Clubs mobilflöde men med vårt innehåll). |
+| 4 nov | Artistsidan: "If you like <artist>, you may like…" med tre skivor från liknande artister. |
 
 ---
 

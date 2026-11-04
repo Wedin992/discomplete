@@ -6,6 +6,13 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 32,
+    date: "2026-11-04",
+    changes: [
+      "Artistsidan: längst ned “If you like <artist>, you may like…” med tre skivor – den mest kända skivan från tre liknande artister (enligt Deezer) som du inte har loggat. Varje förslag har “+ To listen” (källan blir “Similar to <artist>”).",
+    ],
+  },
+  {
     version: 31,
     date: "2026-11-04",
     changes: [

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
+import { YouMayLike } from "./YouMayLike";
 import { baseTitle, getArtist, getArtistAlbums, type ArtistAlbum } from "@/lib/deezer";
 import { artistPath, recordPath, stars, type Album } from "@/lib/format";
 import { openFromDeezer, setExploring, startChallenge } from "@/app/actions";
@@ -209,6 +210,9 @@ export default async function ArtistPage({ params, searchParams }: { params: Par
         </div>
       )}
       <p className="muted small">Studio albums from Deezer. Singles, EPs and compilations aren’t listed.</p>
+      <Suspense fallback={null}>
+        <YouMayLike artistId={id} artistName={artist.name} />
+      </Suspense>
     </div>
   );
 }
