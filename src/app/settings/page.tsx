@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
-import { signOut } from "@/app/actions";
+import { setPartyEmails, signOut } from "@/app/actions";
 import { ProfileForm } from "./ProfileForm";
 import { LastfmCard } from "./LastfmCard";
 import { lastfmConfigured } from "@/lib/lastfm";
@@ -11,15 +11,17 @@ import { REVISIONS } from "./guide/content";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ lastfm?: string }> }) {
-  const { lastfm } = await searchParams;
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ lastfm?: string; emails?: string }> }) {
+  const { lastfm, emails } = await searchParams;
   const { supabase, user } = await getUser();
-  const [{ data }, linkRes, mutedRes, extraRes] = await Promise.all([
+  const [{ data }, linkRes, mutedRes, extraRes, mailRes] = await Promise.all([
     supabase.from("profiles").select("username, display_name").eq("id", user!.id).maybeSingle(),
     supabase.from("lastfm_links").select("username, autolog, synced_at").eq("user_id", user!.id).maybeSingle(),
     supabase.from("lastfm_muted").select("kind, key, label").eq("user_id", user!.id),
     supabase.from("profiles").select("is_public, bio").eq("id", user!.id).maybeSingle(),
+    supabase.from("profiles").select("party_emails").eq("id", user!.id).maybeSingle(),
   ]);
+  const partyEmails = mailRes.error ? null : ((mailRes.data as { party_emails: boolean } | null)?.party_emails ?? true);
   const extra = extraRes.error ? null : (extraRes.data as { is_public: boolean; bio: string | null } | null);
   const muted = (mutedRes.error ? [] : mutedRes.data ?? []) as { kind: string; key: string; label: string | null }[];
   const link = linkRes.error ? null : (linkRes.data as { username: string; autolog: boolean; synced_at: string | null } | null);
@@ -41,6 +43,20 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <p className="muted">The artists you love shape your picks in Discover.</p>
         <Link href="/welcome" className="btn" style={{ alignSelf: "flex-start" }}>Change artists and goals</Link>
       </div>
+      {partyEmails !== null ? (
+        <form action={setPartyEmails} className="card stack gap-12">
+          <h2 className="eyebrow">Emails</h2>
+          <label className="row gap-8" style={{ alignItems: "flex-start", flexWrap: "nowrap" }}>
+            <input type="checkbox" name="party_emails" defaultChecked={partyEmails} style={{ marginTop: 4 }} />
+            <span>
+              <strong>Listening parties</strong>
+              <span className="muted small" style={{ display: "block" }}>A short email on Mondays with this week’s album, and when someone picks one. Nothing else.</span>
+            </span>
+          </label>
+          <button type="submit" className="btn btn-sm" style={{ alignSelf: "flex-start" }}>Save</button>
+          {emails ? <div className="toast" role="status">Saved ✓</div> : null}
+        </form>
+      ) : null}
       <div className="card stack gap-12">
         <h2 className="eyebrow">Your data</h2>
         <p className="muted small">Everything you put in is yours. Take it with you any time, or bring records from somewhere else.</p>

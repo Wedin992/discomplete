@@ -290,7 +290,7 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
         </div>
 
         {lastfmLinked ? <LastfmSync /> : null}
-        <details className="inbox">
+        <details className="inbox" open={partyTurns.length > 0 || suggestions.length > 0}>
           <summary>
             <span className="stack" style={{ gap: 6, flex: "1 1 auto", minWidth: 0 }}>
               <span className="inbox-title">{todoLine ? "To do" : "Waiting for you"}</span>
@@ -540,10 +540,6 @@ export default async function DiaryPage({ searchParams }: { searchParams: Promis
             </div>
           </div>
           {topTags ? <p className="muted" style={{ fontSize: 14 }}>Most tagged: <span style={{ color: "var(--text)" }}>{topTags}</span></p> : null}
-          <div className="row gap-12">
-            <Link href={`/recap/${today.slice(0, 7)}`} className="btn-text small" style={{ color: "var(--accent)", minHeight: 32 }}>{monthName(today)} in albums →</Link>
-            <Link href={`/recap/${prevMonthKey}`} className="btn-text small" style={{ minHeight: 32 }}>{monthName(`${prevMonthKey}-01`)} →</Link>
-          </div>
         </div>
 
         {onRepeat.length ? (

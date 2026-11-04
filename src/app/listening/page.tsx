@@ -30,13 +30,17 @@ function Head({ title, href, label }: { title: string; href: string; label: stri
 /** Everything you're working through: what's playing, your parties, the queue, challenges and lists. */
 export default async function ListeningPage() {
   const { supabase, user } = await getUser();
-  const [turntable, { clubs, ready: partiesReady }, { lists, ready: listsReady }, queueRes] = await Promise.all([
+  const [turntable, { clubs, ready: partiesReady }, { lists, ready: listsReady }, queueRes, chRes] = await Promise.all([
     loadTurntable(supabase, user!.id),
     myClubs(supabase, user!.id),
     myLists(supabase, user!.id),
     supabase.from("to_listen").select("source, album:albums(*)", { count: "exact" }).eq("user_id", user!.id).order("created_at", { ascending: false }).limit(5),
+    supabase.from("challenges").select("id", { count: "exact", head: true }).eq("user_id", user!.id),
   ]);
-  const queue = ((queueRes.data ?? []) as unknown as { source: string | null; album: Album | null }[]).filter((r) => r.album) as { source: string | null; album: Album }[];
+  const empty = !turntable.items.length && !clubs.length && !lists.length && !(queueRes.count ?? 0) && !(chRes.count ?? 0);
+  // A record that's on the turntable shows there, not again in the queue.
+  const playing = new Set(turntable.items.map((s) => s.deezer_id));
+  const queue = ((queueRes.data ?? []) as unknown as { source: string | null; album: Album | null }[]).filter((r) => r.album && !playing.has(r.album.deezer_id ?? -1)) as { source: string | null; album: Album }[];
   const queued = queueRes.count ?? queue.length;
   const progress = await listeningProgress(supabase, user!.id, queue.map((r) => r.album));
 
@@ -48,6 +52,17 @@ export default async function ListeningPage() {
         <h1 className="title-xl">Listening</h1>
       </div>
 
+      {empty ? (
+        <div className="stack gap-12">
+          <p className="muted" style={{ fontSize: 17 }}>This is where the records you’re working through gather. Start with one of these:</p>
+          <div className="flat-list">
+            <Link href="/parties" className="flat-item you-row"><span className="stack"><strong>Start a listening party</strong><span className="small muted">One album a week with a few friends</span></span><span className="er-chevron" aria-hidden="true">›</span></Link>
+            <Link href="/challenges/list/swedish-classics" className="flat-item you-row"><span className="stack"><strong>Take on Swedish classics</strong><span className="small muted">30 records, one at a time, at your own pace</span></span><span className="er-chevron" aria-hidden="true">›</span></Link>
+            <Link href="/discover" className="flat-item you-row"><span className="stack"><strong>Find something in Discover</strong><span className="small muted">Three picks a day — save one with + To listen</span></span><span className="er-chevron" aria-hidden="true">›</span></Link>
+          </div>
+        </div>
+      ) : null}
+
       {turntable.items.length ? (
         <div className="stack gap-12">
           <h2 className="eyebrow">On the turntable</h2>
@@ -55,7 +70,7 @@ export default async function ListeningPage() {
         </div>
       ) : null}
 
-      {partiesReady ? (
+      {partiesReady && !empty ? (
         <div className="stack gap-12">
           <Head title="Listening parties" href="/parties" label={clubs.length ? "All" : "Start one"} />
           {clubs.length ? (
@@ -68,6 +83,7 @@ export default async function ListeningPage() {
         </div>
       ) : null}
 
+      {!empty ? (
       <div className="stack gap-12">
         <Head title={queued ? `To listen · ${queued}` : "To listen"} href="/to-listen" label="All" />
         {queue.length ? (
@@ -92,12 +108,15 @@ export default async function ListeningPage() {
           <p className="muted">Nothing queued. Tap “+ To listen” on any record to save it here.</p>
         )}
       </div>
+      ) : null}
 
-      <Suspense fallback={null}>
-        <DiaryChallenges />
-      </Suspense>
+      {!empty ? (
+        <Suspense fallback={null}>
+          <DiaryChallenges />
+        </Suspense>
+      ) : null}
 
-      {listsReady ? (
+      {listsReady && !empty ? (
         <div className="stack gap-12">
           <Head title="Your lists" href="/lists" label={lists.length ? "All" : "Make one"} />
           {lists.length ? (

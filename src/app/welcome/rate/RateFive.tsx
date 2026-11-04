@@ -16,7 +16,7 @@ export function RateFive({ albums }: { albums: A[] }) {
     <div className="stack gap-24">
       <div className="rate-five-bar" role="status">
         <div className="stack gap-4" style={{ flex: 1, minWidth: 0 }}>
-          <strong>{n >= 5 ? "That’s five — Discover is open" : `${n} of 5 rated`}</strong>
+          <strong>{n >= 5 ? "That’s five — Discover is open" : `${n} of 5 you like`}</strong>
           <div className="bar" style={{ height: 6 }} aria-hidden="true"><span style={{ width: `${Math.min(100, n * 20)}%` }} /></div>
         </div>
         {n >= 5 ? (
@@ -38,7 +38,14 @@ export function RateFive({ albums }: { albums: A[] }) {
               idleText="Heard it? Rate it"
               onRate={async (r) => {
                 const res = await quickRate(a.deezerId, r);
-                if (res.status !== "error" && res.status !== "logged") setRated((s) => new Set(s).add(a.deezerId));
+                if (res.status !== "error" && res.status !== "logged")
+                  setRated((s) => {
+                    const next = new Set(s);
+                    // Discover opens on five records you like (3★ or more).
+                    if (r >= 3) next.add(a.deezerId);
+                    else next.delete(a.deezerId);
+                    return next;
+                  });
                 return res;
               }}
             />

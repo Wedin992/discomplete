@@ -8,17 +8,26 @@ import { PendingButton } from "@/components/PendingButton";
  * "I've listened to it" on a Discover pick: rate it right here (logged as today's listen), then write about it.
  * Knew it from before? One tap saves it as "Heard before" instead, and you can swap for a new pick.
  */
-export function HeardIt({ deezerId, title, scope, slot, canSwap }: { deezerId: number; title: string; scope: string; slot: string; canSwap: boolean }) {
+export function HeardIt({ deezerId, title, scope, slot, canSwap, save, notForMe }: {
+  deezerId: number; title: string; scope: string; slot: string; canSwap: boolean;
+  /** "+ To listen" (or "✓ In To listen"), shown first. */
+  save?: React.ReactNode;
+  /** "Not for me", tucked under ⋯. */
+  notForMe?: React.ReactNode;
+}) {
   const [open, setOpen] = useState<false | "today" | "before">(false);
   if (!open)
     return (
-      <div className="row gap-16">
-        <button type="button" className="btn-text small" style={{ minHeight: 40, color: "var(--accent)" }} onClick={() => setOpen("today")}>
-          ✓ Just listened
-        </button>
-        <button type="button" className="btn-text small" style={{ minHeight: 40 }} onClick={() => setOpen("before")}>
-          Heard it before
-        </button>
+      <div className="row gap-8 pick-actions" style={{ alignItems: "center" }}>
+        {save}
+        <button type="button" className="btn btn-sm" onClick={() => setOpen("today")}>✓ Just listened</button>
+        <details className="more-menu">
+          <summary className="icon-btn" aria-label={`More for ${title}`}>⋯</summary>
+          <div className="more-menu-list">
+            <button type="button" className="btn-text small" onClick={() => setOpen("before")}>Heard it before</button>
+            {notForMe}
+          </div>
+        </details>
       </div>
     );
   return (

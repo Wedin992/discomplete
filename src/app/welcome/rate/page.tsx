@@ -3,7 +3,7 @@ import { getUser } from "@/lib/supabase/server";
 import { getArtistAlbums, getChartAlbums } from "@/lib/deezer";
 import { RateFive } from "./RateFive";
 
-export const metadata: Metadata = { title: "Albums you know" };
+export const metadata: Metadata = { title: "Albums you like" };
 
 /** Right after the quiz: give stars to albums you already know, so Discover has something to go on. */
 export default async function RateFivePage() {
@@ -28,9 +28,9 @@ export default async function RateFivePage() {
     <section className="stack gap-24 narrow" style={{ maxWidth: 760 }}>
       <div className="stack gap-8">
         <p className="eyebrow">One minute</p>
-        <h1 className="title-xl">Rate five albums you already know</h1>
+        <h1 className="title-xl">Rate five albums you like</h1>
         <p className="muted" style={{ fontSize: 17, maxWidth: "60ch" }}>
-          Tap the stars on records you’ve heard. They go under “Heard before” — no dates needed — and tell Discover what to pick for you.
+          Tap the stars on records you’ve heard. Five you like — 3★ or more — and Discover opens with three picks for you. They go under “Heard before”, no dates needed.
         </p>
       </div>
       {albums.length ? (

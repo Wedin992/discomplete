@@ -60,7 +60,7 @@ export default async function YouPage() {
           {profile?.username ? (
             <Row href={`/u/${profile.username}`} title="Your profile" sub={extra?.is_public ? "Public — anyone with the link can see it" : "Private — only you can see it. Switch it on in Settings"} />
           ) : null}
-          <Row href="/records" title="Records" sub={vinyl || cd ? `Everything you’ve logged · ${vinyl} on vinyl · ${cd} on CD` : "Everything you’ve logged, and your vinyl, CDs and wishlist"} />
+          <Row href="/records" title="Collection" sub={vinyl || cd ? `${vinyl} on vinyl · ${cd} on CD · wishlist · heard before` : "Your vinyl, CDs, wishlist and records you knew before"} />
           <Row href="/settings" title="Settings" sub="Profile, Spotify via Last.fm, your data, the app" />
         </div>
       </div>

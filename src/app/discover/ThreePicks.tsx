@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getUser } from "@/lib/supabase/server";
 import { getPicks } from "@/lib/discover-store";
 import { SLOT_LABEL } from "@/lib/discover";
-import { logFromDeezer, notForMe, queueFromDeezer, shuffleDiscover } from "@/app/actions";
+import { notForMe, queueFromDeezer, shuffleDiscover } from "@/app/actions";
 import { PendingButton } from "@/components/PendingButton";
 import { HeardIt } from "./HeardIt";
 import { artistPath, stars, todayIso } from "@/lib/format";
@@ -87,30 +87,34 @@ export async function ThreePicks({ scope, source }: { scope: string; source: str
                   </div>
                 </div>
               ) : null}
-              <div className="row gap-8 pick-actions">
-                {queued.has(p.deezerId) ? (
-                  <Link href="/to-listen" className="btn btn-sm pill" aria-pressed="true">✓ In To listen</Link>
-                ) : (
-                  <form action={queueFromDeezer}>
-                    <input type="hidden" name="deezer_id" value={p.deezerId} />
-                    <input type="hidden" name="source" value={`Discover · ${p.reason}`.slice(0, 200)} />
-                    <PendingButton className="btn btn-sm" pending="Adding…">+ To listen</PendingButton>
-                  </form>
-                )}
-                <form action={logFromDeezer}>
-                  <input type="hidden" name="deezer_id" value={p.deezerId} />
-                  <PendingButton className="btn-text small" style={{ minHeight: 40 }} pending="Opening…">Log it</PendingButton>
-                </form>
-                {persisted ? (
-                  <form action={notForMe}>
-                    <input type="hidden" name="scope" value={scope} />
-                    <input type="hidden" name="slot" value={p.slot} />
-                    <input type="hidden" name="deezer_id" value={p.deezerId} />
-                    <PendingButton className="btn-text small muted" style={{ minHeight: 40 }} pending="Swapping…" aria-label={`Not for me: ${p.title}`}>Not for me</PendingButton>
-                  </form>
-                ) : null}
-              </div>
-              <HeardIt deezerId={p.deezerId} title={p.title} scope={scope} slot={p.slot} canSwap={persisted} />
+              <HeardIt
+                deezerId={p.deezerId}
+                title={p.title}
+                scope={scope}
+                slot={p.slot}
+                canSwap={persisted}
+                save={
+                  queued.has(p.deezerId) ? (
+                    <Link href="/listening" className="btn btn-sm pill" aria-pressed="true">✓ In To listen</Link>
+                  ) : (
+                    <form action={queueFromDeezer}>
+                      <input type="hidden" name="deezer_id" value={p.deezerId} />
+                      <input type="hidden" name="source" value={`Discover · ${p.reason}`.slice(0, 200)} />
+                      <PendingButton className="btn btn-sm btn-primary" pending="Adding…">+ To listen</PendingButton>
+                    </form>
+                  )
+                }
+                notForMe={
+                  persisted ? (
+                    <form action={notForMe}>
+                      <input type="hidden" name="scope" value={scope} />
+                      <input type="hidden" name="slot" value={p.slot} />
+                      <input type="hidden" name="deezer_id" value={p.deezerId} />
+                      <PendingButton className="btn-text small" pending="Swapping…" aria-label={`Not for me: ${p.title}`}>Not for me</PendingButton>
+                    </form>
+                  ) : null
+                }
+              />
               </>
               )}
             </div>

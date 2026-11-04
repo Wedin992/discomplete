@@ -752,6 +752,14 @@ export async function pickForClub(formData: FormData) {
   const { error } = await supabase.from("club_picks").insert({ club_id: clubId, week_start: weekStart, album_id: albumId, picked_by: user.id, note });
   revalidatePath("/", "layout");
   if (error) redirect(`/parties/${clubId}?error=taken`);
+  // Tell the others (after the response, so picking never waits on email).
+  const { data: a } = await supabase.from("albums").select("title, artist, cover_medium").eq("id", albumId).maybeSingle();
+  if (a) {
+    const { after } = await import("next/server");
+    const { mailNewPick } = await import("@/lib/party-mail");
+    const al = a as { title: string; artist: string; cover_medium: string | null };
+    after(() => mailNewPick({ clubId, pickerId: user.id, title: al.title, artist: al.artist, cover: al.cover_medium, note, week: when === "next" ? "next" : "this" }).catch(() => {}));
+  }
   redirect(back.startsWith("/") ? back : `/parties/${clubId}?picked=1`);
 }
 
@@ -905,4 +913,12 @@ export async function moveInList(formData: FormData) {
   // Renumber 1..n so positions stay tidy.
   await Promise.all(items.map((x, k) => (x.position === k + 1 ? null : supabase.from("list_items").update({ position: k + 1 }).eq("list_id", listId).eq("album_id", x.album_id))));
   revalidatePath("/", "layout");
+}
+
+/** Settings → Emails: listening party emails on or off. */
+export async function setPartyEmails(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  await supabase.from("profiles").update({ party_emails: formData.get("party_emails") === "on" }).eq("id", user.id);
+  revalidatePath("/settings");
+  redirect("/settings?emails=saved");
 }

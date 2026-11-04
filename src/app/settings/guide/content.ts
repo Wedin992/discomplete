@@ -6,6 +6,21 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 36,
+    date: "2026-11-04",
+    changes: [
+      "Första minuten heter nu “Rate five albums you like” och räknar bara skivor med 3★ eller mer – samma regel som låser upp Discover.",
+      "Under Listening visas en skiva som ligger på turntable inte också i To listen.",
+      "Discover-korten: + To listen och ✓ Just listened syns, Heard it before och Not for me ligger under ⋯. “Log it” är borttaget från kortet.",
+      "Records heter Collection: Vinyl, CD, Wishlist och Heard before, med antal. Allt du har spelat finns i dagbokens Shelf-vy.",
+      "Recap nås från You, påminnelsen i To do och länken under varje månad. Länkarna i dagbokens sidokolumn är borta.",
+      "En ny användare får ett startblock under Listening: Start a listening party, Take on Swedish classics, Find something in Discover.",
+      "To do-panelen öppnas av sig själv när det är din tur i ett party eller när Spotify frågar “how was it?”.",
+      "Statusrutan på skivsidan: alltid två knappar, “Log it again” (eller “Log it”) och “Edit”.",
+      "Mejl om listening parties (kräver 0019 och nycklar i Vercel): på måndagar veckans album, och när någon väljer ett album. Stängs av under Settings → Emails.",
+    ],
+  },
+  {
     version: 35,
     date: "2026-11-04",
     changes: [

@@ -43,6 +43,7 @@ Not yet: "More like this" recommendations, Last.fm import, following friends.
 17. **"Stars are enough":** run `supabase/migrations/0016_no_words.sql` (stop asking for words on a rated listen).
 18. **Listening parties:** run `supabase/migrations/0017_clubs.sql` (one album a week with friends).
 19. **Lists and public profiles:** run `supabase/migrations/0018_lists_profiles.sql` (your own lists that others can take on, and an optional public profile).
+20. **Listening party emails (optional):** run `supabase/migrations/0019_party_emails.sql`, then set your own `party_mail_key` with the insert at the bottom of that file. In Vercel add `RESEND_API_KEY`, `PARTY_MAIL_KEY` (same value as the key), `CRON_SECRET`, and `MAIL_FROM` (e.g. `Discomplete <hello@discomplete.com>` once the domain is verified in Resend). The Monday cron is in `vercel.json`.
 6. **Sign-up quiz and artist suggestions:** run `0004_explore_artists.sql` and `0005_onboarding.sql`.
 7. **Authentication → Emails → Templates:** in both *Magic Link* and *Confirm signup*, add the code so people can sign in inside the installed app (where email links open the browser instead):
    ```html
