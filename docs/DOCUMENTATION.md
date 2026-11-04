@@ -3,7 +3,7 @@
 > **Levande dokument.** Uppdateras varje gång något läggs till, ändras eller tas bort i appen (se *Så hålls dokumentationen uppdaterad* längst ned).
 > Källan finns i repot som `docs/DOCUMENTATION.md`. En kopia finns i Claude-projektet "Discomplete" som `claude/discomplete-dokumentation.md`.
 >
-> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 36 · **Senaste migrering:** 0019 (ska köras)
+> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 36 · **Senaste migrering:** 0019
 
 ---
 
@@ -337,7 +337,7 @@ Nya texter ska följa ordlistan. Mono-typsnittet används bara för siffror och 
 - Andras data når skivsidan bara via `security definer`-funktionerna ovan.
 - Koden faller tillbaka snällt om en migrering inte är körd: funktionen syns då inte eller sparas utan den nya kolumnen.
 
-**Migreringar 0001–0018 är körda av Kevin. 0019 (party-mejl) ska köras, och nyckeln sättas separat.**
+**Alla migreringar (0001–0019) är körda av Kevin. Nyckeln `party_mail_key` sätts separat (SQL 2) och samma värde läggs i Vercel som `PARTY_MAIL_KEY`.**
 
 ---
 
