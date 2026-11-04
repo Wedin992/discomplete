@@ -3,7 +3,7 @@
 > **Levande dokument.** Uppdateras varje gång något läggs till, ändras eller tas bort i appen (se *Så hålls dokumentationen uppdaterad* längst ned).
 > Källan finns i repot som `docs/DOCUMENTATION.md`. En kopia finns i Claude-projektet "Discomplete" som `claude/discomplete-dokumentation.md`.
 >
-> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 30 · **Senaste migrering:** 0018
+> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 31 · **Senaste migrering:** 0018
 
 ---
 
@@ -69,7 +69,7 @@
 
 ## 3. Navigering och layout
 
-- **Flikar på mobil (bottenmeny):** Diary · Discover · **+** (Log a listen) · To listen · Records. På dator: toppmeny med Diary, Discover, Records, To listen, Parties, Settings och knappen "Log a listen".
+- **Flikar på mobil (bottenmeny):** en svävande, rundad "pill" med ikoner och små etiketter: Diary · Discover · **+** (Log a listen, orange) · To listen · Records. Göms på loggsidan och när man redigerar en lyssning. På dator: toppmeny med Diary, Discover, Records, To listen, Parties, Settings och knappen "Log a listen".
 - **Profilikonen** uppe till höger öppnar Settings.
 - **Tillbaka-pil (‹)** i sidhuvudet finns på alla sidor under huvudflikarna:
   - Har man kommit från en annan sida i appen går den dit, som `router.back()`.
@@ -94,7 +94,11 @@
 
 ### 4.2 Logga en skiva
 - **Sökning** via Deezer. Utgåvor som remaster och deluxe slås ihop till en träff.
-- **Logg-formuläret:** datum, format (Stream/Vinyl/CD), betyg, anteckning, taggar, synlighet och upp till 3 favoritlåtar.
+- **Logg-formuläret** är ett lugnt ark (samma för ny lyssning och redigering):
+  - Fast rad överst: **Cancel · Log a listen · Save**. Under: skivans typ och år, titel, artist, "Change record" och omslaget till höger.
+  - Stora stjärnor, ett textfält ("What did you think? A line is plenty — or nothing at all."), **How did you listen?** (Stream/Vinyl/CD) och vid första loggningen **First listen / Heard it before**.
+  - Rader att trycka upp: **Listened** (Today eller datum), **Favourite tracks** (upp till 3), **Tags**, **Who sees it** (Public / Anonymous / Private) och kryssrutan "I want to hear more from <artist>".
+  - "Save to diary" även längst ned. "Listen on"-länkarna visas inte längre på loggsidan (finns på skivsidan).
 - **Betyg:** halva stjärnor från ½ till 5. Vänster halva av en stjärna ger en halv, höger halva en hel. Visas som `★★★½☆`. I databasen sparas `numeric(2,1)`.
   - Etiketter: Not for me / Meh / Good / Great / All-time, med "+" för halvor (t.ex. 3½ = "Good+").
 - **Första lyssning eller omlyssning** avgörs automatiskt (kind `first`/`relisten`).
@@ -153,6 +157,7 @@ Sidans ordning uppifrån:
   - Smakprofilen bygger på betyg (5★ väger mest), omlyssningar, ägda skivor, följda artister och quizen. Nyare lyssningar väger mer.
   - 1–2★ och "Not for me" trycker ner liknande artister.
   - Källor: Deezers relaterade artister (1–2 steg) och SQL-funktionen `taste_neighbour_picks`.
+- **Svepbara rader** under dagens tre: Your listening parties, Today's picks from your challenges, Not heard yet from your lists, Next up · To listen. Tomma rader visas inte.
 - Förslagen sparas per dag i `discover_picks`. **Shuffle** finns 3 gånger per dag. **Not for me** byter förslaget och kommer ihåg valet.
 - **"✓ I've listened to it":** stjärnor som loggas som dagens lyssning, eller på den dag Spotify såg skivan. **"Knew it already":** sparas som Heard before och förslaget kan bytas ut.
 - **Status på korten:**
@@ -356,6 +361,7 @@ Detaljerad versionshistorik finns i ägarguiden (`/settings/guide`).
 | 3 nov | Ny identitet "Listen to whole albums again" (inloggning och appbeskrivning). Listening parties (0017): ett album i veckan med vänner, inbjudningslänk, låsta omdömen tills man hört skivan, kort överst i dagboken. |
 | 4 nov | Album clubs → Listening parties (`/parties`). Export (CSV/JSON) och import (RYM/CSV). Egna listor som andra kan ta sig an (0018). Recap per månad/år med delningsbild. Publik profil (0018). Renare layout. |
 | 4 nov | Challenges och recap-knuff överst i dagboken; recaplänkar i sidokolumnen. Plattare layout: dagboksrader med linjer i stället för boxar, sidokolumn utan boxar, lugnare sidhuvud. |
+| 4 nov | Svävande bottenmeny, loggning som ett lugnt ark, svepbara rader i Discover, glidande bekräftelser, mindre rubriker på mobil (inspirerat av Record Clubs mobilflöde men med vårt innehåll). |
 
 ---
 

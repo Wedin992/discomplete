@@ -6,11 +6,11 @@ import { saveEntry } from "@/app/actions";
 import { FORMATS, TAGS, ratingLabel, ratingText, type FavTrack } from "@/lib/format";
 import { StarInput } from "@/components/StarInput";
 
-function SaveButton({ editing }: { editing: boolean }) {
+function SaveButton({ editing, big = false }: { editing: boolean; big?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" className="btn btn-primary btn-lg" disabled={pending}>
-      {pending ? "Saving…" : editing ? "Save changes" : "Save to diary"}
+    <button type="submit" className={big ? "btn btn-primary btn-lg log-save-big" : "btn btn-primary btn-sm"} disabled={pending}>
+      {pending ? "Saving…" : editing ? "Save" : big ? "Save to diary" : "Save"}
     </button>
   );
 }
@@ -42,9 +42,11 @@ type Props = {
   tracks?: FavTrack[];
   /** Logging a Last.fm suggestion: it's marked as logged when saved. */
   suggestionId?: string;
+  /** The record (title, artist, cover) shown at the top of the sheet. */
+  head?: React.ReactNode;
 };
 
-export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, explore = null, tracks = [], suggestionId }: Props) {
+export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, explore = null, tracks = [], suggestionId, head }: Props) {
   const editing = !!entryId;
   const [format, setFormat] = useState(initial.format);
   const [rating, setRating] = useState(initial.rating);
@@ -55,7 +57,10 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
   const offerBefore = editing ? initial.kind === "first" || initial.kind === "before" : loggedBefore === 0 && !suggestionId;
   const [heardBefore, setHeardBefore] = useState(initial.kind === "before");
   const [favs, setFavs] = useState<FavTrack[]>(initial.favTracks ?? []);
-  const [showTracks, setShowTracks] = useState((initial.favTracks ?? []).length > 0);
+  const [showTracks, setShowTracks] = useState(false);
+  const [open, setOpen] = useState<null | "date" | "tags" | "who">(null);
+  const toggle = (k: "date" | "tags" | "who") => setOpen((o) => (o === k ? null : k));
+  const [listenedOn, setListenedOn] = useState(initial.listenedOn);
   const toggleFav = (t: FavTrack) =>
     setFavs((cur) => (cur.some((f) => f.id === t.id) ? cur.filter((f) => f.id !== t.id) : cur.length >= 3 ? cur : [...cur, t].sort((a, b) => a.position - b.position)));
 
@@ -65,8 +70,11 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
       ? "Public as “Anonymous listener”. Your name is hidden, your rating counts."
       : "Public — shown on the record page with your name.";
 
+  const dayLabel = listenedOn === today ? "Today" : listenedOn;
+  const whoLabel = isPrivate ? "Private" : isAnon ? "Anonymous" : "Public";
+
   return (
-    <form action={saveEntry} className="stack gap-28">
+    <form action={saveEntry} className="log-sheet">
       <input type="hidden" name="album_id" value={albumId} />
       {editing ? <input type="hidden" name="entry_id" value={entryId} /> : null}
       <input type="hidden" name="format" value={format} />
@@ -75,127 +83,132 @@ export function LogForm({ albumId, today, initial, entryId, loggedBefore = 0, ex
       {suggestionId ? <input type="hidden" name="suggestion_id" value={suggestionId} /> : null}
       {offerBefore ? <input type="hidden" name="kind_choice" value={heardBefore ? "before" : "first"} /> : null}
       {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
+      {heardBefore ? null : <input type="hidden" name="listened_on" value={listenedOn} />}
+      {isPrivate ? <input type="hidden" name="is_private" value="on" /> : null}
+      {isAnon && !isPrivate ? <input type="hidden" name="is_anonymous" value="on" /> : null}
 
-      <fieldset className="stack gap-8">
-        <legend>How did you listen?</legend>
+      <div className="log-bar">
+        <button type="button" className="btn-text" onClick={() => history.back()}>Cancel</button>
+        <strong>{editing ? "Edit listen" : "Log a listen"}</strong>
+        <SaveButton editing={editing} />
+      </div>
+
+      {head}
+
+      <div className="log-stars">
+        <StarInput value={rating} onChange={setRating} size="lg" clearable label="Rating" />
+        <span className="small muted">{rating ? `${ratingText(rating)} · ${ratingLabel(rating)}` : "Tap a star — left half for a half"}</span>
+      </div>
+
+      <textarea id="note" name="note" rows={4} maxLength={5000} className="textarea log-note" defaultValue={initial.note} placeholder="What did you think? A line is plenty — or nothing at all." aria-label="Your note" />
+
+      <div className="log-group">
+        <span className="log-label">How did you listen?</span>
         <div className="row gap-8">
           {FORMATS.map((f) => (
-            <button key={f.value} type="button" className="btn pill" aria-pressed={format === f.value} onClick={() => setFormat(f.value)}>
+            <button key={f.value} type="button" className="btn btn-sm pill" aria-pressed={format === f.value} onClick={() => setFormat(f.value)}>
               {f.label}
             </button>
           ))}
         </div>
-        {!editing && loggedBefore ? (
-          <p className="mono small muted">You’ve logged this {loggedBefore}× before — saved as a relisten, so you can compare.</p>
-        ) : null}
-      </fieldset>
+        {!editing && loggedBefore ? <p className="small muted">You’ve logged this {loggedBefore}× before — saved as a relisten.</p> : null}
+      </div>
 
       {offerBefore ? (
-        <fieldset className="stack gap-8">
-          <legend>Is it new to you?</legend>
+        <div className="log-group">
+          <span className="log-label">Is it new to you?</span>
           <div className="row gap-8">
-            <button type="button" className="btn pill" aria-pressed={!heardBefore} onClick={() => setHeardBefore(false)}>First listen</button>
-            <button type="button" className="btn pill" aria-pressed={heardBefore} onClick={() => setHeardBefore(true)}>Heard it before</button>
+            <button type="button" className="btn btn-sm pill" aria-pressed={!heardBefore} onClick={() => setHeardBefore(false)}>First listen</button>
+            <button type="button" className="btn btn-sm pill" aria-pressed={heardBefore} onClick={() => setHeardBefore(true)}>Heard it before</button>
           </div>
-          <p className="mono small muted">
-            {heardBefore
-              ? "An old favourite or one you know from way back — no date needed. It goes under “Heard before” in your diary, not today’s list."
-              : "First time you’ve properly listened to it."}
-          </p>
-        </fieldset>
-      ) : null}
-
-      <fieldset>
-        <legend style={{ marginBottom: 6 }}>Rating <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></legend>
-        <div className="row" style={{ gap: 2, alignItems: "center" }}>
-          <StarInput value={rating} onChange={setRating} size="lg" clearable label="Rating" />
-          <span className="mono small muted" style={{ marginLeft: 12 }}>{rating ? `${ratingText(rating)} · ` : ""}{ratingLabel(rating)}</span>
-        </div>
-        <p className="mono muted" style={{ fontSize: 11, marginTop: 4 }}>Tap the left half of a star for a half.</p>
-      </fieldset>
-
-      <div className="field">
-        <label htmlFor="note" className="label">Your note</label>
-        <textarea id="note" name="note" rows={4} maxLength={5000} className="textarea" defaultValue={initial.note} placeholder="First impression, a thought, where you were…" />
-      </div>
-
-      <fieldset>
-        <legend>Tags</legend>
-        <div className="row gap-8">
-          {TAGS.map((t) => {
-            const on = tags.includes(t);
-            return (
-              <button key={t} type="button" className="btn btn-sm pill" aria-pressed={on} onClick={() => setTags(on ? tags.filter((x) => x !== t) : [...tags, t])}>
-                {t}
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
-
-      {explore ? (
-        <div className="card stack gap-4">
-          <input type="hidden" name="explore_shown" value="1" />
-          <div className="check">
-            <input id="explore_artist" name="explore_artist" type="checkbox" defaultChecked={explore.following} />
-            <label htmlFor="explore_artist"><strong>I want to hear more from {explore.artist}</strong></label>
-          </div>
-          <p className="muted small" style={{ paddingLeft: 34 }}>Their other albums show up under To listen, so you know what to play next.</p>
+          {heardBefore ? <p className="small muted">No date needed — it goes under “Heard before”.</p> : null}
         </div>
       ) : null}
 
-      {tracks.length ? (
-        <div className="stack gap-12">
-          <button type="button" className="fav-toggle" aria-expanded={showTracks} onClick={() => setShowTracks((v) => !v)}>
-            <span><strong>Favourite tracks</strong> <span className="muted" style={{ fontWeight: 400 }}>(optional, up to 3)</span></span>
-            <span className="mono small muted">{favs.length ? favs.map((f) => f.title).join(", ") : showTracks ? "Hide" : "Pick"}</span>
+      <div className="log-more">
+        {heardBefore ? null : (
+          <div className="log-opt">
+            <button type="button" className="log-opt-head" aria-expanded={open === "date"} onClick={() => toggle("date")}>
+              <span>Listened</span><span className="muted">{dayLabel} ›</span>
+            </button>
+            {open === "date" ? (
+              <input type="date" value={listenedOn} max={today} onChange={(e) => setListenedOn(e.target.value || today)} className="input input-sm" aria-label="Listened on" style={{ maxWidth: 220 }} />
+            ) : null}
+          </div>
+        )}
+
+        {tracks.length ? (
+          <div className="log-opt">
+            <button type="button" className="log-opt-head" aria-expanded={showTracks} onClick={() => setShowTracks((v) => !v)}>
+              <span>Favourite tracks</span>
+              <span className="muted log-opt-val">{favs.length ? favs.map((f) => f.title).join(", ") : "Up to 3"} ›</span>
+            </button>
+            {showTracks ? (
+              <ol className="fav-list" aria-label="Tracklist">
+                {tracks.map((t) => {
+                  const on = favs.some((f) => f.id === t.id);
+                  const full = !on && favs.length >= 3;
+                  return (
+                    <li key={t.id}>
+                      <button type="button" className={`fav-track${on ? " on" : ""}`} aria-pressed={on} disabled={full} onClick={() => toggleFav(t)}>
+                        <span className="mono muted fav-pos">{t.position}</span>
+                        <span className="fav-title">{t.title}</span>
+                        <span className="fav-heart" aria-hidden="true">{on ? "♥" : "♡"}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="log-opt">
+          <button type="button" className="log-opt-head" aria-expanded={open === "tags"} onClick={() => toggle("tags")}>
+            <span>Tags</span><span className="muted log-opt-val">{tags.length ? tags.join(", ") : "Add"} ›</span>
           </button>
-          {showTracks ? (
-            <ol className="fav-list" aria-label="Tracklist">
-              {tracks.map((t) => {
-                const on = favs.some((f) => f.id === t.id);
-                const full = !on && favs.length >= 3;
+          {open === "tags" ? (
+            <div className="row gap-8">
+              {TAGS.map((t) => {
+                const on = tags.includes(t);
                 return (
-                  <li key={t.id}>
-                    <button type="button" className={`fav-track${on ? " on" : ""}`} aria-pressed={on} disabled={full} onClick={() => toggleFav(t)}>
-                      <span className="mono muted fav-pos">{t.position}</span>
-                      <span className="fav-title">{t.title}</span>
-                      <span className="fav-heart" aria-hidden="true">{on ? "♥" : "♡"}</span>
-                    </button>
-                  </li>
+                  <button key={t} type="button" className="btn btn-sm pill" aria-pressed={on} onClick={() => setTags(on ? tags.filter((x) => x !== t) : [...tags, t])}>
+                    {t}
+                  </button>
                 );
               })}
-            </ol>
+            </div>
           ) : null}
         </div>
-      ) : null}
 
-      {heardBefore ? null : (
-        <div className="field" style={{ maxWidth: 260 }}>
-          <label htmlFor="listened_on" className="label">Listened on</label>
-          <input id="listened_on" name="listened_on" type="date" defaultValue={initial.listenedOn} max={today} className="input" />
+        <div className="log-opt">
+          <button type="button" className="log-opt-head" aria-expanded={open === "who"} onClick={() => toggle("who")}>
+            <span>Who sees it</span><span className="muted">{whoLabel} ›</span>
+          </button>
+          {open === "who" ? (
+            <div className="stack gap-4">
+              <div className="row gap-8">
+                <button type="button" className="btn btn-sm pill" aria-pressed={!isPrivate && !isAnon} onClick={() => { setIsPrivate(false); setIsAnon(false); }}>Public</button>
+                <button type="button" className="btn btn-sm pill" aria-pressed={!isPrivate && isAnon} onClick={() => { setIsPrivate(false); setIsAnon(true); }}>Anonymous</button>
+                <button type="button" className="btn btn-sm pill" aria-pressed={isPrivate} onClick={() => setIsPrivate(true)}>Private</button>
+              </div>
+              <p className="small muted" aria-live="polite">{visHelp}</p>
+            </div>
+          ) : null}
         </div>
-      )}
 
-      <div className="card stack gap-8">
-        <p className="eyebrow">Who sees this</p>
-        <div className="check">
-          <input id="is_private" name="is_private" type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
-          <label htmlFor="is_private"><strong>Private only</strong> <span className="muted">— just for my diary</span></label>
-        </div>
-        <div className="check">
-          <input id="is_anonymous" name="is_anonymous" type="checkbox" checked={isAnon && !isPrivate} disabled={isPrivate} onChange={(e) => setIsAnon(e.target.checked)} />
-          <label htmlFor="is_anonymous" style={{ color: isPrivate ? "var(--faint)" : undefined }}>
-            <strong>Post anonymously</strong> — shown as “Anonymous listener”
-          </label>
-        </div>
-        <p style={{ color: "var(--accent)", fontSize: 14 }} aria-live="polite">{visHelp}</p>
+        {explore ? (
+          <div className="log-opt">
+            <input type="hidden" name="explore_shown" value="1" />
+            <label className="check" style={{ minHeight: 48 }}>
+              <input name="explore_artist" type="checkbox" defaultChecked={explore.following} />
+              <span>I want to hear more from {explore.artist}</span>
+            </label>
+          </div>
+        ) : null}
       </div>
 
-      <div className="row gap-12">
-        <SaveButton editing={editing} />
-        <button type="button" className="btn btn-lg" onClick={() => history.back()}>Cancel</button>
-      </div>
+      <SaveButton editing={editing} big />
     </form>
   );
 }

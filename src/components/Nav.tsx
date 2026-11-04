@@ -62,6 +62,7 @@ export function TabBar() {
   const { active: path, go } = useActivePath();
   const current = usePathname();
   if (current.startsWith("/welcome")) return null; // keep the sign-up quiz focused
+  if (/\/log$|^\/entry\/[^/]+\/edit$/.test(current)) return null; // the log sheet has its own Cancel / Save
   const tabs = [LINKS[0], LINKS[1], { href: "/log", label: "Log" }, LINKS[3], LINKS[2]];
   return (
     <nav className="tabbar" aria-label="Main">

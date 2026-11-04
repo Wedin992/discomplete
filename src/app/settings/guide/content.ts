@@ -6,6 +6,16 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 31,
+    date: "2026-11-04",
+    changes: [
+      "Ny bottenmeny på mobilen: en svävande “pill” med ikoner och små etiketter, orange + i mitten. Den göms när du loggar.",
+      "Logga en skiva är nu ett lugnt ark: Cancel · Log a listen · Save högst upp, skivan med omslaget till höger, stora stjärnor, ett textfält och “How did you listen?”. Datum, favoritlåtar, taggar och vem som ser det ligger som rader att trycka upp. Samma upplägg när du redigerar.",
+      "Discover har svepbara rader under dagens tre: dina listening parties, dagens picks från dina utmaningar, ohörda skivor från dina listor och Next up · To listen.",
+      "Bekräftelser som glider in (“Added to the list ✓”, “Picked ✓”). Rubrikerna är mindre på mobilen.",
+    ],
+  },
+  {
     version: 30,
     date: "2026-11-04",
     changes: [

@@ -7,7 +7,7 @@ import { GENRES, GENRES_ENABLED } from "@/lib/genre";
 import { longDate, todayIso } from "@/lib/format";
 import { ThreePicks, ThreeSkeleton } from "./ThreePicks";
 import { GenrePicker } from "./GenrePicker";
-import { ChallengePicks } from "@/components/ChallengeCards";
+import { DiscoverRows } from "./DiscoverRows";
 
 export const metadata: Metadata = { title: "Discover" };
 
@@ -112,7 +112,7 @@ export default async function DiscoverPage() {
       )}
 
       <Suspense fallback={null}>
-        <ChallengePicks heading="From your challenges" />
+        <DiscoverRows />
       </Suspense>
 
       {GENRES_ENABLED ? (

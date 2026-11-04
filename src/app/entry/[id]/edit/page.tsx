@@ -25,16 +25,7 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
   const explore = exploreRes && !exploreRes.error ? { artist: album.artist, following: !!exploreRes.data } : null;
 
   return (
-    <section className="stack gap-28 narrow" style={{ maxWidth: 720 }}>
-      <div className="row gap-16">
-        <Cover album={album} size="96" />
-        <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-          <p className="eyebrow">{entry.kind === "before" ? "Heard before · write about it" : `Editing · ${kindLabel(entry.kind)} · ${longDate(entry.listened_on)}`}</p>
-          <h1 className="title-m" style={{ marginTop: 4 }}>{album.title}</h1>
-          <p className="muted" style={{ marginTop: 4 }}>{album.artist}{album.release_year ? ` · ${album.release_year}` : ""}</p>
-        </div>
-        <Link href={recordPath(album)} className="btn">View record</Link>
-      </div>
+    <section className="stack gap-28 narrow" style={{ maxWidth: 640 }}>
       <LogForm
         albumId={album.id}
         entryId={entry.id}
@@ -52,6 +43,17 @@ export default async function EditEntryPage({ params }: { params: Promise<{ id: 
           kind: entry.kind,
           favTracks: entry.fav_tracks ?? [],
         }}
+        head={
+          <div className="log-head">
+            <div className="stack gap-4" style={{ minWidth: 0 }}>
+              <p className="eyebrow">{entry.kind === "before" ? "Heard before" : `${kindLabel(entry.kind)} · ${longDate(entry.listened_on)}`}</p>
+              <h1>{album.title}</h1>
+              <p className="muted">{album.artist}{album.release_year ? ` · ${album.release_year}` : ""}</p>
+              <Link href={recordPath(album)} className="btn-text small" style={{ alignSelf: "flex-start", minHeight: 32 }}>View record</Link>
+            </div>
+            <Cover album={album} size="96" />
+          </div>
+        }
       />
       <div className="card-dashed row gap-12" style={{ justifyContent: "space-between" }}>
         <p className="muted">Changed your mind completely?</p>

@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { Suspense } from "react";
-import { ListenOn, ListenOnPlaceholder } from "@/components/ListenOn";
 import { getUser } from "@/lib/supabase/server";
 import { Cover } from "@/components/Cover";
-import { artistPath, longDate, todayIso, type Album } from "@/lib/format";
+import { artistPath, todayIso, type Album } from "@/lib/format";
 import { LogForm } from "./LogForm";
 import { getAlbumTracks } from "@/lib/deezer";
 
@@ -29,19 +27,7 @@ export async function LogView({ album, date, suggestionId }: { album: Album; dat
   const tracks = (await tracksP).map((t) => ({ id: t.id, title: t.title, position: t.position }));
 
   return (
-    <section className="stack gap-28 narrow" style={{ maxWidth: 720 }}>
-      <div className="row gap-16">
-        <Cover album={album} size="96" />
-        <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-          <p className="eyebrow">Logging · {longDate(today)}</p>
-          <h1 className="title-m" style={{ marginTop: 4 }}>{album.title}</h1>
-          <p className="muted" style={{ marginTop: 4 }}>{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}{album.release_year ? ` · ${album.release_year}` : ""}</p>
-        </div>
-        <Link href="/log" className="btn">Change record</Link>
-      </div>
-      <Suspense fallback={<ListenOnPlaceholder />}>
-        <ListenOn album={album} />
-      </Suspense>
+    <section className="narrow" style={{ maxWidth: 640 }}>
       <LogForm
         albumId={album.id}
         today={today}
@@ -50,6 +36,17 @@ export async function LogView({ album, date, suggestionId }: { album: Album; dat
         tracks={tracks}
         suggestionId={suggestionId && /^[0-9a-f-]{36}$/i.test(suggestionId) ? suggestionId : undefined}
         initial={{ format: defaultFormat, rating: 0, note: "", tags: [], isPrivate: false, isAnonymous: false, listenedOn }}
+        head={
+          <div className="log-head">
+            <div className="stack gap-4" style={{ minWidth: 0 }}>
+              <p className="eyebrow">{album.record_type === "single" ? "Single" : album.record_type === "ep" ? "EP" : "Album"}{album.release_year ? ` · ${album.release_year}` : ""}</p>
+              <h1>{album.title}</h1>
+              <p className="muted">{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}</p>
+              <Link href="/log" className="btn-text small" style={{ alignSelf: "flex-start", minHeight: 32 }}>Change record</Link>
+            </div>
+            <Cover album={album} size="96" />
+          </div>
+        }
       />
     </section>
   );

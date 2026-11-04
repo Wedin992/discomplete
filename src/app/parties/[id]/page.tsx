@@ -44,7 +44,7 @@ export default async function ClubPage({ params, searchParams }: { params: Promi
         <h1 className="title-xl">{club.name}</h1>
         {flags.new ? <p className="small lfm-msg" role="status">Your party is ready. Pick the first album, then send the invite link below.</p> : null}
         {flags.joined ? <p className="small lfm-msg" role="status">You’re in! Here’s what the party is listening to.</p> : null}
-        {flags.picked ? <p className="small lfm-msg" role="status">Picked. Everyone in the party sees it now.</p> : null}
+        {flags.picked ? <div className="toast" role="status">Picked ✓ Everyone in the party sees it now</div> : null}
         {flags.error === "taken" ? <p className="error small" role="alert">Someone picked an album for that week just before you.</p> : null}
       </div>
 

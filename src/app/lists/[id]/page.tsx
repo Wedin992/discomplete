@@ -40,7 +40,8 @@ export default async function ListPage({ params, searchParams }: { params: Promi
         <h1 className="title-xl">{list.title}</h1>
         {list.description ? <p className="muted" style={{ whiteSpace: "pre-wrap" }}>{list.description}</p> : null}
         {flags.new ? <p className="small lfm-msg" role="status">Your list is ready. Add the first album below.</p> : null}
-        {flags.saved ? <p className="small lfm-msg" role="status">Saved.</p> : null}
+        {flags.saved ? <div className="toast" role="status">Saved ✓</div> : null}
+        {flags.added ? <div className="toast" role="status">Added to the list ✓</div> : null}
         {items.length ? (
           <div className="stack gap-4" style={{ maxWidth: 320, marginTop: 4 }}>
             <span className="mono small muted">You’ve heard {heard} of {items.length}</span>
