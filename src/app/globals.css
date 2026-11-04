@@ -530,3 +530,24 @@ body { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 720px) { .album-row { grid-auto-columns: 132px; margin-right: -16px; padding-right: 16px; } }
 .may-like { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 @media (max-width: 560px) { .may-like { gap: 10px; } .may-like .btn-sm { padding: 0 10px; font-size: 13px; } }
+
+/* Record page: calmer hero */
+.record-hero-cover { flex: 0 1 340px; max-width: 100%; }
+@media (max-width: 720px) {
+  .record-hero { gap: 20px; }
+  .record-hero-cover { flex: 0 0 auto; width: 62%; max-width: 240px; }
+  .record-hero-cover .cover-hero { box-shadow: 0 12px 30px rgba(0,0,0,0.4); }
+}
+.record-save { display: flex; flex-direction: column; gap: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.listen-menu { align-self: flex-start; }
+.listen-menu > summary { list-style: none; cursor: pointer; }
+.listen-menu > summary::-webkit-details-marker { display: none; }
+.listen-menu[open] > summary .er-chevron { transform: rotate(90deg); }
+.listen-links { display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 12px 2px 2px; }
+.listen-link { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; color: var(--text); text-decoration: none; font-weight: 600; font-size: 15px; }
+.listen-link:hover { color: var(--accent-hover); }
+.listen-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--muted); }
+.listen-spotify { background: #1db954; }
+.listen-apple { background: #fa2d48; }
+.listen-youtube { background: #ff0033; }
+.listen-deezer { background: #a238ff; }

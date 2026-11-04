@@ -3,7 +3,7 @@
 > **Levande dokument.** Uppdateras varje gång något läggs till, ändras eller tas bort i appen (se *Så hålls dokumentationen uppdaterad* längst ned).
 > Källan finns i repot som `docs/DOCUMENTATION.md`. En kopia finns i Claude-projektet "Discomplete" som `claude/discomplete-dokumentation.md`.
 >
-> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 32 · **Senaste migrering:** 0018
+> **Senast uppdaterad:** 2026-11-04 · **Guideversion:** 33 · **Senaste migrering:** 0018
 
 ---
 
@@ -134,7 +134,10 @@ Sidans ordning uppifrån:
 - Filtret `?todo=1` visar bara lyssningar som behöver stjärnor eller text.
 
 ### 4.4 Skivsidan
-- Visar omslag, meta (år, genre), spår och längd, och "Listen on" (Spotify, Apple Music, YouTube Music, Deezer). Länkarna är exakta där det går, annars en sökning.
+- Visar omslag (mindre på mobil), en metarad (typ · år · genre · antal låtar · längd), titel och artist. Knappar: **Log this listen** och **+ To listen** (vanlig storlek).
+- **▶ Listen** är en liten knapp som fäller ut Spotify, Apple Music, YouTube Music och Deezer, var och en med en färgprick (inte tjänsternas logotyper). Länkarna är exakta där det går, annars en sökning.
+- **Lists** och **In your collection** (Vinyl/CD/Wishlist, små knappar) ligger samlade under en tunn linje.
+- **What others think:** betygsrutan visas bara när det finns betyg. Saknas både betyg och publika anteckningar står en kort rad i stället för en tom ruta.
 - **Statusruta** om man redan har skivan: "Heard before · no date" eller "In your diary · logged …", med knapparna "Write about it"/"Edit what you wrote", "Log a new listen" och "Log another listen"/"Edit latest". Inga ifyllda knappar, eftersom de såg förvalda ut.
 - **Part of:** chips för de utmaningar skivan ingår i, med framsteg.
 - **Tracklist** med bockar:
@@ -364,6 +367,7 @@ Detaljerad versionshistorik finns i ägarguiden (`/settings/guide`).
 | 4 nov | Challenges och recap-knuff överst i dagboken; recaplänkar i sidokolumnen. Plattare layout: dagboksrader med linjer i stället för boxar, sidokolumn utan boxar, lugnare sidhuvud. |
 | 4 nov | Svävande bottenmeny, loggning som ett lugnt ark, svepbara rader i Discover, glidande bekräftelser, mindre rubriker på mobil (inspirerat av Record Clubs mobilflöde men med vårt innehåll). |
 | 4 nov | Artistsidan: "If you like <artist>, you may like…" med tre skivor från liknande artister. |
+| 4 nov | Lugnare skivsida: metarad, mindre omslag och knappar, "▶ Listen"-meny i stället för fyra knappar, tomma lägen som en rad. |
 
 ---
 

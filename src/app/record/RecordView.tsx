@@ -57,15 +57,14 @@ export async function RecordView({ album }: { album: Album }) {
 
   return (
     <div className="stack gap-56">
-      <div className="row gap-40" style={{ alignItems: "flex-start" }}>
-        <div style={{ flex: "0 1 340px", maxWidth: "100%" }}>
+      <div className="row gap-40 record-hero" style={{ alignItems: "flex-start" }}>
+        <div className="record-hero-cover">
           <Cover album={album} size="hero" decorative={false} />
         </div>
         <div className="stack gap-16" style={{ flex: "999 1 420px", minWidth: 0 }}>
-          <p className="eyebrow">{metaLine}</p>
-          <h1 className="title-xl" style={{ fontSize: "clamp(30px, 5vw, 44px)" }}>{album.title}</h1>
-          <p style={{ fontSize: 20, color: "var(--text-soft)" }}>{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}</p>
-          {facts ? <div className="row gap-8"><span className="chip" style={{ fontSize: 12, padding: "5px 12px" }}>{facts}</span></div> : null}
+          <p className="eyebrow">{[metaLine, facts].filter(Boolean).join(" · ")}</p>
+          <h1 className="title-xl" style={{ fontSize: "clamp(28px, 5vw, 44px)", marginTop: -8 }}>{album.title}</h1>
+          <p style={{ fontSize: 18, color: "var(--text-soft)", marginTop: -8 }}>{artistPath(album.artist, album.deezer_artist_id) ? <Link href={artistPath(album.artist, album.deezer_artist_id)!} className="artist-link">{album.artist}</Link> : album.artist}</p>
           <Suspense fallback={null}>
             <PartOf deezerId={album.deezer_id} artist={album.artist} title={album.title} />
           </Suspense>
@@ -90,18 +89,19 @@ export async function RecordView({ album }: { album: Album }) {
               </div>
             </div>
           ) : (
-            <div className="row gap-12" style={{ marginTop: 4 }}>
-              <Link href={logPath(album)} className="btn btn-primary btn-lg">Log this listen</Link>
+            <div className="row gap-8" style={{ marginTop: 4 }}>
+              <Link href={logPath(album)} className="btn btn-primary">Log this listen</Link>
               <form action={toggleToListen}>
                 <input type="hidden" name="album_id" value={album.id} />
                 <input type="hidden" name="source" value="Saved from the record page" />
-                <button type="submit" className="btn btn-lg" aria-pressed={inList}>{inList ? "✓ On your To listen" : "+ To listen"}</button>
+                <button type="submit" className="btn" aria-pressed={inList}>{inList ? "✓ To listen" : "+ To listen"}</button>
               </form>
             </div>
           )}
           <Suspense fallback={<ListenOnPlaceholder />}>
             <ListenOn album={album} />
           </Suspense>
+          <div className="record-save">
           {!myListsRes.error ? (
             <div className="stack gap-8">
               <p className="eyebrow">Lists</p>
@@ -129,12 +129,13 @@ export async function RecordView({ album }: { album: Album }) {
                 <form key={f} action={toggleCollection}>
                   <input type="hidden" name="album_id" value={album.id} />
                   <input type="hidden" name="field" value={f} />
-                  <button type="submit" className="btn pill" aria-pressed={coll[f]}>
+                  <button type="submit" className="btn btn-sm pill" aria-pressed={coll[f]}>
                     {coll[f] ? "✓ " : ""}{f === "cd" ? "CD" : f === "vinyl" ? "Vinyl" : "Wishlist"}
                   </button>
                 </form>
               ))}
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -146,6 +147,7 @@ export async function RecordView({ album }: { album: Album }) {
       <section className="stack gap-20">
         <h2 className="title-l">What others think</h2>
         <div className="row gap-28" style={{ alignItems: "flex-start" }}>
+          {total ? (
           <div className="card stack gap-8" style={{ flex: "1 1 260px", minWidth: 0 }}>
             <div className="row gap-8" style={{ alignItems: "baseline" }}>
               <span style={{ fontSize: 44, lineHeight: 1, fontWeight: 750 }}>{stats?.avg_rating ?? "–"}</span>
@@ -160,6 +162,7 @@ export async function RecordView({ album }: { album: Album }) {
             ))}
             <p className="muted small" style={{ marginTop: 4 }}>Anonymous ratings count. Private ones don’t.</p>
           </div>
+          ) : null}
           {topTracks.length ? (
             <div className="card stack gap-8" style={{ flex: "1 1 260px", minWidth: 0 }}>
               <p className="eyebrow">Fans’ favourite tracks</p>
@@ -194,10 +197,7 @@ export async function RecordView({ album }: { album: Album }) {
                 );
               })
             ) : (
-              <div className="card-dashed">
-                <p style={{ fontWeight: 700 }}>No public notes yet</p>
-                <p className="muted">Log a listen and yours could be the first one people read here.</p>
-              </div>
+              <p className="muted">{total ? "No public notes yet." : "No ratings or public notes yet — yours could be the first."}</p>
             )}
           </div>
         </div>

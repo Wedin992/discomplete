@@ -6,6 +6,15 @@ export type Section = { id: string; title: string; body: string[] };
 
 export const REVISIONS: Revision[] = [
   {
+    version: 33,
+    date: "2026-11-04",
+    changes: [
+      "Lugnare skivsida: mindre omslag på mobilen, typ, år, genre, antal låtar och längd på en rad, mindre knappar.",
+      "“Listen on” med fyra stora knappar är ersatt av en liten knapp “▶ Listen” som fäller ut Spotify, Apple Music, YouTube Music och Deezer, var och en med en liten färgprick.",
+      "Lists och samlingen (Vinyl/CD/Wishlist) ligger samlade under en tunn linje. Betygsrutan visas bara när skivan har betyg, och tomma lägen är en kort rad i stället för en ruta.",
+    ],
+  },
+  {
     version: 32,
     date: "2026-11-04",
     changes: [
